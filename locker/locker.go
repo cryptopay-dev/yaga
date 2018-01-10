@@ -3,7 +3,6 @@ package locker
 import (
 	"time"
 
-	"github.com/bsm/redis-lock"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/go-redis/redis"
 )
