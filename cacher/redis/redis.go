@@ -13,7 +13,6 @@ type service struct {
 
 func New(opts ...Option) cacher.Cacher {
 	var options = newOptions(opts...)
-	_ = options
 
 	return &service{
 		redis: redis.NewClient(&redis.Options{
