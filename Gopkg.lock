@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/bsm/redis-lock"
+  packages = ["."]
+  revision = "3296d395938a9d5e351f969884ddf6946d10bf2e"
+  version = "v7.0.0"
+
+[[projects]]
   name = "github.com/certifi/gocertifi"
   packages = ["."]
   revision = "a4ab0227d360091084658029ec8ae45f989fba3e"
@@ -166,6 +172,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fadfd957ae7365bf49c957c0dbbe0eb0fff1a40a6418d1330540d8757d41f8c0"
+  inputs-digest = "d92cb931ef19d4d1264a890894d81a818521da198c08ec025749a724cbe925eb"
   solver-name = "gps-cdcl"
   solver-version = 1
