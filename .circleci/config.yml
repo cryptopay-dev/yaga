@@ -1,0 +1,50 @@
+version: 2
+jobs:
+  build:
+    docker:
+      # CircleCI Go images available at: https://hub.docker.com/r/circleci/golang/
+      - image: circleci/golang:1
+      # CircleCI PostgreSQL images available at: https://hub.docker.com/r/circleci/postgres/
+      - image: circleci/postgres:alpine-ram
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: "postgres"
+          POSTGRES_DB: sample
+      - image: redis:alpine
+    working_directory: /go/src/github.com/cryptopay-dev/yaga
+    environment:
+      TEST_DATABASE_ADDR: localhost:5432
+      TEST_DATABASE_USER: postgres
+      TEST_DATABASE_DATABASE: sample
+      TEST_DATABASE_PASSWORD: postgres
+      PGPASSWORD: postgres
+      DEP_HASH: 322152b8b50b26e5e3a7f6ebaeb75d9c11a747e64bbfd0d8bb1f4d89a031c2b5
+    steps:
+      - checkout
+      - run:
+          name: Wait for db
+          command: dockerize -wait tcp://${TEST_DATABASE_ADDR} -timeout 1m
+      - run:
+          name: Dep
+          command: |
+              curl -fsSL -o /go/bin/dep https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64
+              sha256sum /go/bin/dep | grep "${DEP_HASH}" || exit 1
+              chmod +x /go/bin/dep
+              dep ensure
+      - run:
+          name: Migrate
+          command: |
+              echo "Get migrate"
+              go get -v -u -d github.com/mattes/migrate/cli github.com/lib/pq
+              echo "Go to migrate"
+              cd /go/src/github.com/mattes/migrate/cli
+              echo "Build migrate"
+              go build -v -tags 'postgres' -o /go/bin/migrate .
+              echo "Go to yaga"
+              cd /go/src/github.com/cryptopay-dev/yaga
+              echo "Copy migrates"
+              cp ./middlewares/auth/sample.sql 1512662685_sample.up.sql
+              echo "Run migrate"
+              /go/bin/migrate -source="file:///go/src/github.com/cryptopay-dev/yaga" -database "postgres://${TEST_DATABASE_USER}:${TEST_DATABASE_PASSWORD}@${TEST_DATABASE_ADDR}/${TEST_DATABASE_DATABASE}?sslmode=disable" up
+      # Add the Postgres binaries to the path.
+      - run: go test -v ./...
