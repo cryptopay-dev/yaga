@@ -14,7 +14,7 @@ import (
 const (
 	Development             = "development"
 	Production              = "production"
-	startLoggerWithLevelTpl = "Start logger with %q level"
+	startLoggerWithLevelTpl = "Start logger with '%s' level"
 )
 
 type Logger struct {
