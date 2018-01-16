@@ -14,8 +14,8 @@ import (
 
 const (
 	errStartServerTpl    = "error while starting server: %v"
-	startServerOnPortTpl = "server starting on port %q"
-	emptyBindEnv         = "BIND env for server not set, use default port: %q"
+	startServerOnPortTpl = "server starting on port '%s'"
+	emptyBindEnv         = "BIND env for server not set, use default port: '%s'"
 
 	defaultBind = ":8080"
 )
