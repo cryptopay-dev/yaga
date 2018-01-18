@@ -44,6 +44,18 @@
   version = "v6.6.23"
 
 [[projects]]
+  name = "github.com/go-playground/locales"
+  packages = [".","currency"]
+  revision = "e4cbcb5d0652150d40ad0646651076b6bd2be4f6"
+  version = "v0.11.2"
+
+[[projects]]
+  name = "github.com/go-playground/universal-translator"
+  packages = ["."]
+  revision = "b32fa301c9fe55953584134cb6853a13c87ec0a1"
+  version = "v0.16.0"
+
+[[projects]]
   name = "github.com/go-redis/redis"
   packages = [".","internal","internal/consistenthash","internal/hashtag","internal/pool","internal/proto"]
   revision = "73b70592cdaa9e6abdfcfbf97b4a90d80728c836"
@@ -169,9 +181,21 @@
   packages = ["unix"]
   revision = "810d7000345868fc619eb81f46307107118f4ae1"
 
+[[projects]]
+  name = "gopkg.in/go-playground/validator.v9"
+  packages = ["."]
+  revision = "48a433ba4bcadc5be9aa16d4bdcb383d3f57a741"
+  version = "v9.9.3"
+
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "d670f9405373e636a5a2765eea47fac0c9bc91a4"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d92cb931ef19d4d1264a890894d81a818521da198c08ec025749a724cbe925eb"
+  inputs-digest = "7dee3889920153ff779d91ab2d7b461bb3afaf78425e4d31c86c0cd9a66bddbb"
   solver-name = "gps-cdcl"
   solver-version = 1

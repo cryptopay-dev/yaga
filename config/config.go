@@ -15,12 +15,13 @@ var ErrUnknownSourceType = errors.New("unknown type")
 func Load(src, config interface{}) error {
 	switch t := src.(type) {
 	case io.Reader:
-		return readAndValidate(t.(io.Reader), config)
+		return readAndValidate(t, config)
 	case string:
 		file, err := os.Open(t)
 		if err != nil {
 			return err
 		}
+		defer file.Close()
 		return readAndValidate(file, config)
 	default:
 		return ErrUnknownSourceType
