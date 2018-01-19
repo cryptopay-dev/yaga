@@ -31,7 +31,6 @@ func New(platform string) logger.Logger {
 		platform = Production
 		l, _ = zap.Config{
 			Level:            zap.NewAtomicLevelAt(zap.InfoLevel),
-			Development:      false,
 			Encoding:         "json",
 			EncoderConfig:    zap.NewProductionEncoderConfig(),
 			OutputPaths:      []string{"stderr"},
