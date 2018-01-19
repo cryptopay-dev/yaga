@@ -10,8 +10,8 @@
 [[projects]]
   name = "github.com/certifi/gocertifi"
   packages = ["."]
-  revision = "a4ab0227d360091084658029ec8ae45f989fba3e"
-  version = "2017.11.05"
+  revision = "deb3ae2ef2610fde3330947281941c562861188b"
+  version = "2018.01.18"
 
 [[projects]]
   name = "github.com/cryptopay-dev/go-metrics"
@@ -40,8 +40,8 @@
 [[projects]]
   name = "github.com/go-pg/pg"
   packages = [".","internal","internal/parser","internal/pool","orm","types"]
-  revision = "fc91a7fbbb5dde827c24ef45b8705943a5c197b9"
-  version = "v6.6.23"
+  revision = "c2405ea05e2013fc1354cf8f61e94152b896ed91"
+  version = "v6.7.0"
 
 [[projects]]
   name = "github.com/go-playground/locales"
@@ -58,8 +58,8 @@
 [[projects]]
   name = "github.com/go-redis/redis"
   packages = [".","internal","internal/consistenthash","internal/hashtag","internal/pool","internal/proto"]
-  revision = "73b70592cdaa9e6abdfcfbf97b4a90d80728c836"
-  version = "v6.8.0"
+  revision = "4021ace05686f632ff17fd824bbed229fc474cf8"
+  version = "v6.8.2"
 
 [[projects]]
   branch = "master"
@@ -84,6 +84,18 @@
   packages = ["bytes","color","log","random"]
   revision = "57409ada9da0f2afad6664c49502f8c50fbd8476"
   version = "0.2.3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/lib/pq"
+  packages = [".","oid"]
+  revision = "27ea5d92de30060e7121ddd543fe14e9a327e0cc"
+
+[[projects]]
+  name = "github.com/mattes/migrate"
+  packages = [".","database","database/postgres","source","source/file"]
+  revision = "035c07716cd373d88456ec4d701402df52584cb4"
+  version = "v3.0.1"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -140,6 +152,12 @@
   version = "v1.2.0"
 
 [[projects]]
+  name = "github.com/urfave/cli"
+  packages = ["."]
+  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
+  version = "v1.20.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/valyala/bytebufferpool"
   packages = ["."]
@@ -173,13 +191,13 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["acme","acme/autocert","bcrypt","blowfish"]
-  revision = "b3c9a1d25cfbbbab0ff4780b71c4f54e6e92a0de"
+  revision = "a6600008915114d9c087fad9f03d75087b1a74df"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "810d7000345868fc619eb81f46307107118f4ae1"
+  revision = "2c42eef0765b9837fbdab12011af7830f55f88f0"
 
 [[projects]]
   name = "gopkg.in/go-playground/validator.v9"
@@ -196,6 +214,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7dee3889920153ff779d91ab2d7b461bb3afaf78425e4d31c86c0cd9a66bddbb"
+  inputs-digest = "9192573e100c67b87c28fdff35f33b16180358a4d8581f27834ee4d93d5deb9c"
   solver-name = "gps-cdcl"
   solver-version = 1
