@@ -29,7 +29,14 @@ func New(platform string) logger.Logger {
 		l, _ = zap.NewDevelopment(zap.AddCallerSkip(1))
 	} else {
 		platform = Production
-		l, _ = zap.NewProduction(zap.AddCallerSkip(1))
+		l, _ = zap.Config{
+			Level:            zap.NewAtomicLevelAt(zap.InfoLevel),
+			Development:      false,
+			Encoding:         "json",
+			EncoderConfig:    zap.NewProductionEncoderConfig(),
+			OutputPaths:      []string{"stderr"},
+			ErrorOutputPaths: []string{"stderr"},
+		}.Build()
 	}
 
 	core := l.Core()
