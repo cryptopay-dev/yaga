@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func shutdownApplication(opts Options) {
+func shutdownApplication(opts *Options) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := opts.App.Shutdown(ctx); err != nil {
@@ -20,7 +20,7 @@ func shutdownApplication(opts Options) {
 	}
 }
 
-func setDatabase(opts Options) func(ctx *cli.Context) error {
+func setDatabase(opts *Options) func(ctx *cli.Context) error {
 	return func(ctx *cli.Context) error {
 		var db = ctx.String("db")
 
@@ -64,7 +64,7 @@ func addCommands(cliApp *cli.App, opts Options) {
 			Aliases: []string{"s"},
 			Usage:   "start main server",
 			After: func(context *cli.Context) error {
-				shutdownApplication(opts)
+				shutdownApplication(&opts)
 				return nil
 			},
 			Action: func(c *cli.Context) error {
@@ -95,9 +95,9 @@ func addCommands(cliApp *cli.App, opts Options) {
 			Flags: []cli.Flag{
 				requiredDBFlag,
 			},
-			Before: setDatabase(opts),
+			Before: setDatabase(&opts),
 			After: func(context *cli.Context) error {
-				shutdownApplication(opts)
+				shutdownApplication(&opts)
 				return nil
 			},
 			Action: func(c *cli.Context) error {
@@ -137,9 +137,9 @@ func addCommands(cliApp *cli.App, opts Options) {
 			Flags: []cli.Flag{
 				setDBFlag,
 			},
-			Before: setDatabase(opts),
+			Before: setDatabase(&opts),
 			After: func(context *cli.Context) error {
-				shutdownApplication(opts)
+				shutdownApplication(&opts)
 				return nil
 			},
 			Action: func(c *cli.Context) error {
@@ -160,9 +160,9 @@ func addCommands(cliApp *cli.App, opts Options) {
 				setDBFlag,
 				setStepsFlag,
 			},
-			Before: setDatabase(opts),
+			Before: setDatabase(&opts),
 			After: func(context *cli.Context) error {
-				shutdownApplication(opts)
+				shutdownApplication(&opts)
 				return nil
 			},
 			Action: func(c *cli.Context) error {
