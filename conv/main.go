@@ -1,6 +1,6 @@
 package conv
 
-import "github.com/shopspring/decimal"
+import "github.com/cryptopay-dev/yaga/decimal"
 
 const (
 	places int32 = 6
