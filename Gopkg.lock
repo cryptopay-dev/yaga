@@ -134,6 +134,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/robfig/cron"
+  packages = ["."]
+  revision = "b024fc5ea0e34bc3f83d9941c8d60b0622bfaca4"
+  version = "v1"
+
+[[projects]]
   name = "github.com/satori/go.uuid"
   packages = ["."]
   revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
@@ -214,6 +220,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9192573e100c67b87c28fdff35f33b16180358a4d8581f27834ee4d93d5deb9c"
+  inputs-digest = "3297ce587563d31ed7f4a4dbd00d7045aba065dbf3dfaa9c1bba145d1832c5bf"
   solver-name = "gps-cdcl"
   solver-version = 1
