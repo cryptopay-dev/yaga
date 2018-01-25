@@ -10,16 +10,14 @@ type pool struct {
 	stop *atomic.Bool
 	wg   sync.WaitGroup
 
-	mu      sync.Locker
+	mu      sync.Mutex
 	workers map[string]*worker
 }
 
 func newPool() *pool {
 	return &pool{
 		workers: make(map[string]*worker),
-		mu:      new(sync.Mutex),
 		stop:    atomic.NewBool(false),
-		wg:      sync.WaitGroup{},
 	}
 }
 
