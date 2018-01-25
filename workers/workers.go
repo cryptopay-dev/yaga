@@ -8,8 +8,6 @@ import (
 )
 
 type (
-	CronHandler func(Schedule, func())
-
 	Options struct {
 		Name     string
 		Schedule Schedule
@@ -29,25 +27,9 @@ var (
 	poolWorker = newPool()
 )
 
-func newWorker(opts Options, p *pool, addToCron CronHandler) (*worker, error) {
-	if opts.Schedule == nil || opts.Handler == nil {
-		return nil, ErrWrongOptions
-	}
-
-	w, err := p.createWorker(opts)
-	if err != nil {
-		return nil, err
-	}
-	w.pool = p
-
-	addToCron(w.options.Schedule, w.job)
-
-	return w, nil
-}
-
 func New(opts Options) (err error) {
-	_, err = newWorker(opts, poolWorker, func(schedule Schedule, handler func()) {
-		cronWorker.Schedule(schedule, cron.FuncJob(handler))
+	_, err = newWorker(opts, poolWorker, func(w *worker, handler func()) {
+		cronWorker.Schedule(w.options.Schedule, cron.FuncJob(handler))
 	})
 
 	return

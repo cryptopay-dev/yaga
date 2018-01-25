@@ -7,10 +7,11 @@ import (
 )
 
 type pool struct {
-	workers map[string]*worker
+	stop *atomic.Bool
+	wg   sync.WaitGroup
+
 	mu      sync.Locker
-	stop    *atomic.Bool
-	wg      sync.WaitGroup
+	workers map[string]*worker
 }
 
 func newPool() *pool {
