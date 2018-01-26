@@ -23,6 +23,9 @@ type mockCron struct {
 func (m *mockCron) New(duration time.Duration, job func()) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if m.stopped {
+		return
+	}
 
 	ticker := time.NewTicker(duration)
 	go func() {
