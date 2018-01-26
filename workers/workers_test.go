@@ -63,7 +63,7 @@ func TestWorkerStartAndStop(t *testing.T) {
 			t.FailNow()
 		}
 
-		time.Sleep(minTickForTest * 10)
+		time.Sleep(minTickForTest * 100)
 		if !assert.True(t, start.Load() > 0, "Cannot start worker") {
 			t.FailNow()
 		}
@@ -79,7 +79,7 @@ func TestWorkerStartAndStop(t *testing.T) {
 			t.FailNow()
 		}
 
-		time.Sleep(minTickForTest * 10)
+		time.Sleep(minTickForTest * 100)
 		if !assert.True(t, info.Load() > 0, "Cannot start worker") {
 			t.FailNow()
 		}
@@ -89,7 +89,7 @@ func TestWorkerStartAndStop(t *testing.T) {
 		c.Wait()
 		info.Store(312)
 
-		time.Sleep(minTickForTest * 10)
+		time.Sleep(minTickForTest * 100)
 		if !assert.True(t, info.Load() == 312, "Cannot stop worker") {
 			t.FailNow()
 		}
@@ -113,13 +113,13 @@ func TestWorkersRestart(t *testing.T) {
 			t.FailNow()
 		}
 
-		time.Sleep(minTickForTest * 10)
+		time.Sleep(minTickForTest * 100)
 		c.Stop() // останавливаем воркеры
 
 		c.Wait() // ждём пока все остановятся
 		info.Store(1122)
 
-		time.Sleep(minTickForTest * 10)
+		time.Sleep(minTickForTest * 100)
 		if !assert.True(t, info.Load() == 1122, "Cannot stop worker") {
 			t.FailNow()
 		}
@@ -127,7 +127,7 @@ func TestWorkersRestart(t *testing.T) {
 		num = 246975
 		c.Start()
 
-		time.Sleep(minTickForTest * 10)
+		time.Sleep(minTickForTest * 100)
 		if !assert.True(t, info.Load() == num, "Cannot restart worker") {
 			t.FailNow()
 		}
@@ -152,7 +152,7 @@ func TestWorkersRestart(t *testing.T) {
 			t.FailNow()
 		}
 
-		time.Sleep(minTickForTest * 10)
+		time.Sleep(minTickForTest * 100)
 		if !assert.True(t, info.Load() == 22, "Cannot start workers") {
 			t.FailNow()
 		}
@@ -162,14 +162,14 @@ func TestWorkersRestart(t *testing.T) {
 		c.Wait() // ждём пока все остановятся
 		info.Store(123)
 
-		time.Sleep(minTickForTest * 10)
+		time.Sleep(minTickForTest * 100)
 		if !assert.True(t, info.Load() == 123, "Cannot stop workers") {
 			t.FailNow()
 		}
 
 		c.Start()
 
-		time.Sleep(minTickForTest * 10)
+		time.Sleep(minTickForTest * 100)
 		if !assert.True(t, info.Load() == 789, "Cannot restart workers") {
 			t.FailNow()
 		}
@@ -190,7 +190,7 @@ func TestWorkersWait(t *testing.T) {
 		)
 
 		mu.Lock()
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 5; i++ {
 			lockedFlag := false
 			if i == 4 {
 				// только один воркер заблочим
@@ -209,8 +209,8 @@ func TestWorkersWait(t *testing.T) {
 			}
 		}
 
-		time.Sleep(minTickForTest * 100)
-		if !assert.True(t, info.Load() == 10, "Cannot start workers") {
+		time.Sleep(minTickForTest * 1000)
+		if !assert.True(t, info.Load() == 5, "Cannot start workers") {
 			t.FailNow()
 		}
 
@@ -222,7 +222,7 @@ func TestWorkersWait(t *testing.T) {
 		}()
 
 		select {
-		case <-time.After(minTickForTest * 10):
+		case <-time.After(minTickForTest * 100):
 		case <-watch:
 			assert.FailNow(t, "Fail waiting of workers")
 		}
@@ -244,7 +244,7 @@ func TestWorkersStop(t *testing.T) {
 			info = atomic.NewInt32(num)
 		)
 
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 5; i++ {
 			n := num
 			_, err = creater(getUniqueWorkerName(), minTickForTest, func() {
 				info.CAS(n, n*2)
@@ -256,7 +256,7 @@ func TestWorkersStop(t *testing.T) {
 			num = num * 2
 		}
 
-		time.Sleep(minTickForTest * 100)
+		time.Sleep(minTickForTest * 1000)
 		if !assert.True(t, info.Load() == num, "Cannot start workers") {
 			t.FailNow()
 		}
@@ -266,7 +266,7 @@ func TestWorkersStop(t *testing.T) {
 		c.Wait() // ждём пока все остановятся
 		info.Store(123)
 
-		time.Sleep(minTickForTest * 10)
+		time.Sleep(minTickForTest * 100)
 		if !assert.True(t, info.Load() == 123, "Cannot stop workers") {
 			t.FailNow()
 		}
