@@ -41,7 +41,7 @@ func TestWorkerConflictName(t *testing.T) {
 	// добавляем новый воркер с другим именем
 	w, err = creater(name+" foobar", minTickForTest, func() {})
 	if !assert.NoError(t, err) || !assert.NotNil(t, w) {
-		assert.FailNow(t, "Cannot create worker with uniqe name")
+		assert.FailNow(t, "Cannot create worker with unique name")
 	}
 
 	if !assert.Equal(t, 2, len(w.pool.workers)) {
