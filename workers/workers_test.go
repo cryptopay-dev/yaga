@@ -244,7 +244,7 @@ func TestWorkersStop(t *testing.T) {
 			info = atomic.NewInt32(num)
 		)
 
-		for i := 0; i < 20; i++ {
+		for i := 0; i < 10; i++ {
 			n := num
 			_, err = creater(getUniqueWorkerName(), minTickForTest, func() {
 				info.CAS(n, n*2)
