@@ -2,3 +2,51 @@
   non-go = true
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  name = "github.com/cryptopay-dev/go-metrics"
+  version = "2.0.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/getsentry/raven-go"
+
+[[constraint]]
+  name = "github.com/go-pg/pg"
+  version = "6.6.23"
+
+[[constraint]]
+  name = "github.com/go-redis/redis"
+  version = "6.8.0"
+
+[[constraint]]
+  name = "github.com/joho/godotenv"
+  version = "1.2.0"
+
+[[constraint]]
+  name = "github.com/labstack/echo"
+  version = "3.2.6"
+
+[[constraint]]
+  name = "github.com/labstack/gommon"
+  version = "0.2.3"
+
+[[constraint]]
+  name = "github.com/satori/go.uuid"
+  version = "1.2.0"
+
+[[constraint]]
+  name = "github.com/shopspring/decimal"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/stretchr/testify"
+  version = "1.2.0"
+
+[[constraint]]
+  name = "go.uber.org/zap"
+  version = "1.7.1"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/crypto"
