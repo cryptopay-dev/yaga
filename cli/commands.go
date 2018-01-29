@@ -40,22 +40,6 @@ func setDatabase(opts *Options) func(ctx *cli.Context) error {
 }
 
 func addCommands(cliApp *cli.App, opts Options) {
-	var (
-		setStepsFlag = cli.IntFlag{
-			Name:  "steps",
-			Value: 1,
-			Usage: "steps count to down",
-		}
-		setDBFlag = cli.StringFlag{
-			Name:  "db",
-			Value: opts.DB.Options().Database,
-			Usage: "set database",
-		}
-		requiredDBFlag = cli.StringFlag{
-			Name:  "db",
-			Usage: "set database",
-		}
-	)
 
 	cliApp.Commands = cli.Commands{
 
@@ -88,7 +72,33 @@ func addCommands(cliApp *cli.App, opts Options) {
 				return nil
 			},
 		},
+	}
 
+	if opts.DB != nil {
+		cliApp.Commands = append(cliApp.Commands, dbCommands(opts)...)
+	}
+
+}
+
+func dbCommands(opts Options) cli.Commands {
+	var (
+		setStepsFlag = cli.IntFlag{
+			Name:  "steps",
+			Value: 1,
+			Usage: "steps count to down",
+		}
+		setDBFlag = cli.StringFlag{
+			Name:  "db",
+			Value: opts.DB.Options().Database,
+			Usage: "set database",
+		}
+		requiredDBFlag = cli.StringFlag{
+			Name:  "db",
+			Usage: "set database",
+		}
+	)
+
+	return cli.Commands{
 		{
 			Name:  "db:cleanup",
 			Usage: "Cleanup database",
@@ -183,5 +193,4 @@ func addCommands(cliApp *cli.App, opts Options) {
 			},
 		},
 	}
-
 }

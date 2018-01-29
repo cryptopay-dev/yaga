@@ -9,9 +9,9 @@ import (
 
 type Options struct {
 	App          Instance      `validate:"required"`
-	DB           *pg.DB        `validate:"required"`
 	Level        string        `validate:"required"`
 	Logger       logger.Logger `validate:"required"`
+	DB           *pg.DB
 	Users        []cli.Author
 	Usage        string
 	Name         string
