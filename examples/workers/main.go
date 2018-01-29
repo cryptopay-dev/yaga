@@ -15,7 +15,7 @@ type myDelayLock struct {
 
 func (m *myDelayLock) Next(t time.Time) time.Time {
 	if m.stop {
-		fmt.Printf("[%s] instance shell be stopped\n", time.Now().Format("15:04:05"))
+		fmt.Printf("[%s] instance will be stopped\n", time.Now().Format("15:04:05"))
 		// we stop the worker using zero time
 		return time.Time{}
 	}
@@ -89,7 +89,7 @@ func main() {
 		Schedule: delay,
 		Handler: func() {
 			if step.Load() > 4 && !delay.stop {
-				fmt.Printf("[%s] worker #4: send command exit\n", time.Now().Format("15:04:05"))
+				fmt.Printf("[%s] worker #4: send command 'exit'\n", time.Now().Format("15:04:05"))
 				delay.stop = true
 				// delay canceling of context for 10 seconds
 				time.AfterFunc(time.Second*10, cancel)
