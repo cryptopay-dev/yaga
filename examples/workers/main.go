@@ -16,14 +16,11 @@ type myDelayLock struct {
 func (m *myDelayLock) Next(t time.Time) time.Time {
 	if m.stop {
 		fmt.Printf("[%s] instance shell be stopped\n", time.Now().Format("15:04:05"))
-		// отправляя нулевое время, мы по факту выключаем воркер,
-		// больше не сможем никогда его запустить,
-		// во всяком случае я пока не придумал как
+		// we stop the worker using zero time
 		return time.Time{}
 	}
 
-	// будем планировать на каждой следующей секунде,
-	// то есть фактически мы будем запускать воркер каждую секунду
+	// we will plan on every second
 	return t.Add(time.Second)
 }
 
@@ -33,8 +30,8 @@ func main() {
 
 	fmt.Printf("[%s] Hello, workers!\n", time.Now().Format("15:04:05"))
 
-	// воркер будет запускаться каждые 5 секунд
-	// пример планировщика на подобии тикера
+	// worker will run every 5 seconds
+	// example of scheduler like time.Ticker
 	err := workers.New(workers.Options{
 		Name:     "worker #1",
 		Schedule: workers.Every(time.Second * 5),
@@ -48,8 +45,8 @@ func main() {
 
 	workers.Start()
 
-	// воркер будет запускаться каждые 13 секунд
-	// пример планировщика на подобии тикера, но из парсинга строки
+	// worker will run every 13 seconds
+	// example of scheduler like time.Ticker (using string parsing)
 	sched, err := workers.Parse("@every 13s")
 	if err != nil {
 		panic(err)
@@ -66,9 +63,9 @@ func main() {
 		panic(err)
 	}
 
-	// воркер будет запускаться каждую минуту в 12 секунд
-	// пример планировщика на основе крона UNIX, но отличие в дополнительном
-	// первом поле обозначающем секунды
+	// worker will run every minutes at 12 secs
+	// example of scheduler like UNIX cron
+	// but with first element for seconds
 	sched, err = workers.Parse("12 */1 * * * *")
 	if err != nil {
 		panic(err)
@@ -84,8 +81,8 @@ func main() {
 		panic(err)
 	}
 
-	// воркер будет запускаться согласно кастомному планировщику
-	// пример планировщика с использованием интерфейса workers.Schedule
+	// worker will run as custom scheduler
+	// example of scheduler (using workers.Schedule interface)
 	delay := new(myDelayLock)
 	err = workers.New(workers.Options{
 		Name:     "worker #4",
@@ -94,7 +91,7 @@ func main() {
 			if step.Load() > 4 && !delay.stop {
 				fmt.Printf("[%s] worker #4: send command exit\n", time.Now().Format("15:04:05"))
 				delay.stop = true
-				// откладываем отмену контекста на 10 секунд
+				// delay canceling of context for 10 seconds
 				time.AfterFunc(time.Second*10, cancel)
 			}
 		},
@@ -103,14 +100,14 @@ func main() {
 		panic(err)
 	}
 
-	// ждем пока контекст не будет отменен
+	// wait until context will be canceled
 	<-ctx.Done()
 
-	// отдаем команду стопить все воркеры
+	// stopping workers
 	workers.Stop()
 
-	// ждем пока все воркеры остановятся
+	// wait until all workers will be stopped
 	workers.Wait()
 
-	fmt.Printf("[%s] All workers is stopped\n", time.Now().Format("15:04:05"))
+	fmt.Printf("[%s] All workers are stopped\n", time.Now().Format("15:04:05"))
 }
