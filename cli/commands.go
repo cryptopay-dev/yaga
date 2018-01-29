@@ -24,10 +24,6 @@ func setDatabase(opts *Options) func(ctx *cli.Context) error {
 	return func(ctx *cli.Context) error {
 		var db = ctx.String("db")
 
-		if opts.DB == nil {
-			opts.Logger.Fatal("DB can't be empty, if you wanna use it")
-		}
-
 		if len(db) == 0 || db == opts.DB.Options().Database {
 			return nil
 		}
