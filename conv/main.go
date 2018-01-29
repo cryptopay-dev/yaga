@@ -6,7 +6,7 @@ const (
 	places int32 = 6
 )
 
-// FloatToDecimal convert float to decimal
+// FloatToDecimal convert float to decimal with default precision
 func FloatToDecimal(input float64) decimal.Decimal {
 	return decimal.NewFromFloat(input).Truncate(places)
 }
