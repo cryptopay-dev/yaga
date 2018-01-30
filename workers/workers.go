@@ -15,12 +15,11 @@ type (
 		Handler  func()
 	}
 
-	// The Schedule describes a job's duty cycle.
-	Schedule interface {
-		// Return the next activation time, later than the given time.
-		// Next is invoked initially, and then each time the job is run.
-		cron.Schedule
-	}
+	// Schedule describes a job's duty cycle.
+	//
+	// Return the next activation time, later than the given time.
+	// Next is invoked initially, and then each time the job is run.
+	Schedule = cron.Schedule
 )
 
 var (
@@ -36,7 +35,7 @@ var (
 	poolWorker = newPool()
 )
 
-// New returns a error if cannot create new worker
+// New returns an error if cannot create new worker
 func New(opts Options) (err error) {
 	_, err = newWorker(opts, poolWorker, func(w *worker, handler func()) {
 		cronWorker.Schedule(w.options.Schedule, cron.FuncJob(handler))
@@ -62,13 +61,13 @@ func Every(duration time.Duration) Schedule {
 	return cron.Every(duration)
 }
 
-// Starting all workers.
+// Start all workers.
 func Start() {
 	poolWorker.stop.Store(false)
 	cronWorker.Start()
 }
 
-// Stopping all workers.
+// Stop all workers.
 func Stop() {
 	poolWorker.stop.Store(true)
 	cronWorker.Stop()
