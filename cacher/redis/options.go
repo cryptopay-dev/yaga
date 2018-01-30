@@ -7,7 +7,7 @@ type Options struct {
 	DB       int
 }
 
-// newOptions converts closure to Options-field
+// newOptions converts slice of closures to Options-field
 func newOptions(opts ...Option) Options {
 	var options Options
 	for _, o := range opts {
