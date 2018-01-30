@@ -2,6 +2,7 @@ package cacher
 
 import "time"
 
+// Cacher interface to abstract Redis/other
 type Cacher interface {
 	Get(key string, val interface{}) error
 	Set(key string, val interface{}, timeout time.Duration) error
