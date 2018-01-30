@@ -10,10 +10,17 @@ import (
 
 var database *Database
 
+// Database for tests
 type Database struct {
 	DB *pg.DB
 }
 
+// GetTestDB creates connection to PostgreSQL.
+// Options used from ENV:
+// - TEST_DATABASE_ADDR
+// - TEST_DATABASE_USER
+// - TEST_DATABASE_DATABASE
+// - TEST_DATABASE_PASSWORD
 func GetTestDB() *Database {
 	if database == nil {
 		err := godotenv.Load()
@@ -31,11 +38,4 @@ func GetTestDB() *Database {
 	}
 
 	return database
-}
-
-func (d *Database) Cleanup() {
-	_, err := d.DB.Exec("TRUNCATE trades, orders, users RESTART IDENTITY;")
-	if err != nil {
-		panic(err)
-	}
 }
