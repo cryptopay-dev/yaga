@@ -11,40 +11,50 @@ import (
 	_ "github.com/mattes/migrate/source/file"
 )
 
+// MigrationLogger abstraction for migrate-logger
 type MigrationLogger struct {
 	logger logger.Logger
 }
 
+// NewMigrationLogger creates abstraction for migrate-logger
 func NewMigrationLogger(logger logger.Logger) MigrationLogger {
 	return MigrationLogger{
 		logger: logger,
 	}
 }
 
+// Printf implementation of migrate.Logger
 func (m MigrationLogger) Printf(format string, v ...interface{}) {
 	m.logger.Info(fmt.Sprintf(format, v...))
 }
 
+// Verbose implementation of migrate.Logger
 func (m MigrationLogger) Verbose() bool {
 	return true
 }
 
+// MigrationDirection type
 type MigrationDirection int
 
 const (
 	_ MigrationDirection = iota
 
+	// MigrationUp to migrate step up
 	MigrationUp
+	// MigrationDown to migrate step down
 	MigrationDown
 )
 
+// MigrateOptions struct used for Migrate method
 type MigrateOptions struct {
 	Steps     int
 	Direction MigrationDirection
 }
 
+// MigrateOption closure
 type MigrateOption func(o *MigrateOptions)
 
+//  newMigrateOptions converts slice of closures to MigrateOptions-field
 func newMigrateOptions(opts ...MigrateOption) MigrateOptions {
 	// Defaults:
 	var options = MigrateOptions{
@@ -59,18 +69,21 @@ func newMigrateOptions(opts ...MigrateOption) MigrateOptions {
 	return options
 }
 
+// MigrateDirection closure to set field in MigrateOptions
 func MigrateDirection(direction MigrationDirection) MigrateOption {
 	return func(o *MigrateOptions) {
 		o.Direction = direction
 	}
 }
 
+// MigrateSteps closure to set field in MigrateOptions
 func MigrateSteps(steps int) MigrateOption {
 	return func(o *MigrateOptions) {
 		o.Steps = steps
 	}
 }
 
+// Migrate db using MigrateOption's
 func (o Options) Migrate(opts ...MigrateOption) error {
 	var options = newMigrateOptions(opts...)
 
@@ -112,6 +125,8 @@ func (o Options) Migrate(opts ...MigrateOption) error {
 	return nil
 }
 
+// migrate returns a new Migrate instance from a source URL and a database URL.
+// The URL scheme is defined by each driver
 func (o Options) migrate() (*migrate.Migrate, error) {
 	uri := "postgres://%s:%s@%s/%s?sslmode=disable"
 

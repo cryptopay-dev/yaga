@@ -6,6 +6,7 @@ import (
 	"github.com/urfave/cli"
 )
 
+// New creates instance of cli.App
 func New(opts ...Option) (*cli.App, error) {
 	var options, err = newOptions(opts...)
 
