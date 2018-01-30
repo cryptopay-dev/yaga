@@ -83,7 +83,7 @@ func MigrateSteps(steps int) MigrateOption {
 	}
 }
 
-// Migrate db using MigrateOption's
+// Migrate db using MigrateOptions
 func (o Options) Migrate(opts ...MigrateOption) error {
 	var options = newMigrateOptions(opts...)
 

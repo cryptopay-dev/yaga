@@ -10,7 +10,6 @@ import (
 // Options for creating cli.App instance
 type Options struct {
 	App          Instance      `validate:"required"`
-	Level        string        `validate:"required"`
 	Logger       logger.Logger `validate:"required"`
 	DB           *pg.DB
 	Users        []cli.Author
@@ -64,13 +63,6 @@ func BuildTime(buildTime string) Option {
 func BuildVersion(buildVersion string) Option {
 	return func(o *Options) {
 		o.BuildVersion = buildVersion
-	}
-}
-
-// Level closure to set field in Options
-func Level(level string) Option {
-	return func(o *Options) {
-		o.Level = level
 	}
 }
 

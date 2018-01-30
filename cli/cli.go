@@ -6,7 +6,11 @@ import (
 	"github.com/urfave/cli"
 )
 
-// New creates instance of cli.App
+// New creates instance of cli.App with Options.
+// Validate options with https://github.com/go-playground/validator
+// Required:
+// - App instance
+// - Logger
 func New(opts ...Option) (*cli.App, error) {
 	var options, err = newOptions(opts...)
 
