@@ -52,7 +52,7 @@ func (s *service) Keys(pattern string) ([]string, error) {
 	return s.redis.Keys(pattern).Result()
 }
 
-// TTL for key from redis-cache
+// TTL fetch for key from redis-cache
 func (s *service) TTL(key string) (time.Duration, error) {
 	return s.redis.TTL(key).Result()
 }
