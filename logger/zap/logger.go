@@ -72,8 +72,14 @@ func (l *Logger) Named(name string) logger.Logger {
 	}
 }
 
-func (l *Logger) WithContext(fields ...zapcore.Field) logger.Logger {
-	lg := l.logger.With(fields...)
+func (l *Logger) WithContext(fields map[string]interface{}) logger.Logger {
+	zapFields := make([]zapcore.Field, len(fields))
+	i := 0
+	for key, field := range fields {
+		zapFields[i] = zap.Any(key, field)
+		i++
+	}
+	lg := l.logger.With(zapFields...)
 	core := lg.Core()
 	sugar := lg.Sugar()
 	return &Logger{
@@ -104,7 +110,7 @@ func (l *Logger) Warn(i ...interface{})                      { l.sugar.Warn(i...
 func (l *Logger) Warnf(format string, args ...interface{})   { l.sugar.Warnf(format, args...) }
 func (l *Logger) Warnj(j log.JSON)                           {}
 func (l *Logger) Warnw(message string, args ...interface{})  { l.sugar.Warnw(message, args...) }
-func (l *Logger) Error(i ...interface{})                     { l.sugar.Error(i...) }
+func (l *Logger) Error(i ...interface{})                     { l.sugar.Error(zap.Any("error", i)) }
 func (l *Logger) Errorf(format string, args ...interface{})  { l.sugar.Errorf(format, args...) }
 func (l *Logger) Errorj(j log.JSON)                          {}
 func (l *Logger) Errorw(message string, args ...interface{}) { l.sugar.Errorw(message, args...) }

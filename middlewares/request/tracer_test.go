@@ -42,12 +42,11 @@ func TestRayTraceID(t *testing.T) {
 	handle = RayTraceID(nop.New())(func(c echo.Context) error {
 		var (
 			tag   = TraceTag(c)
-			field = TraceField(c)
+			field = TraceTag(c)
 		)
 		assert.Equal(t, c.Request().Header.Get(RayTraceHeader), fakeRayTraceID)
 		assert.Equal(t, tag, T{RayTraceHeader: fakeRayTraceID})
-		assert.Equal(t, field.Key, RayTraceHeader)
-		assert.Equal(t, field.String, fakeRayTraceID)
+		assert.Equal(t, field["X-Ray-Trace-ID"], fakeRayTraceID)
 		return c.NoContent(http.StatusOK)
 	})
 

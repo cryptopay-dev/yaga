@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"github.com/labstack/gommon/log"
-	"go.uber.org/zap/zapcore"
 )
 
 type Logger interface {
@@ -17,7 +16,7 @@ type Logger interface {
 	Level() log.Lvl
 	SetLevel(v log.Lvl)
 
-	WithContext(fields ...zapcore.Field) Logger
+	WithContext(fields map[string]interface{}) Logger
 	Named(name string) Logger
 
 	Print(i ...interface{})
