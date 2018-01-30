@@ -4,7 +4,6 @@ import (
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/labstack/echo"
 	"github.com/satori/go.uuid"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -17,15 +16,6 @@ func rayTrace(ctx echo.Context) (key, val string) {
 	key = RayTraceHeader
 	val = ctx.Request().Header.Get(key)
 	return
-}
-
-func TraceField(ctx echo.Context) zapcore.Field {
-	key, val := rayTrace(ctx)
-	return zapcore.Field{
-		Key:    key,
-		Type:   zapcore.StringType,
-		String: val,
-	}
 }
 
 func TraceTag(ctx echo.Context) T {
@@ -53,7 +43,8 @@ func RayTraceID(logger logger.Logger) func(next echo.HandlerFunc) echo.HandlerFu
 
 			res.Header().Set(RayTraceHeader, id)
 
-			ctx.Echo().Logger = logger.WithContext(TraceField(ctx))
+			key, val := rayTrace(ctx)
+			ctx.Echo().Logger = logger.WithContext(map[string]interface{}{key: val})
 
 			return next(ctx)
 		}

@@ -61,7 +61,7 @@ func (c *Logic) Capture(err error, ctx echo.Context) {
 	// Capture errors:
 	if code >= http.StatusInternalServerError {
 		raven.CaptureErrorAndWait(err, request.TraceTag(ctx))
-		c.Opts.Logger.Error("Request error", zap.Error(err), request.TraceField(ctx))
+		c.Opts.Logger.Error("Request error", zap.Error(err), request.TraceTag(ctx))
 	}
 
 	// Capture stack trace:
