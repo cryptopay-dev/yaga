@@ -10,8 +10,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// ErrUnknownSourceType when source type not string-path or io.Reader
 var ErrUnknownSourceType = errors.New("unknown type")
 
+// Load config from source (like io.Reader / string path)
+// and validate it (https://github.com/go-playground/validator)
 func Load(src, config interface{}) error {
 	switch t := src.(type) {
 	case io.Reader:
