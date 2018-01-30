@@ -26,6 +26,8 @@ type Options struct {
 	Debug  bool
 }
 
+type Context = echo.Context
+
 func New(opts Options) *echo.Echo {
 	// Enabling raven:
 	if err := raven.SetDSN(os.Getenv("SENTRY_DSN")); err != nil {
