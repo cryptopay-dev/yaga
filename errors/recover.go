@@ -10,6 +10,8 @@ import (
 	"github.com/labstack/echo"
 )
 
+// Recover is an echo-middleware to capture panics in controllers/actions
+// and send info to sentry
 func (c *Logic) Recover() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {

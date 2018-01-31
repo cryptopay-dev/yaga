@@ -12,25 +12,31 @@ import (
 	"go.uber.org/zap"
 )
 
+// Options for creating new Logic
 type Options struct {
 	Debug  bool
 	Logger logger.Logger
 }
 
+// Response answer structure
 type Response struct {
 	Error  string   `json:"error"`
 	Stack  []string `json:"stack"`
 	Result []string `json:"result"`
 }
 
+// Logic is an structure for capture and recover
+// web-errors and panics
 type Logic struct {
 	Opts Options
 }
 
 var (
+	// ErrorEmptyLogger issued when logger received empty logger to New-method
 	ErrorEmptyLogger = errors.New("options hasn't logger")
 )
 
+// New creates instance of Logic structure
 func New(opts Options) (*Logic, error) {
 	if opts.Logger == nil {
 		return nil, ErrorEmptyLogger
@@ -42,6 +48,7 @@ func New(opts Options) (*Logic, error) {
 	return e, nil
 }
 
+// Capture web-errors and formatting answer
 func (c *Logic) Capture(err error, ctx echo.Context) {
 	code := http.StatusInternalServerError
 	result := make([]string, 0)
@@ -61,7 +68,7 @@ func (c *Logic) Capture(err error, ctx echo.Context) {
 	// Capture errors:
 	if code >= http.StatusInternalServerError {
 		raven.CaptureErrorAndWait(err, request.TraceTag(ctx))
-		c.Opts.Logger.Error("Request error", zap.Error(err), request.TraceField(ctx))
+		c.Opts.Logger.Error("Request error", zap.Error(err), request.TraceTag(ctx))
 	}
 
 	// Capture stack trace:

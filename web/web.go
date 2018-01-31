@@ -20,7 +20,9 @@ const (
 	defaultBind = ":8080"
 )
 
+// Options contains a parameters for new Echo instance.
 type Options struct {
+	// TODO suggest change to echo.Logger
 	Logger logger.Logger
 	Error  errors.Logic
 	Debug  bool
@@ -28,13 +30,13 @@ type Options struct {
 
 type Context = echo.Context
 
+// New creates an instance of Echo.
 func New(opts Options) *echo.Echo {
-	// Enabling raven:
 	if err := raven.SetDSN(os.Getenv("SENTRY_DSN")); err != nil {
 		opts.Logger.Error(err)
 	}
 
-	//Enable metrics:
+	// enable metrics
 	if err := metrics.Setup(os.Getenv("METRICS_URL"), os.Getenv("METRICS_APP"), os.Getenv("METRICS_HOSTNAME")); err == nil {
 		go func() {
 			if errWatch := metrics.Watch(time.Second * 10); errWatch != nil {
@@ -57,15 +59,18 @@ func New(opts Options) *echo.Echo {
 	return e
 }
 
+// StartServer HTTP with custom address.
 func StartServer(e *echo.Echo, bind string) error {
-	// Start server
+	// start server
 	if len(bind) == 0 {
 		bind = defaultBind
 		e.Logger.Infof(emptyBindEnv, bind)
 	}
+
 	e.Logger.Infof(startServerOnPortTpl, bind)
 	if err := e.Start(bind); err != nil {
 		return fmt.Errorf(errStartServerTpl, err)
 	}
+
 	return nil
 }

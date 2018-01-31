@@ -8,16 +8,19 @@ import (
 	"github.com/go-redis/redis"
 )
 
+// Locker interface to abstract bsm/redis-lock
 type Locker interface {
 	Run(key string, timeout time.Duration, handler func() error)
 }
 
+// Lock struct to abstract bsm/redis-lock
 type Lock struct {
 	redis  *redis.Client
 	locker *lock.Options
 	logger logger.Logger
 }
 
+// New creates instance of Locker
 func New(opts ...Option) Locker {
 	var options = newOptions(opts...)
 	return &Lock{
@@ -30,6 +33,7 @@ func New(opts ...Option) Locker {
 	}
 }
 
+// Run runs a callback handler with a Redis lock.
 func (l *Lock) Run(key string, timeout time.Duration, handler func() error) {
 	l.locker.LockTimeout = timeout
 	if err := lock.Run(l.redis, key, l.locker, handler); err != nil {

@@ -18,7 +18,7 @@ jobs:
       TEST_DATABASE_DATABASE: sample
       TEST_DATABASE_PASSWORD: postgres
       PGPASSWORD: postgres
-      DEP_HASH: 322152b8b50b26e5e3a7f6ebaeb75d9c11a747e64bbfd0d8bb1f4d89a031c2b5
+      DEP_HASH: 31144e465e52ffbc0035248a10ddea61a09bf28b00784fd3fdd9882c8cbb2315
     steps:
       - checkout
       - run:
@@ -27,7 +27,7 @@ jobs:
       - run:
           name: Dep
           command: |
-              curl -fsSL -o /go/bin/dep https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64
+              curl -fsSL -o /go/bin/dep https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64
               sha256sum /go/bin/dep | grep "${DEP_HASH}" || exit 1
               chmod +x /go/bin/dep
               dep ensure
