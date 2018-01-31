@@ -12,12 +12,45 @@ import (
 )
 
 var (
-	minTickForTest = time.Microsecond * 10
-	uniqWorkerN    = atomic.NewInt32(0)
+	limitTimeForTest = time.Second * 30
+	minTickForTest   = time.Microsecond * 10
+	uniqWorkerN      = atomic.NewInt32(0)
 )
 
 func getUniqueWorkerName() string {
 	return fmt.Sprintf("worker %d", uniqWorkerN.Inc())
+}
+
+func tryTestGtZero(cnt *atomic.Int32) bool {
+	limit := time.Now().Add(limitTimeForTest)
+
+	for {
+		if cnt.Load() > 0 {
+			return true
+		}
+
+		if time.Now().After(limit) {
+			return false
+		}
+
+		runtime.Gosched()
+	}
+}
+
+func tryTestEqual(cnt *atomic.Int32, expected int32) bool {
+	limit := time.Now().Add(limitTimeForTest)
+
+	for {
+		if cnt.Load() == expected {
+			return true
+		}
+
+		if time.Now().After(limit) {
+			return false
+		}
+
+		runtime.Gosched()
+	}
 }
 
 func TestWorkerConflictName(t *testing.T) {
@@ -64,12 +97,8 @@ func TestWorkerStartAndStop(t *testing.T) {
 			t.FailNow()
 		}
 
-		for {
-			// try to test start worker
-			if start.Load() > 0 {
-				break
-			}
-			runtime.Gosched()
+		if !tryTestGtZero(start) {
+			assert.FailNow(t, "Cannot start worker")
 		}
 	})
 
@@ -83,12 +112,8 @@ func TestWorkerStartAndStop(t *testing.T) {
 			t.FailNow()
 		}
 
-		for {
-			// try to test start worker
-			if info.Load() > 0 {
-				break
-			}
-			runtime.Gosched()
+		if !tryTestGtZero(info) {
+			assert.FailNow(t, "Cannot start worker")
 		}
 
 		c.Stop()
@@ -97,12 +122,8 @@ func TestWorkerStartAndStop(t *testing.T) {
 		info.Store(312)
 		time.Sleep(minTickForTest * 100)
 
-		for {
-			// try to test stop worker
-			if info.Load() == 312 {
-				break
-			}
-			runtime.Gosched()
+		if !tryTestEqual(info, 312) {
+			assert.FailNow(t, "Cannot stop worker")
 		}
 	})
 }
@@ -124,12 +145,8 @@ func TestWorkersRestart(t *testing.T) {
 			t.FailNow()
 		}
 
-		for {
-			// try to test start worker
-			if info.Load() == 321 {
-				break
-			}
-			runtime.Gosched()
+		if !tryTestEqual(info, 321) {
+			assert.FailNow(t, "Cannot start worker")
 		}
 		c.Stop()
 
@@ -137,23 +154,15 @@ func TestWorkersRestart(t *testing.T) {
 		info.Store(1122)
 		time.Sleep(minTickForTest * 100)
 
-		for {
-			// try to test stop worker
-			if info.Load() == 1122 {
-				break
-			}
-			runtime.Gosched()
+		if !tryTestEqual(info, 1122) {
+			assert.FailNow(t, "Cannot stop worker")
 		}
 
 		num = 246975
 		c.Start()
 
-		for {
-			// try to test restart worker
-			if info.Load() == num {
-				break
-			}
-			runtime.Gosched()
+		if !tryTestEqual(info, num) {
+			assert.FailNow(t, "Cannot restart worker")
 		}
 	})
 
@@ -176,12 +185,8 @@ func TestWorkersRestart(t *testing.T) {
 			t.FailNow()
 		}
 
-		for {
-			// try to test start worker
-			if info.Load() == 22 {
-				break
-			}
-			runtime.Gosched()
+		if !tryTestEqual(info, 22) {
+			assert.FailNow(t, "Cannot start workers")
 		}
 
 		c.Stop()
@@ -190,22 +195,14 @@ func TestWorkersRestart(t *testing.T) {
 		info.Store(123)
 		time.Sleep(minTickForTest * 100)
 
-		for {
-			// try to test stop workers
-			if info.Load() == 123 {
-				break
-			}
-			runtime.Gosched()
+		if !tryTestEqual(info, 123) {
+			assert.FailNow(t, "Cannot stop workers")
 		}
 
 		c.Start()
 
-		for {
-			// try to test start workers
-			if info.Load() == 789 {
-				break
-			}
-			runtime.Gosched()
+		if !tryTestEqual(info, 789) {
+			assert.FailNow(t, "Cannot start workers")
 		}
 	})
 }
@@ -243,12 +240,8 @@ func TestWorkersWait(t *testing.T) {
 			}
 		}
 
-		for {
-			// try to test start workers
-			if info.Load() == 5 {
-				break
-			}
-			runtime.Gosched()
+		if !tryTestEqual(info, 5) {
+			assert.FailNow(t, "Cannot start workers")
 		}
 
 		c.Stop()
@@ -294,12 +287,8 @@ func TestWorkersStop(t *testing.T) {
 			num = num * 2
 		}
 
-		for {
-			// try to test start workers
-			if info.Load() == num {
-				break
-			}
-			runtime.Gosched()
+		if !tryTestEqual(info, num) {
+			assert.FailNow(t, "Cannot start workers")
 		}
 
 		c.Stop()
@@ -308,12 +297,8 @@ func TestWorkersStop(t *testing.T) {
 		info.Store(123)
 		time.Sleep(minTickForTest * 100)
 
-		for {
-			// try to test stop workers
-			if info.Load() == 123 {
-				break
-			}
-			runtime.Gosched()
+		if !tryTestEqual(info, 123) {
+			assert.FailNow(t, "Cannot stop workers")
 		}
 	})
 }
