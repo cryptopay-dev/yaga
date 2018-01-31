@@ -28,9 +28,10 @@ type Options struct {
 	Debug  bool
 }
 
+type Context = echo.Context
+
 // New creates an instance of Echo.
 func New(opts Options) *echo.Echo {
-	// enabling raven
 	if err := raven.SetDSN(os.Getenv("SENTRY_DSN")); err != nil {
 		opts.Logger.Error(err)
 	}
