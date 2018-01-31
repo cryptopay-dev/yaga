@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	limitTimeForTest = time.Second * 30
+	limitTimeForTest = time.Second * 5
 	minTickForTest   = time.Microsecond * 10
 	uniqWorkerN      = atomic.NewInt32(0)
 )
