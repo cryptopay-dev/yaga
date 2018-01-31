@@ -2,6 +2,7 @@ package workers
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -32,13 +33,13 @@ func TestWorkerConflictName(t *testing.T) {
 		assert.FailNow(t, "Invalidate workers data, must be 1 worker")
 	}
 
-	// добавляем новый воркер с существующим именем
+	// create new worker with already name
 	w, err = creater(name, minTickForTest, func() {})
 	if !assert.Error(t, err) || !assert.Nil(t, w) {
 		assert.FailNow(t, "Created new worker with duplicate name")
 	}
 
-	// добавляем новый воркер с другим именем
+	// create new worker with unique name
 	w, err = creater(name+" foobar", minTickForTest, func() {})
 	if !assert.NoError(t, err) || !assert.NotNil(t, w) {
 		assert.FailNow(t, "Cannot create worker with unique name")
@@ -63,9 +64,12 @@ func TestWorkerStartAndStop(t *testing.T) {
 			t.FailNow()
 		}
 
-		time.Sleep(minTickForTest * 100)
-		if !assert.True(t, start.Load() > 0, "Cannot start worker") {
-			t.FailNow()
+		for {
+			// try to test start worker
+			if start.Load() > 0 {
+				break
+			}
+			runtime.Gosched()
 		}
 	})
 
@@ -79,19 +83,26 @@ func TestWorkerStartAndStop(t *testing.T) {
 			t.FailNow()
 		}
 
-		time.Sleep(minTickForTest * 100)
-		if !assert.True(t, info.Load() > 0, "Cannot start worker") {
-			t.FailNow()
+		for {
+			// try to test start worker
+			if info.Load() > 0 {
+				break
+			}
+			runtime.Gosched()
 		}
 
 		c.Stop()
 
 		c.Wait()
 		info.Store(312)
-
 		time.Sleep(minTickForTest * 100)
-		if !assert.True(t, info.Load() == 312, "Cannot stop worker") {
-			t.FailNow()
+
+		for {
+			// try to test stop worker
+			if info.Load() == 312 {
+				break
+			}
+			runtime.Gosched()
 		}
 	})
 }
@@ -113,23 +124,36 @@ func TestWorkersRestart(t *testing.T) {
 			t.FailNow()
 		}
 
-		time.Sleep(minTickForTest * 100)
-		c.Stop() // останавливаем воркеры
+		for {
+			// try to test start worker
+			if info.Load() == 321 {
+				break
+			}
+			runtime.Gosched()
+		}
+		c.Stop()
 
-		c.Wait() // ждём пока все остановятся
+		c.Wait()
 		info.Store(1122)
-
 		time.Sleep(minTickForTest * 100)
-		if !assert.True(t, info.Load() == 1122, "Cannot stop worker") {
-			t.FailNow()
+
+		for {
+			// try to test stop worker
+			if info.Load() == 1122 {
+				break
+			}
+			runtime.Gosched()
 		}
 
 		num = 246975
 		c.Start()
 
-		time.Sleep(minTickForTest * 100)
-		if !assert.True(t, info.Load() == num, "Cannot restart worker") {
-			t.FailNow()
+		for {
+			// try to test restart worker
+			if info.Load() == num {
+				break
+			}
+			runtime.Gosched()
 		}
 	})
 
@@ -152,26 +176,36 @@ func TestWorkersRestart(t *testing.T) {
 			t.FailNow()
 		}
 
-		time.Sleep(minTickForTest * 100)
-		if !assert.True(t, info.Load() == 22, "Cannot start workers") {
-			t.FailNow()
+		for {
+			// try to test start worker
+			if info.Load() == 22 {
+				break
+			}
+			runtime.Gosched()
 		}
 
-		c.Stop() // останавливаем воркеры
+		c.Stop()
 
-		c.Wait() // ждём пока все остановятся
+		c.Wait()
 		info.Store(123)
-
 		time.Sleep(minTickForTest * 100)
-		if !assert.True(t, info.Load() == 123, "Cannot stop workers") {
-			t.FailNow()
+
+		for {
+			// try to test stop workers
+			if info.Load() == 123 {
+				break
+			}
+			runtime.Gosched()
 		}
 
 		c.Start()
 
-		time.Sleep(minTickForTest * 100)
-		if !assert.True(t, info.Load() == 789, "Cannot restart workers") {
-			t.FailNow()
+		for {
+			// try to test start workers
+			if info.Load() == 789 {
+				break
+			}
+			runtime.Gosched()
 		}
 	})
 }
@@ -193,7 +227,7 @@ func TestWorkersWait(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			lockedFlag := false
 			if i == 4 {
-				// только один воркер заблочим
+				// only one worker should be block
 				lockedFlag = true
 			}
 			n := int32(i)
@@ -209,15 +243,18 @@ func TestWorkersWait(t *testing.T) {
 			}
 		}
 
-		time.Sleep(minTickForTest * 1000)
-		if !assert.True(t, info.Load() == 5, "Cannot start workers") {
-			t.FailNow()
+		for {
+			// try to test start workers
+			if info.Load() == 5 {
+				break
+			}
+			runtime.Gosched()
 		}
 
-		c.Stop() // останавливаем воркеры
+		c.Stop()
 
 		go func() {
-			c.Wait() // ждём пока все остановятся
+			c.Wait()
 			close(watch)
 		}()
 
@@ -227,7 +264,7 @@ func TestWorkersWait(t *testing.T) {
 			assert.FailNow(t, "Fail waiting of workers")
 		}
 
-		mu.Unlock() // разблокируем один воркер
+		mu.Unlock() // unblock one worker
 		<-watch
 	})
 }
@@ -257,19 +294,26 @@ func TestWorkersStop(t *testing.T) {
 			num = num * 2
 		}
 
-		time.Sleep(minTickForTest * 1000)
-		if !assert.True(t, info.Load() == num, "Cannot start workers") {
-			t.FailNow()
+		for {
+			// try to test start workers
+			if info.Load() == num {
+				break
+			}
+			runtime.Gosched()
 		}
 
-		c.Stop() // останавливаем воркеры
+		c.Stop()
 
-		c.Wait() // ждём пока все остановятся
+		c.Wait()
 		info.Store(123)
-
 		time.Sleep(minTickForTest * 100)
-		if !assert.True(t, info.Load() == 123, "Cannot stop workers") {
-			t.FailNow()
+
+		for {
+			// try to test stop workers
+			if info.Load() == 123 {
+				break
+			}
+			runtime.Gosched()
 		}
 	})
 }
