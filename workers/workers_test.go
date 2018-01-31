@@ -224,7 +224,7 @@ func TestWorkersWait(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			lockedFlag := false
 			if i == 4 {
-				// only one worker should be block
+				// we will block only one worker
 				lockedFlag = true
 			}
 			n := int32(i)
