@@ -23,3 +23,5 @@ func variantTwo() cacher.Cacher {
 		redis.DB(0),
 	)
 }
+
+func main() {}
