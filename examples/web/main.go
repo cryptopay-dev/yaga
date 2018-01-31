@@ -37,9 +37,12 @@ func main() {
 
 		switch cmd {
 		case "nop":
+			// do nothing
 		case "off":
+			// send signal to exit
 			ch <- syscall.SIGABRT
 		default:
+			// unknown operation
 			return http.ErrNotSupported
 		}
 
@@ -55,7 +58,7 @@ func main() {
 		}
 	}()
 
-	// Wait for signals:
+	// wait for signals
 	sig := <-ch
 	fmt.Println("Received signal:", sig.String())
 
