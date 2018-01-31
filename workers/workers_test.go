@@ -66,7 +66,7 @@ func TestWorkerConflictName(t *testing.T) {
 		assert.FailNow(t, "Invalidate workers data, must be 1 worker")
 	}
 
-	// create new worker with already name
+	// create new worker with existing name
 	w, err = creater(name, minTickForTest, func() {})
 	if !assert.Error(t, err) || !assert.Nil(t, w) {
 		assert.FailNow(t, "Created new worker with duplicate name")
