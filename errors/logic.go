@@ -20,5 +20,5 @@ func NewError(code int, message string) *LogicError {
 
 // NewErrorf return LogicError with http-code and formatted error message
 func NewErrorf(code int, format string, a ...interface{}) *LogicError {
-	return &LogicError{code, fmt.Sprintf(format, a)}
+	return &LogicError{code, fmt.Sprintf(format, a...)}
 }
