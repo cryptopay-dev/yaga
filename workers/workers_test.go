@@ -21,7 +21,7 @@ func getUniqueWorkerName() string {
 	return fmt.Sprintf("worker %d", uniqWorkerN.Inc())
 }
 
-func tryTestGtZero(cnt *atomic.Int32) bool {
+func checkGtZero(cnt *atomic.Int32) bool {
 	limit := time.Now().Add(limitTimeForTest)
 
 	for {
@@ -37,7 +37,7 @@ func tryTestGtZero(cnt *atomic.Int32) bool {
 	}
 }
 
-func tryTestEqual(cnt *atomic.Int32, expected int32) bool {
+func checkEqual(cnt *atomic.Int32, expected int32) bool {
 	limit := time.Now().Add(limitTimeForTest)
 
 	for {
@@ -97,7 +97,7 @@ func TestWorkerStartAndStop(t *testing.T) {
 			t.FailNow()
 		}
 
-		if !tryTestGtZero(start) {
+		if !checkGtZero(start) {
 			assert.FailNow(t, "Cannot start worker")
 		}
 	})
@@ -112,7 +112,7 @@ func TestWorkerStartAndStop(t *testing.T) {
 			t.FailNow()
 		}
 
-		if !tryTestGtZero(info) {
+		if !checkGtZero(info) {
 			assert.FailNow(t, "Cannot start worker")
 		}
 
@@ -122,7 +122,7 @@ func TestWorkerStartAndStop(t *testing.T) {
 		info.Store(312)
 		time.Sleep(minTickForTest * 100)
 
-		if !tryTestEqual(info, 312) {
+		if !checkEqual(info, 312) {
 			assert.FailNow(t, "Cannot stop worker")
 		}
 	})
@@ -145,7 +145,7 @@ func TestWorkersRestart(t *testing.T) {
 			t.FailNow()
 		}
 
-		if !tryTestEqual(info, 321) {
+		if !checkEqual(info, 321) {
 			assert.FailNow(t, "Cannot start worker")
 		}
 		c.Stop()
@@ -154,14 +154,14 @@ func TestWorkersRestart(t *testing.T) {
 		info.Store(1122)
 		time.Sleep(minTickForTest * 100)
 
-		if !tryTestEqual(info, 1122) {
+		if !checkEqual(info, 1122) {
 			assert.FailNow(t, "Cannot stop worker")
 		}
 
 		num = 246975
 		c.Start()
 
-		if !tryTestEqual(info, num) {
+		if !checkEqual(info, num) {
 			assert.FailNow(t, "Cannot restart worker")
 		}
 	})
@@ -185,7 +185,7 @@ func TestWorkersRestart(t *testing.T) {
 			t.FailNow()
 		}
 
-		if !tryTestEqual(info, 22) {
+		if !checkEqual(info, 22) {
 			assert.FailNow(t, "Cannot start workers")
 		}
 
@@ -195,13 +195,13 @@ func TestWorkersRestart(t *testing.T) {
 		info.Store(123)
 		time.Sleep(minTickForTest * 100)
 
-		if !tryTestEqual(info, 123) {
+		if !checkEqual(info, 123) {
 			assert.FailNow(t, "Cannot stop workers")
 		}
 
 		c.Start()
 
-		if !tryTestEqual(info, 789) {
+		if !checkEqual(info, 789) {
 			assert.FailNow(t, "Cannot start workers")
 		}
 	})
@@ -240,7 +240,7 @@ func TestWorkersWait(t *testing.T) {
 			}
 		}
 
-		if !tryTestEqual(info, 5) {
+		if !checkEqual(info, 5) {
 			assert.FailNow(t, "Cannot start workers")
 		}
 
@@ -287,7 +287,7 @@ func TestWorkersStop(t *testing.T) {
 			num = num * 2
 		}
 
-		if !tryTestEqual(info, num) {
+		if !checkEqual(info, num) {
 			assert.FailNow(t, "Cannot start workers")
 		}
 
@@ -297,7 +297,7 @@ func TestWorkersStop(t *testing.T) {
 		info.Store(123)
 		time.Sleep(minTickForTest * 100)
 
-		if !tryTestEqual(info, 123) {
+		if !checkEqual(info, 123) {
 			assert.FailNow(t, "Cannot stop workers")
 		}
 	})
