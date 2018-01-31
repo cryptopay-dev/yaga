@@ -58,7 +58,7 @@ func New(opts Options) *echo.Echo {
 	return e
 }
 
-// Start starts an HTTP server with custom address.
+// StartServer HTTP with custom address.
 func StartServer(e *echo.Echo, bind string) error {
 	// start server
 	if len(bind) == 0 {
