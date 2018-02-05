@@ -23,11 +23,13 @@ const (
 // Options contains a parameters for new Echo instance.
 type Options struct {
 	// TODO suggest change to echo.Logger
-	Logger logger.Logger
-	Error  errors.Logic
-	Debug  bool
+	Logger    logger.Logger
+	Error     errors.Logic
+	Debug     bool
+	Validator echo.Validator
 }
 
+// Context from echo.Context (for shadowing)
 type Context = echo.Context
 
 // New creates an instance of Echo.
@@ -52,6 +54,10 @@ func New(opts Options) *echo.Echo {
 	e.Debug = opts.Debug
 	e.HideBanner = true
 	e.Logger = opts.Logger
+
+	if opts.Validator != nil {
+		e.Validator = opts.Validator
+	}
 
 	e.HTTPErrorHandler = opts.Error.Capture
 	e.Use(opts.Error.Recover())
