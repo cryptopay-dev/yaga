@@ -10,6 +10,7 @@ Yaga is a project that provides a set of useful utilities for creating a golang 
 - [**Config**](./config) provides utilities for loading and validating config
 - [**Conv**](./conv) provides functions for working with *decimal.Decimal*, converting from a string or float to decimal
 - [**Decimal**](./decimal) is a wrapper over `github.com/shopspring/decimal` which allows you to work with decimal in a simplified way
+- [**Doc**](./doc) tool for echo, allowing you to make documentation based on the swagger file and `rebilly.github.io/ReDoc`
 - [**Errors**](./errors) is an error wrapper package that allows you to capture errors, convert them to a readable form and catch internal errors or panics, with conversion to a pretty logical error
 - [**Locker**](./locker) is a wrapper over `github.com/bsm/redis-lock` for locks in Redis
 - [**Logger**](./logger) provides the interface for its implementation for [zap](github.com/uber-go/zap) logger and for nop logger (dummy)
