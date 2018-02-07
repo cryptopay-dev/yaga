@@ -7,7 +7,6 @@ import (
 
 	"github.com/cryptopay-dev/go-metrics"
 	"github.com/cryptopay-dev/yaga/errors"
-	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/getsentry/raven-go"
 	"github.com/labstack/echo"
 )
@@ -22,8 +21,7 @@ const (
 
 // Options contains a parameters for new Echo instance.
 type Options struct {
-	// TODO suggest change to echo.Logger
-	Logger    logger.Logger
+	Logger    echo.Logger
 	Error     errors.Logic
 	Debug     bool
 	Validator echo.Validator
