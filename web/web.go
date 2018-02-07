@@ -18,7 +18,7 @@ const (
 	defaultBind = ":8080"
 )
 
-type errorer interface {
+type recoverer interface {
 	Capture(error, echo.Context)
 	Recover() echo.MiddlewareFunc
 }
@@ -26,7 +26,7 @@ type errorer interface {
 // Options contains a parameters for new Echo instance.
 type Options struct {
 	Logger    echo.Logger
-	Error     errorer
+	Error     recoverer
 	Debug     bool
 	Validator echo.Validator
 }
