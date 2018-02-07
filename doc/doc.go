@@ -13,6 +13,7 @@ const (
 )
 
 type params struct {
+	title           string
 	docURL          string
 	swaggerFilePath string
 }
@@ -37,7 +38,7 @@ func (p *params) apiDoc(ctx echo.Context) error {
 		Title string
 		YAML  string
 	}{
-		Title: "Midas",
+		Title: p.title,
 		YAML:  swaggerURL(p.docURL),
 	})
 }
@@ -48,7 +49,7 @@ func (p *params) swaggerYAML(ctx echo.Context) error {
 }
 
 // AddDocumentation allows you to add documentation for the url for the swagger file
-func AddDocumentation(e *echo.Echo, url string, swaggerFilePath string) {
+func AddDocumentation(e *echo.Echo, url, title, swaggerFilePath string) {
 	if len(url) == 0 {
 		url = defaultDocURL
 	}
@@ -59,6 +60,7 @@ func AddDocumentation(e *echo.Echo, url string, swaggerFilePath string) {
 	}
 	e.Renderer = renderer
 	p := &params{
+		title:           title,
 		docURL:          url,
 		swaggerFilePath: swaggerFilePath,
 	}
