@@ -4,30 +4,30 @@ import (
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/go-pg/pg"
 	"github.com/urfave/cli"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 // Options for creating cli.App instance
 type Options struct {
-	App          Instance      `validate:"required"`
-	Logger       logger.Logger `validate:"required"`
-	DB           *pg.DB
-	Users        []cli.Author
-	Usage        string
-	Name         string
-	BuildTime    string
-	BuildVersion string
+	App             Instance      `validate:"required"`
+	Logger          logger.Logger `validate:"required"`
+	ConfigSource    interface{}   `validate:"required"`
+	ConfigInterface interface{}   `validate:"required"`
+	DB              *pg.DB
+	Users           []cli.Author
+	Usage           string
+	Name            string
+	BuildTime       string
+	BuildVersion    string
 }
 
 // Option closure
 type Option func(*Options)
 
 // newOptions converts slice of closures to Options-field
-func newOptions(opts ...Option) (opt Options, err error) {
+func newOptions(opts ...Option) (opt Options) {
 	for _, o := range opts {
 		o(&opt)
 	}
-	err = validator.New().Struct(opt)
 	return
 }
 
@@ -84,5 +84,19 @@ func Name(name string) Option {
 func Users(users []cli.Author) Option {
 	return func(o *Options) {
 		o.Users = users
+	}
+}
+
+// ConfigSource interface for loading config
+func ConfigSource(v interface{}) Option {
+	return func(o *Options) {
+		o.ConfigSource = v
+	}
+}
+
+// ConfigInterface for loading config
+func ConfigInterface(v interface{}) Option {
+	return func(o *Options) {
+		o.ConfigInterface = v
 	}
 }

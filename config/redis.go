@@ -7,8 +7,8 @@ import (
 // Redis default configuration
 type Redis struct {
 	Address  string `yaml:"address" validate:"required"`
-	Password string `yaml:"password" validate:"required"`
-	Database int    `yaml:"database" validate:"required"`
+	Database int    `yaml:"database"`
+	Password string `yaml:"password"`
 }
 
 // Connect to Redis and check connection:
