@@ -124,3 +124,11 @@ func StartServer(e *Engine, bind string) error {
 func AddTrailingSlash() MiddlewareFunc {
 	return middleware.AddTrailingSlashWithConfig(middleware.DefaultTrailingSlashConfig)
 }
+
+// RemoveTrailingSlash returns a root level (before router) middleware which removes
+// a trailing slash from the request URI.
+//
+// Usage `Engine#Pre(RemoveTrailingSlash())`
+func RemoveTrailingSlash() MiddlewareFunc {
+	return middleware.RemoveTrailingSlashWithConfig(middleware.TrailingSlashConfig{})
+}
