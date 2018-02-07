@@ -23,15 +23,28 @@ const (
 // Options contains a parameters for new Echo instance.
 type Options struct {
 	// TODO suggest change to echo.Logger
-	Logger logger.Logger
-	Error  errors.Logic
-	Debug  bool
+	Logger    logger.Logger
+	Error     errors.Logic
+	Debug     bool
+	Validator echo.Validator
 }
 
-type Context = echo.Context
+type (
+	// Context from echo.Context (for shadowing)
+	Context = echo.Context
+
+	// HandlerFunc from echo.HandlerFunc (for shadowing)
+	HandlerFunc = echo.HandlerFunc
+
+	// Engine from echo.Echo (for shadowing)
+	Engine = echo.Echo
+
+	// Group from echo.Group (for shadowing)
+	Group = echo.Group
+)
 
 // New creates an instance of Echo.
-func New(opts Options) *echo.Echo {
+func New(opts Options) *Engine {
 	if err := raven.SetDSN(os.Getenv("SENTRY_DSN")); err != nil {
 		opts.Logger.Error(err)
 	}
@@ -53,6 +66,10 @@ func New(opts Options) *echo.Echo {
 	e.HideBanner = true
 	e.Logger = opts.Logger
 
+	if opts.Validator != nil {
+		e.Validator = opts.Validator
+	}
+
 	e.HTTPErrorHandler = opts.Error.Capture
 	e.Use(opts.Error.Recover())
 
@@ -60,7 +77,7 @@ func New(opts Options) *echo.Echo {
 }
 
 // StartServer HTTP with custom address.
-func StartServer(e *echo.Echo, bind string) error {
+func StartServer(e *Engine, bind string) error {
 	// start server
 	if len(bind) == 0 {
 		bind = defaultBind
