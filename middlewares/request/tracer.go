@@ -2,7 +2,7 @@ package request
 
 import (
 	"github.com/cryptopay-dev/yaga/logger"
-	"github.com/labstack/echo"
+	"github.com/cryptopay-dev/yaga/web"
 	"github.com/satori/go.uuid"
 )
 
@@ -12,13 +12,13 @@ const (
 
 type T = map[string]string
 
-func rayTrace(ctx echo.Context) (key, val string) {
+func rayTrace(ctx web.Context) (key, val string) {
 	key = RayTraceHeader
 	val = ctx.Request().Header.Get(key)
 	return
 }
 
-func TraceTag(ctx echo.Context) T {
+func TraceTag(ctx web.Context) T {
 	key, val := rayTrace(ctx)
 	if val == "" {
 		return nil
@@ -27,9 +27,9 @@ func TraceTag(ctx echo.Context) T {
 	return T{key: val}
 }
 
-func RayTraceID(logger logger.Logger) func(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(ctx echo.Context) error {
+func RayTraceID(logger logger.Logger) web.MiddlewareFunc {
+	return func(next web.HandlerFunc) web.HandlerFunc {
+		return func(ctx web.Context) error {
 			var (
 				req = ctx.Request()
 				res = ctx.Response()

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/cryptopay-dev/go-metrics"
-	"github.com/cryptopay-dev/yaga/errors"
 	"github.com/getsentry/raven-go"
 	"github.com/labstack/echo"
 )
@@ -19,10 +18,15 @@ const (
 	defaultBind = ":8080"
 )
 
+type errorer interface {
+	Capture(error, echo.Context)
+	Recover() echo.MiddlewareFunc
+}
+
 // Options contains a parameters for new Echo instance.
 type Options struct {
 	Logger    echo.Logger
-	Error     errors.Logic
+	Error     errorer
 	Debug     bool
 	Validator echo.Validator
 }
@@ -33,6 +37,9 @@ type (
 
 	// HandlerFunc from echo.HandlerFunc (for shadowing)
 	HandlerFunc = echo.HandlerFunc
+
+	// MiddlewareFunc from echo.MiddlewareFunc (for shadowing)
+	MiddlewareFunc = echo.MiddlewareFunc
 
 	// Engine from echo.Echo (for shadowing)
 	Engine = echo.Echo
