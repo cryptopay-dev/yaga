@@ -23,7 +23,7 @@ func main() {
 
 	e := web.New(web.Options{
 		Logger: nop.New(),
-		Error: errors.Logic{
+		Error: &errors.Logic{
 			Opts: errors.Options{
 				Logger: nop.New(),
 			},

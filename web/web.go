@@ -8,6 +8,7 @@ import (
 	"github.com/cryptopay-dev/go-metrics"
 	"github.com/getsentry/raven-go"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 const (
@@ -30,6 +31,25 @@ type Options struct {
 	Debug     bool
 	Validator echo.Validator
 }
+
+// Errors
+var (
+	ErrUnsupportedMediaType        = echo.ErrUnsupportedMediaType
+	ErrNotFound                    = echo.ErrNotFound
+	ErrUnauthorized                = echo.ErrUnauthorized
+	ErrForbidden                   = echo.ErrForbidden
+	ErrMethodNotAllowed            = echo.ErrMethodNotAllowed
+	ErrStatusRequestEntityTooLarge = echo.ErrStatusRequestEntityTooLarge
+	ErrValidatorNotRegistered      = echo.ErrValidatorNotRegistered
+	ErrRendererNotRegistered       = echo.ErrRendererNotRegistered
+	ErrInvalidRedirectCode         = echo.ErrInvalidRedirectCode
+	ErrCookieNotFound              = echo.ErrCookieNotFound
+)
+
+var (
+	// NewHTTPError creates a new HTTPError instance.
+	NewHTTPError = echo.NewHTTPError
+)
 
 type (
 	// Context from echo.Context (for shadowing)
@@ -95,4 +115,12 @@ func StartServer(e *Engine, bind string) error {
 	}
 
 	return nil
+}
+
+// AddTrailingSlash returns a root level (before router) middleware which adds a
+// trailing slash to the request `URL#Path`.
+//
+// Usage `Engine#Pre(AddTrailingSlash())`
+func AddTrailingSlash() MiddlewareFunc {
+	return middleware.AddTrailingSlashWithConfig(middleware.DefaultTrailingSlashConfig)
 }
