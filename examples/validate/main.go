@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/cryptopay-dev/yaga/validate"
-	"github.com/labstack/echo"
+	"github.com/cryptopay-dev/yaga/web"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -15,17 +15,18 @@ type Request struct {
 }
 
 func main() {
-	e := echo.New()
 	v := validator.New()
 
 	// ... if need connect custom validators
 	// (see - https://godoc.org/gopkg.in/go-playground/validator.v9#hdr-Custom_Validation_Functions)
 
-	// Creates echo-like validator
-	e.Validator = validate.New(v)
+	e := web.New(web.Options{
+		// Creates echo-like validator
+		Validator: validate.New(v),
+	})
 
 	// Our test action
-	e.POST("/", func(ctx echo.Context) error {
+	e.POST("/", func(ctx web.Context) error {
 		var req Request
 
 		// Try to parse request

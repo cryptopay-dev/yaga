@@ -6,17 +6,18 @@ import (
 
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/middlewares/auth"
+	"github.com/cryptopay-dev/yaga/web"
 	"github.com/go-pg/pg"
-	"github.com/labstack/echo"
 )
 
 func main() {
-	e := echo.New()
-	e.Logger = nop.New()
-	e.HideBanner = true
+	log := nop.New()
+	e := web.New(web.Options{
+		Logger: log,
+	})
 
 	authenticate := auth.New(
-		auth.Logger(nop.New()),
+		auth.Logger(log),
 		auth.DB(pg.Connect(&pg.Options{
 			Addr:     os.Getenv("DATABASE_ADDR"),
 			User:     os.Getenv("DATABASE_USER"),
@@ -28,7 +29,7 @@ func main() {
 
 	e.Use(authenticate.Middleware())
 
-	e.GET("/", func(ctx echo.Context) error {
+	e.GET("/", func(ctx web.Context) error {
 		return ctx.String(
 			http.StatusOK,
 			"Private zone",

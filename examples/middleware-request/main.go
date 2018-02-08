@@ -3,20 +3,21 @@ package main
 import (
 	"net/http"
 
-	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/logger/zap"
 	"github.com/cryptopay-dev/yaga/middlewares/request"
-	"github.com/labstack/echo"
+	"github.com/cryptopay-dev/yaga/web"
 )
 
 func main() {
-	e := echo.New()
-	e.Logger = nop.New()
-	e.HideBanner = true
+	log := zap.New(zap.Development)
 
-	e.Use(request.RayTraceID(zap.New(zap.Development)))
+	e := web.New(web.Options{
+		Logger: log,
+	})
 
-	e.GET("/", func(ctx echo.Context) error {
+	e.Use(request.RayTraceID(log))
+
+	e.GET("/", func(ctx web.Context) error {
 		return ctx.String(
 			http.StatusOK,
 			ctx.Request().Header.Get(request.RayTraceHeader),

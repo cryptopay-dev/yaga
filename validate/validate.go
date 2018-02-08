@@ -1,7 +1,6 @@
 package validate
 
 import (
-	"github.com/labstack/echo"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -10,8 +9,13 @@ type validate struct {
 	Validator *validator.Validate
 }
 
+// Validator is the interface that wraps the Validate function.
+type Validator interface {
+	Validate(interface{}) error
+}
+
 // New creates new wrapper of validator for echo.Validator
-func New(v *validator.Validate) echo.Validator {
+func New(v *validator.Validate) Validator {
 	return &validate{v}
 }
 

@@ -13,7 +13,7 @@ import (
 func main() {
 	e := web.New(web.Options{
 		Logger: nop.New(),
-		Error: errors.Logic{Opts: errors.Options{
+		Error: &errors.Logic{Opts: errors.Options{
 			Logger: nop.New(),
 		}},
 	})

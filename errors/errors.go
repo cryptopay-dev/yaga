@@ -3,6 +3,8 @@ package errors
 import (
 	"errors"
 	"net/http"
+	"os"
+	"sync"
 
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/middlewares/request"
@@ -34,6 +36,8 @@ type Logic struct {
 var (
 	// ErrorEmptyLogger issued when logger received empty logger to New-method
 	ErrorEmptyLogger = errors.New("options hasn't logger")
+
+	initRavenOnce = sync.Once{}
 )
 
 // New creates instance of Logic structure
@@ -44,6 +48,12 @@ func New(opts Options) (*Logic, error) {
 
 	e := new(Logic)
 	e.Opts = opts
+
+	initRavenOnce.Do(func() {
+		if err := raven.SetDSN(os.Getenv("SENTRY_DSN")); err != nil {
+			e.Opts.Logger.Error(err)
+		}
+	})
 
 	return e, nil
 }
