@@ -93,6 +93,9 @@ func hasRedis(conf interface{}) (*config.Redis, bool) {
 	v := reflect.ValueOf(conf).Elem()
 
 	for i := 0; i < v.NumField(); i++ {
+		if !v.Field(i).CanInterface() {
+			continue
+		}
 		if val, ok := v.Field(i).Interface().(config.Redis); ok {
 			return &val, true
 		}
@@ -105,6 +108,10 @@ func hasDB(conf interface{}) (*config.Database, bool) {
 	v := reflect.ValueOf(conf).Elem()
 
 	for i := 0; i < v.NumField(); i++ {
+		if !v.Field(i).CanInterface() {
+			continue
+		}
+
 		if val, ok := v.Field(i).Interface().(config.Database); ok {
 			return &val, true
 		}
