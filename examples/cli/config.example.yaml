@@ -1,0 +1,9 @@
+redis:
+  address: 0.0.0.0:6379
+  database: 0
+  password: ''
+database:
+  address: localhost:5432
+  database: sample
+  user: postgres
+  password: postgres
