@@ -14,7 +14,7 @@ type App struct {
 }
 
 // Run application
-func (App) Run() error { return nil }
+func (App) Run(opts cli.RunOptions) error { return nil }
 
 // Shutdown application
 func (App) Shutdown(ctx context.Context) error { return nil }

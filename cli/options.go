@@ -3,6 +3,7 @@ package cli
 import (
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/go-pg/pg"
+	"github.com/go-redis/redis"
 	"github.com/urfave/cli"
 )
 
@@ -13,6 +14,7 @@ type Options struct {
 	ConfigSource    interface{}   `validate:"required"`
 	ConfigInterface interface{}   `validate:"required"`
 	DB              *pg.DB
+	Redis           *redis.Client
 	Users           []cli.Author
 	Usage           string
 	Name            string
@@ -35,13 +37,6 @@ func newOptions(opts ...Option) (opt Options) {
 func App(app Instance) Option {
 	return func(o *Options) {
 		o.App = app
-	}
-}
-
-// DB closure to set field in Options
-func DB(db *pg.DB) Option {
-	return func(o *Options) {
-		o.DB = db
 	}
 }
 

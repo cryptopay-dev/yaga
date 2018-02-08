@@ -64,7 +64,10 @@ func addCommands(cliApp *cli.App, opts Options) {
 				}()
 
 				// Running main server
-				if err := opts.App.Run(); err != nil {
+				if err := opts.App.Run(RunOptions{
+					DB:    opts.DB,
+					Redis: opts.Redis,
+				}); err != nil {
 					opts.Logger.Fatal("Application failure", zap.Error(err))
 				}
 

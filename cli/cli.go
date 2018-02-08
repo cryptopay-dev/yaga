@@ -12,8 +12,10 @@ import (
 )
 
 var (
-	ErrAppNotPointer    = errors.New("app must be an pointer to an struct")
-	ErrConfigNotPointer = errors.New("config must be an pointer to an struct")
+	// ErrAppNotPointer when app-instance not pointer to struct
+	ErrAppNotPointer = errors.New("app must be a pointer to a struct")
+	// ErrConfigNotPointer when app-instance not pointer to struct
+	ErrConfigNotPointer = errors.New("config must be a pointer to a struct")
 )
 
 // Run creates instance of cli.App with Options.
@@ -57,8 +59,44 @@ func Run(opts ...Option) error {
 	cliApp.Version = options.BuildVersion
 	cliApp.Authors = options.Users
 
+	if dbConf, ok := hasDB(options.ConfigInterface); ok {
+		if options.DB, err = dbConf.Connect(); err != nil {
+			return err
+		}
+	}
+
+	if redisConf, ok := hasRedis(options.ConfigInterface); ok {
+		if options.Redis, err = redisConf.Connect(); err != nil {
+			return err
+		}
+	}
+
 	addCommands(cliApp, options)
 	sort.Sort(cli.CommandsByName(cliApp.Commands))
 
 	return cliApp.Run(os.Args)
+}
+
+func hasRedis(conf interface{}) (*config.Redis, bool) {
+	v := reflect.ValueOf(conf).Elem()
+
+	for i := 0; i < v.NumField(); i++ {
+		if val, ok := v.Field(i).Interface().(config.Redis); ok {
+			return &val, true
+		}
+	}
+
+	return nil, false
+}
+
+func hasDB(conf interface{}) (*config.Database, bool) {
+	v := reflect.ValueOf(conf).Elem()
+
+	for i := 0; i < v.NumField(); i++ {
+		if val, ok := v.Field(i).Interface().(config.Database); ok {
+			return &val, true
+		}
+	}
+
+	return nil, false
 }
