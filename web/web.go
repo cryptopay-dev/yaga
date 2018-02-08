@@ -3,10 +3,10 @@ package web
 import (
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/cryptopay-dev/go-metrics"
-	"github.com/getsentry/raven-go"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -49,6 +49,8 @@ var (
 var (
 	// NewHTTPError creates a new HTTPError instance.
 	NewHTTPError = echo.NewHTTPError
+
+	initMetricsOnce = sync.Once{}
 )
 
 type (
@@ -66,37 +68,44 @@ type (
 
 	// Group from echo.Group (for shadowing)
 	Group = echo.Group
+
+	// BasicAuthValidator defines a function to validate BasicAuth credentials.
+	BasicAuthValidator = middleware.BasicAuthValidator
 )
 
 // New creates an instance of Echo.
 func New(opts Options) *Engine {
-	if err := raven.SetDSN(os.Getenv("SENTRY_DSN")); err != nil {
-		opts.Logger.Error(err)
-	}
-
-	// enable metrics
-	if err := metrics.Setup(os.Getenv("METRICS_URL"), os.Getenv("METRICS_APP"), os.Getenv("METRICS_HOSTNAME")); err == nil {
-		go func() {
-			if errWatch := metrics.Watch(time.Second * 10); errWatch != nil {
-				opts.Logger.Errorf("Can't start watching for metrics: %v", errWatch)
-			}
-		}()
-	} else {
-		opts.Logger.Error(err)
-	}
-
 	e := echo.New()
+
+	if opts.Logger != nil {
+		e.Logger = opts.Logger
+	}
+
+	// TODO may be move to function?
+	initMetricsOnce.Do(func() {
+		// enable metrics
+		if err := metrics.Setup(os.Getenv("METRICS_URL"), os.Getenv("METRICS_APP"), os.Getenv("METRICS_HOSTNAME")); err == nil {
+			go func() {
+				if errWatch := metrics.Watch(time.Second * 10); errWatch != nil {
+					e.Logger.Errorf("Can't start watching for metrics: %v", errWatch)
+				}
+			}()
+		} else {
+			e.Logger.Error(err)
+		}
+	})
 
 	e.Debug = opts.Debug
 	e.HideBanner = true
-	e.Logger = opts.Logger
 
 	if opts.Validator != nil {
 		e.Validator = opts.Validator
 	}
 
-	e.HTTPErrorHandler = opts.Error.Capture
-	e.Use(opts.Error.Recover())
+	if opts.Error != nil {
+		e.HTTPErrorHandler = opts.Error.Capture
+		e.Use(opts.Error.Recover())
+	}
 
 	return e
 }
@@ -131,4 +140,14 @@ func AddTrailingSlash() MiddlewareFunc {
 // Usage `Engine#Pre(RemoveTrailingSlash())`
 func RemoveTrailingSlash() MiddlewareFunc {
 	return middleware.RemoveTrailingSlashWithConfig(middleware.TrailingSlashConfig{})
+}
+
+// BasicAuth returns an BasicAuth middleware.
+//
+// For valid credentials it calls the next handler.
+// For missing or invalid credentials, it sends "401 - Unauthorized" response.
+func BasicAuth(fn BasicAuthValidator) MiddlewareFunc {
+	c := middleware.DefaultBasicAuthConfig
+	c.Validator = fn
+	return middleware.BasicAuthWithConfig(c)
 }

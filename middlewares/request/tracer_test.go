@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/web"
 	"github.com/labstack/echo"
 	"github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
@@ -14,9 +15,8 @@ import (
 var fakeRayTraceID = uuid.NewV4().String()
 
 func TestRayTraceID(t *testing.T) {
-	e := echo.New()
-	e.Logger = nop.New()
-	e.HideBanner = true
+	e := web.New(web.Options{})
+
 	req := httptest.NewRequest(echo.POST, "/", nil)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
@@ -24,7 +24,7 @@ func TestRayTraceID(t *testing.T) {
 		err    error
 		rec    = httptest.NewRecorder()
 		c      = e.NewContext(req, rec)
-		handle = RayTraceID(nop.New())(func(c echo.Context) error {
+		handle = RayTraceID(nop.New())(func(c web.Context) error {
 			return c.NoContent(http.StatusOK)
 		})
 	)

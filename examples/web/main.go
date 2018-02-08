@@ -21,14 +21,16 @@ func main() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 
+	log := nop.New()
+
+	errLogic, _ := errors.New(errors.Options{
+		Logger: log,
+	})
+
 	e := web.New(web.Options{
-		Logger: nop.New(),
-		Error: &errors.Logic{
-			Opts: errors.Options{
-				Logger: nop.New(),
-			},
-		},
-		Debug: true,
+		Logger: log,
+		Error:  errLogic,
+		Debug:  true,
 	})
 
 	e.GET("/test/:command", func(c web.Context) error {
