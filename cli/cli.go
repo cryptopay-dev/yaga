@@ -7,6 +7,8 @@ import (
 	"sort"
 
 	"github.com/cryptopay-dev/yaga/config"
+	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/logger/zap"
 	"github.com/urfave/cli"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -28,6 +30,16 @@ func Run(opts ...Option) error {
 		err     error
 		options = newOptions(opts...)
 	)
+
+	if options.Logger == nil {
+		if options.Debug == false { // Debug = false
+			options.Logger = zap.New(zap.Production)
+		} else if options.Quiet { // Debug = true && Quiet = true
+			options.Logger = nop.New()
+		} else { // Debug = true && Quiet = false
+			options.Logger = zap.New(zap.Development)
+		}
+	}
 
 	// If we have config-source/interface - loading config:
 	if options.ConfigSource != nil &&

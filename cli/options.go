@@ -16,6 +16,8 @@ type Options struct {
 	DB              *pg.DB
 	Redis           *redis.Client
 	Users           []cli.Author
+	Debug           bool
+	Quiet           bool
 	Usage           string
 	Name            string
 	BuildTime       string
@@ -82,16 +84,23 @@ func Users(users []cli.Author) Option {
 	}
 }
 
-// ConfigSource interface for loading config
-func ConfigSource(v interface{}) Option {
+// Config closure to set config source and interface in Options
+func Config(src, conf interface{}) Option {
 	return func(o *Options) {
-		o.ConfigSource = v
+		o.ConfigSource = src
+		o.ConfigInterface = conf
 	}
 }
 
-// ConfigInterface for loading config
-func ConfigInterface(v interface{}) Option {
+// Debug closure to set debug and quiet state of logger in Options
+func Debug(args ...bool) Option {
 	return func(o *Options) {
-		o.ConfigInterface = v
+		if len(args) > 0 {
+			o.Debug = args[0]
+		}
+
+		if len(args) > 1 {
+			o.Quiet = args[1]
+		}
 	}
 }
