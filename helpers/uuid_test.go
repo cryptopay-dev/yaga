@@ -69,18 +69,13 @@ func TestUUIDv4(t *testing.T) {
 
 func TestUUIDs(t *testing.T) {
 	var (
-		err       error
-		ins, size int
+		err error
+		ins int
+
+		size = 5
 	)
 
 	for _, item := range uuidsForTest {
-		for {
-			size = rand.Intn(10)
-			if size > 2 {
-				break
-			}
-		}
-
 		ins = rand.Intn(size)
 		in := make([]string, size)
 		for i := 0; i < size; i++ {
