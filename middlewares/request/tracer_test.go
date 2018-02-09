@@ -5,14 +5,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/cryptopay-dev/yaga/helpers"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/web"
 	"github.com/labstack/echo"
-	"github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-var fakeRayTraceID = uuid.NewV4().String()
+var fakeRayTraceID = helpers.GenerateUUIDv4AsString()
 
 func TestRayTraceID(t *testing.T) {
 	e := web.New(web.Options{})
@@ -30,10 +30,6 @@ func TestRayTraceID(t *testing.T) {
 	)
 
 	assert.Nil(t, TraceTag(c))
-
-	assert.False(t, traceIDSkipper(""))
-	assert.False(t, traceIDSkipper("empty"))
-	assert.False(t, traceIDSkipper(uuid.NewV1().String()))
 
 	err = handle(c)
 	assert.NoError(t, err)

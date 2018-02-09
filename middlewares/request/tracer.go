@@ -1,9 +1,9 @@
 package request
 
 import (
+	"github.com/cryptopay-dev/yaga/helpers"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/web"
-	"github.com/satori/go.uuid"
 )
 
 const (
@@ -36,8 +36,8 @@ func RayTraceID(logger logger.Logger) web.MiddlewareFunc {
 				id  = req.Header.Get(RayTraceHeader)
 			)
 
-			if !traceIDSkipper(id) {
-				id = traceIDGenerator()
+			if !helpers.VerifyUUIDv4String(id) {
+				id = helpers.GenerateUUIDv4AsString()
 				req.Header.Set(RayTraceHeader, id)
 			}
 
@@ -49,20 +49,4 @@ func RayTraceID(logger logger.Logger) web.MiddlewareFunc {
 			return next(ctx)
 		}
 	}
-}
-
-func traceIDSkipper(id string) bool {
-	if id == "" {
-		return false
-	} else if uid, err := uuid.FromString(id); err != nil {
-		return false
-	} else if uid.Version() != 4 {
-		return false
-	}
-
-	return true
-}
-
-func traceIDGenerator() string {
-	return uuid.NewV4().String()
 }
