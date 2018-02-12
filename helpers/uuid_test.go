@@ -53,21 +53,21 @@ var uuidsForTest = []struct {
 }
 
 func TestUUIDv4(t *testing.T) {
-	assert.False(t, VerifyUUIDv4String(""))
-	assert.False(t, VerifyUUIDv4String("empty"))
-	assert.False(t, VerifyUUIDv4String(uuid.NewV1().String()))
+	assert.Error(t, ValidateUUIDv4(""))
+	assert.Error(t, ValidateUUIDv4("empty"))
+	assert.Error(t, ValidateUUIDv4(uuid.NewV1().String()))
 
-	assert.True(t, VerifyUUIDv4String("b17c7f4b981e43658679d16d5837a7eb"))
-	assert.True(t, VerifyUUIDv4String("b17c7f4b-981e-4365-8679-d16d5837a7eb"))
-	assert.False(t, VerifyUUIDv4String("b17c7f4b-981e-6365-8679-d16d5837a7eb"))
-	assert.False(t, VerifyUUIDv4String("k17c7f4b-981e-4365-8679-d16d5837a7eb"))
+	assert.NoError(t, ValidateUUIDv4("b17c7f4b981e43658679d16d5837a7eb"))
+	assert.NoError(t, ValidateUUIDv4("b17c7f4b-981e-4365-8679-d16d5837a7eb"))
+	assert.Error(t, ValidateUUIDv4("b17c7f4b-981e-6365-8679-d16d5837a7eb"))
+	assert.Error(t, ValidateUUIDv4("k17c7f4b-981e-4365-8679-d16d5837a7eb"))
 
-	assert.True(t, VerifyUUIDv4String(GenerateUUIDv4AsString()))
-	assert.True(t, VerifyUUIDv4String("{"+GenerateUUIDv4AsString()+"}"))
-	assert.False(t, VerifyUUIDv4String("["+GenerateUUIDv4AsString()+"]"))
+	assert.NoError(t, ValidateUUIDv4(NewUUIDv4()))
+	assert.NoError(t, ValidateUUIDv4("{"+NewUUIDv4()+"}"))
+	assert.Error(t, ValidateUUIDv4("["+NewUUIDv4()+"]"))
 }
 
-func TestUUIDs(t *testing.T) {
+func TestValidateUUIDs(t *testing.T) {
 	var (
 		err error
 		ins int
@@ -82,7 +82,7 @@ func TestUUIDs(t *testing.T) {
 			if i == ins {
 				in[i] = item.uuid
 			} else {
-				in[i] = GenerateUUIDv4AsString()
+				in[i] = NewUUIDv4()
 			}
 		}
 
