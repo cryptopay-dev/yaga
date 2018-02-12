@@ -13,8 +13,8 @@ func (p Proxy) String() string {
 	return string(p)
 }
 
-// Apply proxy
-func (p Proxy) Apply(t http.RoundTripper) error {
+// Apply proxy to http.Client
+func (p Proxy) Apply(hc *http.Client) error {
 	var (
 		err      error
 		proxyURL *url.URL
@@ -32,7 +32,7 @@ func (p Proxy) Apply(t http.RoundTripper) error {
 	}
 
 	// Set default transport:
-	t = &http.Transport{Proxy: http.ProxyURL(proxyURL)}
+	hc.Transport = &http.Transport{Proxy: http.ProxyURL(proxyURL)}
 
 	return nil
 }
