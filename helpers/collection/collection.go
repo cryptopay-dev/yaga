@@ -82,6 +82,8 @@ func Format(ctx web.Context, opts Options) error {
 	opts.Query.Limit(pager.Limit)
 	opts.Query.Offset(pager.Offset)
 
+	response.Offset = pager.Offset
+
 	if response.Items, err = opts.Fetcher(opts.Query); err != nil {
 		ctx.Logger().Error(err.Error())
 		return errors.NewError(http.StatusInternalServerError, err.Error())
