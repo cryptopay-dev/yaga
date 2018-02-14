@@ -86,6 +86,11 @@ func Format(ctx web.Context, opts Options) error {
 
 	if response.Items, err = opts.Fetcher(opts.Query); err != nil {
 		ctx.Logger().Error(err.Error())
+
+		if logicError, ok := err.(*errors.LogicError); ok {
+			return logicError
+		}
+
 		return errors.NewError(http.StatusInternalServerError, err.Error())
 	}
 
