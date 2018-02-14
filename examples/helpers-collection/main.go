@@ -58,9 +58,9 @@ type ModelResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// FormFilter with embedded Pager
+// FormFilter with embedded Paginate
 type FormFilter struct {
-	collection.Pager
+	collection.Paginate
 }
 
 // Apply your filters to a Query

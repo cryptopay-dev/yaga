@@ -12,25 +12,25 @@ const defaultOrdersLimit = 25
 
 // Filter interface
 type Filter interface {
-	Pager() Pager
+	Pager() Paginate
 	Apply(*orm.Query) error
 }
 
-// Pager is part of filter structure
-type Pager struct {
+// Paginate is part of filter structure
+type Paginate struct {
 	Offset int `query:"offset" form:"offset" json:"offset"`
 	Limit  int `query:"limit" form:"limit" json:"limit"`
 }
 
-// Pager returns Pager-struct
-func (p Pager) Pager() Pager {
+// Pager returns Paginate-struct
+func (p Paginate) Pager() Paginate {
 	var limit = defaultOrdersLimit
 
 	if p.Limit > 0 {
 		limit = p.Limit
 	}
 
-	return Pager{
+	return Paginate{
 		Offset: p.Offset,
 		Limit:  limit,
 	}
