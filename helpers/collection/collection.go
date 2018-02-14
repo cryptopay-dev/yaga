@@ -68,10 +68,6 @@ func Format(ctx web.Context, opts Options) error {
 		response Collection
 	)
 
-	// Pagination:
-	opts.Query.Limit(pager.Limit)
-	opts.Query.Offset(pager.Offset)
-
 	if err = opts.Filter.Apply(opts.Query); err != nil {
 		ctx.Logger().Error(err.Error())
 		return errors.NewError(http.StatusBadRequest, err.Error())
@@ -81,6 +77,10 @@ func Format(ctx web.Context, opts Options) error {
 		ctx.Logger().Error(err.Error())
 		return errors.NewError(http.StatusInternalServerError, err.Error())
 	}
+
+	// Pagination:
+	opts.Query.Limit(pager.Limit)
+	opts.Query.Offset(pager.Offset)
 
 	if response.Items, err = opts.Fetcher(opts.Query); err != nil {
 		ctx.Logger().Error(err.Error())
