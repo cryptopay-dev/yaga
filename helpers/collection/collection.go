@@ -8,67 +8,53 @@ import (
 	"github.com/go-pg/pg/orm"
 )
 
-const defaultOrdersLimit = 25
+// DefaultItemsLimit per page limit
+var DefaultItemsLimit = 50
 
-// Filter interface
-type Filter interface {
-	Pager() Paginate
-	Apply(*orm.Query) error
-}
+// SeparatorOrder
+var SeparatorOrder = ","
 
-// Paginate is part of filter structure
-type Paginate struct {
-	Offset int `query:"offset" form:"offset" json:"offset"`
-	Limit  int `query:"limit" form:"limit" json:"limit"`
-}
-
-// Pager returns Paginate-struct
-func (p Paginate) Pager() Paginate {
-	var limit = defaultOrdersLimit
-
-	if p.Limit > 0 {
-		limit = p.Limit
+type (
+	// Filter interface
+	Filter interface {
+		ApplyFilter(*Options, *Collection) error
+		ApplyPager(*Options, *Collection) error
+		ApplySorter(*Options, *Collection) error
 	}
 
-	return Paginate{
-		Offset: p.Offset,
-		Limit:  limit,
+	// ModelsFetcher closure to fetch and format Items
+	ModelsFetcher = func(*Options) (Items, error)
+
+	// Items is formatted response of models
+	Items = []interface{}
+
+	// Collection response answer
+	Collection struct {
+		Total  int   `json:"total"`
+		Offset int   `json:"offset"`
+		Items  Items `json:"items"`
 	}
-}
 
-// Collection response answer
-type Collection struct {
-	Total  int   `json:"total"`
-	Offset int   `json:"offset"`
-	Items  Items `json:"items"`
-}
+	// Options to Format list-response
+	Options struct {
+		Query   *orm.Query
+		Fetcher ModelsFetcher
+		Filter  Filter
+	}
+)
 
-// ModelsFetcher closure to fetch and format Items
-type ModelsFetcher = func(*orm.Query) (Items, error)
-
-// Items is formatted response of models
-type Items = []interface{}
-
-// Options to Format list-response
-type Options struct {
-	Query   *orm.Query
-	Fetcher ModelsFetcher
-	Filter  Filter
-}
-
-// Format collection as response-answer (Collection)
-func Format(ctx web.Context, opts Options) error {
+// FormatQuery collection as response-answer (Collection)
+func FormatQuery(ctx web.Context, opts Options) error {
 	if opts.Query == nil || opts.Filter == nil || opts.Fetcher == nil {
 		return nil
 	}
 
 	var (
 		err      error
-		pager    = opts.Filter.Pager()
 		response Collection
 	)
 
-	if err = opts.Filter.Apply(opts.Query); err != nil {
+	if err = opts.Filter.ApplyFilter(&opts, &response); err != nil {
 		ctx.Logger().Error(err.Error())
 		return errors.NewError(http.StatusBadRequest, err.Error())
 	}
@@ -78,13 +64,45 @@ func Format(ctx web.Context, opts Options) error {
 		return errors.NewError(http.StatusInternalServerError, err.Error())
 	}
 
-	// Pagination:
-	opts.Query.Limit(pager.Limit)
-	opts.Query.Offset(pager.Offset)
+	if err = opts.Filter.ApplyPager(&opts, &response); err != nil {
+		ctx.Logger().Error(err.Error())
+		return errors.NewError(http.StatusBadRequest, err.Error())
+	}
 
-	response.Offset = pager.Offset
+	if err = opts.Filter.ApplySorter(&opts, &response); err != nil {
+		ctx.Logger().Error(err.Error())
+		return errors.NewError(http.StatusBadRequest, err.Error())
+	}
 
-	if response.Items, err = opts.Fetcher(opts.Query); err != nil {
+	return format(ctx, &opts, response)
+}
+
+// FormatSimple collection as response-answer (Collection)
+func FormatSimple(ctx web.Context, opts Options) error {
+	if opts.Filter == nil || opts.Fetcher == nil {
+		return nil
+	}
+
+	var (
+		err      error
+		response Collection
+	)
+
+	if err = opts.Filter.ApplyFilter(&opts, &response); err != nil {
+		ctx.Logger().Error(err.Error())
+		return errors.NewError(http.StatusBadRequest, err.Error())
+	}
+
+	if err = opts.Filter.ApplyPager(&opts, &response); err != nil {
+		ctx.Logger().Error(err.Error())
+		return errors.NewError(http.StatusBadRequest, err.Error())
+	}
+
+	return format(ctx, &opts, response)
+}
+
+func format(ctx web.Context, opts *Options, response Collection) (err error) {
+	if response.Items, err = opts.Fetcher(opts); err != nil {
 		ctx.Logger().Error(err.Error())
 
 		if logicError, ok := err.(*errors.LogicError); ok {
