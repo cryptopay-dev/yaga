@@ -35,7 +35,7 @@
   branch = "master"
   name = "github.com/getsentry/raven-go"
   packages = ["."]
-  revision = "32a13797442ccb601b11761d74232773c1402d14"
+  revision = "563b81fc02b75d664e54da31f787c2cc2186780b"
 
 [[projects]]
   name = "github.com/go-pg/pg"
@@ -47,8 +47,8 @@
     "orm",
     "types"
   ]
-  revision = "c2405ea05e2013fc1354cf8f61e94152b896ed91"
-  version = "v6.7.0"
+  revision = "eff1632b1caea7c554b174d5551ff2791021810c"
+  version = "v6.9.3"
 
 [[projects]]
   name = "github.com/go-playground/locales"
@@ -75,8 +75,8 @@
     "internal/pool",
     "internal/proto"
   ]
-  revision = "4021ace05686f632ff17fd824bbed229fc474cf8"
-  version = "v6.8.2"
+  revision = "8b4fa6d443e35ca8b1c37be877285252430b06a3"
+  version = "v6.8.3"
 
 [[projects]]
   branch = "master"
@@ -117,7 +117,7 @@
     ".",
     "oid"
   ]
-  revision = "27ea5d92de30060e7121ddd543fe14e9a327e0cc"
+  revision = "88edab0803230a3898347e77b474f8c1820a1f20"
 
 [[projects]]
   name = "github.com/mattes/migrate"
@@ -192,8 +192,8 @@
 [[projects]]
   name = "github.com/stretchr/testify"
   packages = ["assert"]
-  revision = "b91bfb9ebec76498946beb6af7c0230c7cc7ba6c"
-  version = "v1.2.0"
+  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
+  version = "v1.2.1"
 
 [[projects]]
   name = "github.com/urfave/cli"
@@ -247,19 +247,19 @@
     "bcrypt",
     "blowfish"
   ]
-  revision = "a6600008915114d9c087fad9f03d75087b1a74df"
+  revision = "650f4a345ab4e5b245a3034b110ebc7299e68186"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "2c42eef0765b9837fbdab12011af7830f55f88f0"
+  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
 
 [[projects]]
   name = "gopkg.in/go-playground/validator.v9"
   packages = ["."]
-  revision = "48a433ba4bcadc5be9aa16d4bdcb383d3f57a741"
-  version = "v9.9.3"
+  revision = "535f85221eb67ab842438877b22cac6274380cf2"
+  version = "v9.10.0"
 
 [[projects]]
   branch = "v2"
