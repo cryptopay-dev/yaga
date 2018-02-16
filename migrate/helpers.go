@@ -13,13 +13,6 @@ import (
 	"github.com/go-pg/pg/types"
 )
 
-func wrapQuery(db DB, query interface{}, params ...interface{}) error {
-	return db.RunInTransaction(func(tx *pg.Tx) error {
-		_, err := tx.Exec(query, params...)
-		return err
-	})
-}
-
 func getTableName() types.ValueAppender {
 	return pg.Q(tableName)
 }
@@ -76,6 +69,24 @@ func addVersion(tx *pg.Tx, version int64) error {
 	return err
 }
 
+func doMigrate(version int64, sql string, fn updateVersion) func(db DB) error {
+	fmt.Println(sql)
+
+	return func(db DB) error {
+		return db.RunInTransaction(func(tx *pg.Tx) error {
+			if _, errQuery := tx.Exec(sql); errQuery != nil {
+				return errQuery
+			}
+
+			if errVersion := fn(tx, version); errVersion != nil {
+				return errVersion
+			}
+
+			return nil
+		})
+	}
+}
+
 func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (migrations, error) {
 	var (
 		err          error
@@ -106,27 +117,11 @@ func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (mig
 			return nil, fmt.Errorf(errVersionNotEqualTpl, m.Version, ver)
 		}
 
-		closure := func(fn updateVersion) func(db DB) error {
-			return func(db DB) error {
-				return db.RunInTransaction(func(tx *pg.Tx) error {
-					if _, errQuery := tx.Exec(string(data)); errQuery != nil {
-						return errQuery
-					}
-
-					if errVersion := fn(tx, m.Version); errVersion != nil {
-						return errVersion
-					}
-
-					return nil
-				})
-			}
-		}
-
 		switch mType {
 		case "up":
-			m.Up = closure(addVersion)
+			m.Up = doMigrate(ver, string(data), addVersion)
 		case "down":
-			m.Down = closure(remVersion)
+			m.Down = doMigrate(ver, string(data), remVersion)
 		}
 
 		migrateParts[name] = m
