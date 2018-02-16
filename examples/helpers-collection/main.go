@@ -59,7 +59,7 @@ type ModelResponse struct {
 
 // FormFilter with embedded Paginate
 type FormFilter struct {
-	collection.Paginate
+	collection.Form
 }
 
 func formatModelResponse(model *MyModel) *ModelResponse {
@@ -83,9 +83,9 @@ func (c *Controller) ListCollections(ctx web.Context) error {
 		return errors.NewError(http.StatusBadRequest, err.Error())
 	}
 
-	return collection.FormatQuery(ctx, collection.Options{
+	return collection.ResponseQuery(ctx, collection.Options{
 		Query:  c.DB.Model(&MyModel{}),
-		Filter: &req,
+		Former: &req,
 		Fetcher: func(opts *collection.Options) (collection.Items, error) {
 			models := make([]MyModel, 0)
 

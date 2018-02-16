@@ -7,8 +7,8 @@ import (
 	"github.com/go-pg/pg/orm"
 )
 
-// Paginate is part of filter structure
-type Paginate struct {
+// Form is part of filter structure
+type Form struct {
 	Order  string      `query:"order" form:"order" json:"order"`
 	Offset json.Number `query:"offset" form:"offset" json:"offset" validate:"omitempty,gte=0"`
 	Limit  json.Number `query:"limit" form:"limit" json:"limit" validate:"omitempty,gte=0"`
@@ -63,45 +63,45 @@ func applySorter(inOrder string, query sorter) {
 	}
 }
 
-// ApplySorter your filters to a Query
-func (p *Paginate) ApplySorter(opts *Options, res *Collection) error {
-	if len(p.Order) == 0 || opts.Query == nil {
+// ApplySorter your sorter to a Query
+func (f *Form) ApplySorter(opts *Options) error {
+	if len(f.Order) == 0 || opts.Query == nil {
 		return nil
 	}
 
-	applySorter(p.Order, opts.Query)
+	applySorter(f.Order, opts.Query)
 
 	return nil
 }
 
 // ApplyPager
-func (p *Paginate) ApplyPager(opts *Options, res *Collection) (err error) {
+func (f *Form) ApplyPager(opts *Options) (err error) {
+	if opts.Query != nil {
+		return nil
+	}
+
 	var (
 		limit = DefaultItemsLimit
 		val   int64
 	)
 
-	if val, err = p.Offset.Int64(); err != nil {
-		return err
-	}
-	res.Offset = int(val)
-
-	if val, err = p.Limit.Int64(); err != nil {
+	if val, err = f.Limit.Int64(); err != nil {
 		return err
 	} else if val > 0 {
 		limit = int(val)
 	}
+	opts.Query.Limit(limit)
 
-	if opts.Query != nil {
-		opts.Query.Limit(limit)
-		opts.Query.Offset(res.Offset)
+	if val, err = f.Offset.Int64(); err != nil {
+		return err
 	}
+	opts.Query.Offset(int(val))
 
 	return nil
 }
 
 // ApplyFilter your filters to a Query
-func (*Paginate) ApplyFilter(*Options, *Collection) (err error) {
+func (*Form) ApplyFilter(*Options) (err error) {
 	// ...
 
 	return nil

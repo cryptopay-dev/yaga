@@ -15,15 +15,15 @@ var DefaultItemsLimit = 50
 var SeparatorOrder = ","
 
 type (
-	// Filter interface
-	Filter interface {
-		ApplyFilter(*Options, *Collection) error
-		ApplyPager(*Options, *Collection) error
-		ApplySorter(*Options, *Collection) error
+	// Former interface
+	Former interface {
+		ApplyFilter(*Options) error
+		ApplyPager(*Options) error
+		ApplySorter(*Options) error
 	}
 
-	// ModelsFetcher closure to fetch and format Items
-	ModelsFetcher = func(*Options) (Items, error)
+	// Fetcher closure to fetch and format Items
+	Fetcher = func(*Options) (Items, error)
 
 	// Items is formatted response of models
 	Items = []interface{}
@@ -38,14 +38,14 @@ type (
 	// Options to Format list-response
 	Options struct {
 		Query   *orm.Query
-		Fetcher ModelsFetcher
-		Filter  Filter
+		Fetcher Fetcher
+		Former  Former
 	}
 )
 
-// FormatQuery collection as response-answer (Collection)
-func FormatQuery(ctx web.Context, opts Options) error {
-	if opts.Query == nil || opts.Filter == nil || opts.Fetcher == nil {
+// ResponseQuery collection as response-answer (Collection)
+func ResponseQuery(ctx web.Context, opts Options) error {
+	if opts.Query == nil || opts.Former == nil || opts.Fetcher == nil {
 		return nil
 	}
 
@@ -54,7 +54,7 @@ func FormatQuery(ctx web.Context, opts Options) error {
 		response Collection
 	)
 
-	if err = opts.Filter.ApplyFilter(&opts, &response); err != nil {
+	if err = opts.Former.ApplyFilter(&opts); err != nil {
 		ctx.Logger().Error(err.Error())
 		return errors.NewError(http.StatusBadRequest, err.Error())
 	}
@@ -64,12 +64,12 @@ func FormatQuery(ctx web.Context, opts Options) error {
 		return errors.NewError(http.StatusInternalServerError, err.Error())
 	}
 
-	if err = opts.Filter.ApplyPager(&opts, &response); err != nil {
+	if err = opts.Former.ApplyPager(&opts); err != nil {
 		ctx.Logger().Error(err.Error())
 		return errors.NewError(http.StatusBadRequest, err.Error())
 	}
 
-	if err = opts.Filter.ApplySorter(&opts, &response); err != nil {
+	if err = opts.Former.ApplySorter(&opts); err != nil {
 		ctx.Logger().Error(err.Error())
 		return errors.NewError(http.StatusBadRequest, err.Error())
 	}
@@ -77,9 +77,9 @@ func FormatQuery(ctx web.Context, opts Options) error {
 	return format(ctx, &opts, response)
 }
 
-// FormatSimple collection as response-answer (Collection)
-func FormatSimple(ctx web.Context, opts Options) error {
-	if opts.Filter == nil || opts.Fetcher == nil {
+// ResponseSimple collection as response-answer (Collection)
+func ResponseSimple(ctx web.Context, opts Options) error {
+	if opts.Former == nil || opts.Fetcher == nil {
 		return nil
 	}
 
@@ -88,12 +88,12 @@ func FormatSimple(ctx web.Context, opts Options) error {
 		response Collection
 	)
 
-	if err = opts.Filter.ApplyFilter(&opts, &response); err != nil {
+	if err = opts.Former.ApplyFilter(&opts); err != nil {
 		ctx.Logger().Error(err.Error())
 		return errors.NewError(http.StatusBadRequest, err.Error())
 	}
 
-	if err = opts.Filter.ApplyPager(&opts, &response); err != nil {
+	if err = opts.Former.ApplyPager(&opts); err != nil {
 		ctx.Logger().Error(err.Error())
 		return errors.NewError(http.StatusBadRequest, err.Error())
 	}
