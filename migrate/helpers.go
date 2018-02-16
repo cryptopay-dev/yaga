@@ -70,8 +70,6 @@ func addVersion(tx *pg.Tx, version int64) error {
 }
 
 func doMigrate(version int64, sql string, fn updateVersion) func(db DB) error {
-	fmt.Println(sql)
-
 	return func(db DB) error {
 		return db.RunInTransaction(func(tx *pg.Tx) error {
 			if _, errQuery := tx.Exec(sql); errQuery != nil {
