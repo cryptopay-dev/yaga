@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cryptopay-dev/yaga/migrate"
 	"github.com/go-pg/pg"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -160,9 +161,20 @@ func dbCommands(opts Options) cli.Commands {
 				return nil
 			},
 			Action: func(c *cli.Context) error {
-				if err := opts.Migrate(
-					MigrateDirection(MigrationUp),
-				); err != nil {
+				var (
+					err      error
+					migrator migrate.Migrator
+				)
+
+				if migrator, err = migrate.New(migrate.Options{
+					DB:     opts.DB,
+					Path:   opts.migrationPath,
+					Logger: opts.Logger,
+				}); err != nil {
+					return err
+				}
+
+				if err := migrator.Up(0); err != nil {
 					opts.Logger.Fatal("Migration failure", zap.Error(err))
 				}
 
@@ -183,16 +195,25 @@ func dbCommands(opts Options) cli.Commands {
 				return nil
 			},
 			Action: func(c *cli.Context) error {
-				var steps = 1
+				var (
+					err      error
+					steps    = 1
+					migrator migrate.Migrator
+				)
 
 				if c.Int("steps") > 0 {
 					steps = c.Int("steps")
 				}
 
-				if err := opts.Migrate(
-					MigrateDirection(MigrationDown),
-					MigrateSteps(steps),
-				); err != nil {
+				if migrator, err = migrate.New(migrate.Options{
+					DB:     opts.DB,
+					Path:   opts.migrationPath,
+					Logger: opts.Logger,
+				}); err != nil {
+					return err
+				}
+
+				if err := migrator.Down(steps); err != nil {
 					opts.Logger.Fatal("Migration failure", zap.Error(err))
 				}
 

@@ -3,6 +3,7 @@ package testdb
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/go-pg/pg"
 	"github.com/joho/godotenv"
@@ -24,7 +25,7 @@ type Database struct {
 func GetTestDB() *Database {
 	if database == nil {
 		err := godotenv.Load()
-		if err != nil {
+		if err != nil && !strings.Contains(err.Error(), "no such file or directory") {
 			fmt.Println(err)
 		}
 		database = new(Database)

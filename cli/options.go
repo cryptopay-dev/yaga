@@ -22,6 +22,8 @@ type Options struct {
 	Name            string
 	BuildTime       string
 	BuildVersion    string
+
+	migrationPath string
 }
 
 // Option closure
@@ -29,6 +31,8 @@ type Option func(*Options)
 
 // newOptions converts slice of closures to Options-field
 func newOptions(opts ...Option) (opt Options) {
+	opt.migrationPath = "./migrations"
+
 	for _, o := range opts {
 		o(&opt)
 	}
@@ -89,6 +93,13 @@ func Config(src, conf interface{}) Option {
 	return func(o *Options) {
 		o.ConfigSource = src
 		o.ConfigInterface = conf
+	}
+}
+
+// MigrationsPath closure to set param in Options
+func MigrationsPath(path string) Option {
+	return func(o *Options) {
+		o.migrationPath = path
 	}
 }
 
