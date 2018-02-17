@@ -40,7 +40,7 @@ type migrate struct {
 	migrations
 }
 
-//
+// migration item
 type migration struct {
 	Version int64
 	Name    string
@@ -48,6 +48,7 @@ type migration struct {
 	Down    func(DB) error
 }
 
+// migrations slice
 type migrations []*migration
 
 // New creates new Migrator
@@ -74,22 +75,13 @@ func New(opts Options) (Migrator, error) {
 		return nil, err
 	}
 
-	m := &migrate{
+	return &migrate{
 		Options:    opts,
 		migrations: items,
-	}
-
-	if err = m.init(); err != nil {
-		return nil, err
-	}
-
-	return m, nil
+	}, nil
 }
 
-func (m *migrate) init() error {
-	return createTables(m.DB)
-}
-
+// createTables for migrations
 func createTables(db DB) error {
 	var err error
 	if len(schemaName) > 0 {
@@ -106,6 +98,7 @@ func createTables(db DB) error {
 	return err
 }
 
+// Up, roll up multiple migrations
 func (m *migrate) Up(steps int) error {
 	var (
 		err     error
@@ -145,6 +138,7 @@ func (m *migrate) Up(steps int) error {
 	return nil
 }
 
+// Down rollback some migrations
 func (m *migrate) Down(steps int) error {
 	var (
 		err     error
@@ -182,6 +176,7 @@ func (m *migrate) Down(steps int) error {
 	return nil
 }
 
+// Version fetching from database
 func (m *migrate) Version() (version int64, err error) {
 	version = -1
 

@@ -13,10 +13,12 @@ import (
 	"github.com/go-pg/pg/types"
 )
 
+// getTableName for quote table name
 func getTableName() types.ValueAppender {
 	return pg.Q(tableName)
 }
 
+// extractAttributes, such as  version, name and migration-type
 func extractAttributes(filename string) (version int64, name, mType string, err error) {
 	parts := strings.SplitN(filename, "_", 2)
 
@@ -44,6 +46,7 @@ func extractAttributes(filename string) (version int64, name, mType string, err 
 	return
 }
 
+// findMigrations in specified folder (path)
 func findMigrations(path string) ([]os.FileInfo, error) {
 	var (
 		err error
@@ -57,18 +60,22 @@ func findMigrations(path string) ([]os.FileInfo, error) {
 	return dir.Readdir(0)
 }
 
+// updateVersion abstraction
 type updateVersion func(tx *pg.Tx, version int64) error
 
+// remVersion migration from database
 func remVersion(tx *pg.Tx, version int64) error {
 	_, err := tx.Exec(sqlRemVersion, getTableName(), version)
 	return err
 }
 
+// addVersion migration to database
 func addVersion(tx *pg.Tx, version int64) error {
 	_, err := tx.Exec(sqlNewVersion, getTableName(), version)
 	return err
 }
 
+// doMigrate closure
 func doMigrate(version int64, sql string, fn updateVersion) func(db DB) error {
 	return func(db DB) error {
 		return db.RunInTransaction(func(tx *pg.Tx) error {
@@ -85,6 +92,7 @@ func doMigrate(version int64, sql string, fn updateVersion) func(db DB) error {
 	}
 }
 
+// extractMigrations, find files in migration folder and convert to migration-item
 func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (migrations, error) {
 	var (
 		err          error

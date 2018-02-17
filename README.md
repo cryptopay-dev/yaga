@@ -7,6 +7,7 @@ Yaga is a project that provides a set of useful utilities for creating a golang 
 
 - [**Cacher**](./cacher) is a wrapper over Redis client with the basic methods for work that are described in the interface, with it you can write, get and delete data in Redis
 - [**Cli**](./cli) with cli you can start the application with specifying the parameters. You can also use this package to run migrations or clean up the database
+- [**Collection**](./helpers/collection) provides simple method to list your data from database
 - [**Config**](./config) provides utilities for loading and validating config
 - [**Conv**](./conv) provides functions for working with *decimal.Decimal*, converting from a string or float to decimal
 - [**Decimal**](./decimal) is a wrapper over `github.com/shopspring/decimal` which allows you to work with decimal in a simplified way
@@ -15,9 +16,10 @@ Yaga is a project that provides a set of useful utilities for creating a golang 
 - [**Locker**](./locker) is a wrapper over `github.com/bsm/redis-lock` for locks in Redis
 - [**Logger**](./logger) provides the interface for its implementation for [zap](github.com/uber-go/zap) logger and for nop logger (dummy)
 - [**Middlewares**](./middlewares) provides intermediate layers for authorizing and logging requests in web application
+- [**Migrator**](./migrate) this package allows you to run migrations on your PostgreSQL database
 - [**Pprof**](./pprof) provides a utility for profiling with web interaction
 - [**Report**](./report) helps to write metrics for data using `cryptopay-dev/go-metrics`
-- [**Testdb**](./testdb) creates a connection to the test database to run tests
+- [**Testdb**](./helpers/testdb) creates a connection to the test database to run tests
 - [**Tracer**](./tracer) is a wrapper over the raven `github.com/getsentry/raven-go` client for the Sentry event/error logging system
 - [**Web**](./web) allows you to run the web server using `github.com/labstack/echo` web framework with the necessary parameters
 - [**Workers**](./workers) are tools to run goroutine and do some work on scheduling with a safe stop of their work
