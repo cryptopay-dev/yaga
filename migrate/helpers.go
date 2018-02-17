@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -102,6 +103,11 @@ func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (mig
 	)
 
 	for _, file := range files {
+		// Ignore non sql files:
+		if filepath.Ext(file.Name()) != ".sql" {
+			continue
+		}
+
 		log.Infof("Prepare migration file: %s", file.Name())
 
 		if data, err = ioutil.ReadFile(path + "/" + file.Name()); err != nil {
