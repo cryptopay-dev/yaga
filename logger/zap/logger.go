@@ -46,7 +46,6 @@ func New(platform string) logger.Logger {
 		logger: l,
 		sugar:  sugar,
 	}
-	sugaredLogger.Infof(startLoggerWithLevelTpl, platform)
 
 	return sugaredLogger
 }
