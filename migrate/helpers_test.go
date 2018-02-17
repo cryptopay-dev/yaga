@@ -1,8 +1,10 @@
 package migrate
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -98,4 +100,45 @@ func TestExtractMigrations(t *testing.T) {
 
 	// up/down is one migration:
 	assert.Equal(t, len(files)/2, len(items))
+}
+
+func TestCreateMigrations(t *testing.T) {
+	t.Run("Good", func(t *testing.T) {
+		dir, err := ioutil.TempDir("", time.Now().Format(time.RFC3339))
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
+
+		if err = CreateMigration(dir, "something"); !assert.NoError(t, err) {
+			t.FailNow()
+		}
+
+		files, err := findMigrations(dir)
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
+
+		if !assert.True(t, 2 == len(files)) {
+			t.FailNow()
+		}
+
+		items, err := extractMigrations(defaultLogger, dir, files)
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
+
+		if !assert.True(t, 1 == len(items)) {
+			t.FailNow()
+		}
+
+		if !assert.True(t, "something" == items[0].Name) {
+			t.FailNow()
+		}
+	})
+
+	t.Run("Bad", func(t *testing.T) {
+		if err := CreateMigration("/path/to/not/existing/folder", "something"); !assert.Error(t, err) {
+			t.FailNow()
+		}
+	})
 }

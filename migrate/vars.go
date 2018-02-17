@@ -10,6 +10,8 @@ const (
 	errFileVersionTpl     = "bad file version '%s', must be greater than 0"
 	errVersionNotEqualTpl = "version of 'up' and 'down' migrations must be equal: %d != %d"
 
+	fileNameTpl = "%d_%s.%s.sql"
+
 	sqlCreateSchema = `CREATE SCHEMA IF NOT EXISTS ?`
 	sqlNewVersion   = `INSERT INTO ? (version, created_at) VALUES (?, now())`
 	sqlRemVersion   = `DELETE FROM ? WHERE version = ?`

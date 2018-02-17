@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/go-pg/pg"
@@ -155,4 +156,24 @@ func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (mig
 	})
 
 	return items, nil
+}
+
+// CreateMigration files
+func CreateMigration(path, name string) error {
+	var (
+		err   error
+		f     *os.File
+		dt    = time.Now().Unix()
+		items = []string{"up", "down"}
+	)
+
+	for _, item := range items {
+		if f, err = os.Create(path + "/" + fmt.Sprintf(fileNameTpl, dt, name, item)); err != nil {
+			return err
+		}
+
+		f.Close()
+	}
+
+	return nil
 }

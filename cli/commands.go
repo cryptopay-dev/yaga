@@ -90,6 +90,11 @@ func addCommands(cliApp *cli.App, opts Options) {
 
 func dbCommands(opts Options) cli.Commands {
 	var (
+		setNameFlag = cli.StringFlag{
+			Name:  "name",
+			Value: "",
+			Usage: "migration name",
+		}
 		setStepsFlag = cli.IntFlag{
 			Name:  "steps",
 			Value: 1,
@@ -130,7 +135,7 @@ func dbCommands(opts Options) cli.Commands {
 				}
 
 				var (
-					querySelect   = `SELECT table_name as name FROM information_schema.tables WHERE table_schema = 'public' AND table_name != 'schema_migrations' ORDER BY table_name;`
+					querySelect   = `SELECT table_name as name FROM information_schema.tables WHERE table_schema = 'public' AND table_name != 'migrations' ORDER BY table_name;`
 					queryTruncate = `TRUNCATE %s RESTART IDENTITY;`
 				)
 
@@ -218,6 +223,23 @@ func dbCommands(opts Options) cli.Commands {
 				}
 
 				return nil
+			},
+		},
+
+		{
+			Name:  "migrate:create",
+			Usage: "Create new migration",
+			Flags: []cli.Flag{
+				setNameFlag,
+			},
+			Before: setDatabase(&opts),
+			After: func(context *cli.Context) error {
+				shutdownApplication(&opts)
+				return nil
+			},
+			Action: func(c *cli.Context) error {
+				var name = c.String("name")
+				return migrate.CreateMigration(opts.migrationPath, name)
 			},
 		},
 	}
