@@ -1,4 +1,7 @@
 version: 2
+dependencies:
+  cache_directories:
+    - "~/docker-images"
 jobs:
   build:
     docker:
