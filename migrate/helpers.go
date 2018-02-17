@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -150,10 +149,6 @@ func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (mig
 
 		items = append(items, m)
 	}
-
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].Version < items[j].Version
-	})
 
 	return items, nil
 }

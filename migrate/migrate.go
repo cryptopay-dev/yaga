@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"os"
+	"sort"
 
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/go-pg/pg"
@@ -118,7 +119,15 @@ func (m *migrate) Up(steps int) error {
 		return err
 	}
 
-	for i, item := range m.migrations {
+	items := make(migrations, count)
+
+	copy(items, m.migrations)
+
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Version < items[j].Version
+	})
+
+	for i, item := range items {
 		if steps <= 0 {
 			break
 		}
@@ -162,8 +171,22 @@ func (m *migrate) Down(steps int) error {
 		return nil
 	}
 
-	for steps > 0 {
-		var item = m.migrations[steps-1]
+	items := make(migrations, count)
+
+	copy(items, m.migrations)
+
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Version > items[j].Version
+	})
+
+	for _, item := range items {
+		if steps <= 0 {
+			break
+		}
+
+		if item.Version > version {
+			continue
+		}
 
 		m.Logger.Infof("(%d) migrate down to: %d_%s", steps, item.Version, item.Name)
 		if err = item.Down(m.DB); err != nil {
