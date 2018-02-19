@@ -1,15 +1,13 @@
 package helpers_test
 
 import (
-	"math/rand"
 	"testing"
 
 	. "github.com/cryptopay-dev/yaga/helpers"
-	"github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-var uuidsForTest = []struct {
+var uuids = []struct {
 	uuid   string
 	result bool
 }{
@@ -22,7 +20,8 @@ var uuidsForTest = []struct {
 		result: false,
 	},
 	{
-		uuid:   uuid.NewV1().String(),
+		// UUIDv1
+		uuid:   "87adb170-1568-11e8-b642-0ed5f89f718b",
 		result: false,
 	},
 	{
@@ -65,6 +64,8 @@ var okUUIDs = []string{
 	"32c2c280-df3f-4d98-8030-f59859e87835",
 }
 
+var positionsUUID = []int{0, len(okUUIDs) / 2, len(okUUIDs) - 1}
+
 func TestNewUUIDv4(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		assert.NoError(t, ValidateUUIDv4(NewUUIDv4()))
@@ -77,42 +78,51 @@ func TestNewUUIDv4(t *testing.T) {
 func TestValidateUUIDv4(t *testing.T) {
 	assert.Error(t, ValidateUUIDv4(""))
 	assert.Error(t, ValidateUUIDv4("empty"))
-	assert.Error(t, ValidateUUIDv4(uuid.NewV1().String()))
+	assert.Error(t, ValidateUUIDv4("b610263c-a361-1c15-b17f-2152ee115f0a")) // UUIDv1
 
 	assert.NoError(t, ValidateUUIDv4("b17c7f4b981e43658679d16d5837a7eb"))
 	assert.NoError(t, ValidateUUIDv4("b17c7f4b-981e-4365-8679-d16d5837a7eb"))
-	assert.Error(t, ValidateUUIDv4("b17c7f4b-981e-6365-8679-d16d5837a7eb"))
-	assert.Error(t, ValidateUUIDv4("k17c7f4b-981e-4365-8679-d16d5837a7eb"))
+	assert.Error(t, ValidateUUIDv4("b17c7f4b-981e-6365-8679-d16d5837a7eb")) // not UUIDv4
+	assert.Error(t, ValidateUUIDv4("k17c7f4b-981e-4365-8679-d16d5837a7eb")) // not valid symbols
 
 	for _, id := range okUUIDs {
 		assert.NoError(t, ValidateUUIDv4(id))
+	}
+
+	for _, item := range uuids {
+		if item.result {
+			assert.NoError(t, ValidateUUIDv4(item.uuid))
+		} else {
+			assert.Error(t, ValidateUUIDv4(item.uuid))
+		}
 	}
 }
 
 func TestValidateUUIDs(t *testing.T) {
 	var (
 		err error
-		ins int
 
 		size = len(okUUIDs)
 	)
 
-	for _, item := range uuidsForTest {
-		ins = rand.Intn(size)
-		in := make([]string, size)
-		for i := 0; i < size; i++ {
-			if i == ins {
-				in[i] = item.uuid
-			} else {
-				in[i] = okUUIDs[i]
+	for _, k := range positionsUUID {
+		// k - insertion position
+		for _, item := range uuids {
+			in := make([]string, size)
+			for i := 0; i < size; i++ {
+				if i == k {
+					in[i] = item.uuid
+				} else {
+					in[i] = okUUIDs[i]
+				}
 			}
-		}
 
-		err = ValidateUUIDs(in)
-		if item.result {
-			assert.NoError(t, err)
-		} else {
-			assert.Error(t, err)
+			err = ValidateUUIDs(in)
+			if item.result {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+			}
 		}
 	}
 }
