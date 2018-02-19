@@ -24,6 +24,12 @@ const (
 	zero int64 = 0
 )
 
+func init() {
+	var db = testdb.GetTestDB().DB
+
+	createTables(db)
+}
+
 type mockDB struct {
 	*pg.DB
 	*pg.Tx

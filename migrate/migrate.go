@@ -79,6 +79,10 @@ func New(opts Options) (Migrator, error) {
 		return nil, err
 	}
 
+	if err = createTables(opts.DB); err != nil {
+		return nil, err
+	}
+
 	return &migrate{
 		Options:    opts,
 		Migrations: items,
