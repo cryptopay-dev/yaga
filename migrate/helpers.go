@@ -58,6 +58,8 @@ func findMigrations(path string) ([]os.FileInfo, error) {
 		return nil, ErrDirNotExists
 	}
 
+	defer dir.Close()
+
 	return dir.Readdir(0)
 }
 
