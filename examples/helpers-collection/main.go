@@ -83,7 +83,7 @@ func (c *Controller) ListCollections(ctx web.Context) error {
 		return errors.NewError(http.StatusBadRequest, err.Error())
 	}
 
-	return collection.ResponseQuery(ctx, collection.Options{
+	return collection.Response(ctx, collection.Options{
 		Query:  c.DB.Model(&MyModel{}),
 		Former: &req,
 		Fetcher: func(opts *collection.Options) (collection.Items, error) {

@@ -43,8 +43,11 @@ type (
 	}
 )
 
-// ResponseQuery collection as response-answer (Collection)
-func ResponseQuery(ctx web.Context, opts Options) error {
+// Response collection as response-answer (Collection)
+//
+// if you do not want to use opts.Query
+// then see https://gist.github.com/jenchik/05a6a1bc80e7199203b8fa122cdaf922
+func Response(ctx web.Context, opts Options) error {
 	if opts.Query == nil || opts.Former == nil || opts.Fetcher == nil {
 		return nil
 	}
@@ -70,30 +73,6 @@ func ResponseQuery(ctx web.Context, opts Options) error {
 	}
 
 	if err = opts.Former.ApplySorter(&opts); err != nil {
-		ctx.Logger().Error(err.Error())
-		return errors.NewError(http.StatusBadRequest, err.Error())
-	}
-
-	return format(ctx, &opts, response)
-}
-
-// ResponseSimple collection as response-answer (Collection)
-func ResponseSimple(ctx web.Context, opts Options) error {
-	if opts.Former == nil || opts.Fetcher == nil {
-		return nil
-	}
-
-	var (
-		err      error
-		response Collection
-	)
-
-	if err = opts.Former.ApplyFilter(&opts); err != nil {
-		ctx.Logger().Error(err.Error())
-		return errors.NewError(http.StatusBadRequest, err.Error())
-	}
-
-	if err = opts.Former.ApplyPager(&opts); err != nil {
 		ctx.Logger().Error(err.Error())
 		return errors.NewError(http.StatusBadRequest, err.Error())
 	}
