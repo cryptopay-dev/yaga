@@ -97,7 +97,7 @@ func doMigrate(version int64, sql string, fn updateVersion) func(db DB) error {
 }
 
 // extractMigrations, find files in migration folder and convert to Migration-item
-func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (Migrations, error) {
+func extractMigrations(log logger.Logger, folder string, files []os.FileInfo) (Migrations, error) {
 	var (
 		err          error
 		data         []byte
@@ -113,7 +113,7 @@ func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (Mig
 
 		log.Infof("Prepare migration file: %s", file.Name())
 
-		if data, err = ioutil.ReadFile(path + "/" + file.Name()); err != nil {
+		if data, err = ioutil.ReadFile(path.Join(folder, file.Name())); err != nil {
 			return nil, err
 		}
 
