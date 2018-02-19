@@ -10,7 +10,6 @@ import (
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/web"
 	"github.com/go-pg/pg"
-	"github.com/go-pg/pg/orm"
 )
 
 func main() {
@@ -60,14 +59,7 @@ type ModelResponse struct {
 
 // FormFilter with embedded Paginate
 type FormFilter struct {
-	collection.Paginate
-}
-
-// Apply your filters to a Query
-func (f FormFilter) Apply(query *orm.Query) error {
-	// ...
-
-	return nil
+	collection.Form
 }
 
 func formatModelResponse(model *MyModel) *ModelResponse {
@@ -91,13 +83,13 @@ func (c *Controller) ListCollections(ctx web.Context) error {
 		return errors.NewError(http.StatusBadRequest, err.Error())
 	}
 
-	return collection.Format(ctx, collection.Options{
+	return collection.Response(ctx, collection.Options{
 		Query:  c.DB.Model(&MyModel{}),
-		Filter: req,
-		Fetcher: func(query *orm.Query) (collection.Items, error) {
+		Former: &req,
+		Fetcher: func(opts *collection.Options) (collection.Items, error) {
 			models := make([]MyModel, 0)
 
-			if err := query.Select(&models); err != nil {
+			if err := opts.Query.Select(&models); err != nil {
 				return nil, errors.NewError(http.StatusInternalServerError, err.Error())
 			}
 
