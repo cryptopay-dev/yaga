@@ -9,11 +9,15 @@ import (
 )
 
 const (
-	Up   = "up"
+	// Up action
+	Up = "up"
+	// Down action
 	Down = "down"
+	// List action
 	List = "list"
 )
 
+// Options for migrate cmd
 type Options struct {
 	Addr     string
 	User     string
@@ -24,22 +28,22 @@ type Options struct {
 	Steps    int
 }
 
+// Validate migrate options
 func (o Options) Validate() bool {
 	return len(o.Addr) > 0 &&
 		len(o.User) > 0 &&
 		len(o.Database) > 0 &&
-		len(o.Password) > 0 &&
 		len(o.Path) > 0 &&
 		(o.Type == Up || o.Type == Down || o.Type == List)
 }
 
+// PG options
 func (o Options) PG() *pg.Options {
 	return &pg.Options{
 		Addr:     o.Addr,
 		User:     o.User,
 		Database: o.Database,
 		Password: o.Password,
-		PoolSize: 2,
 	}
 }
 
@@ -50,10 +54,10 @@ var (
 
 func main() {
 	flag.StringVar(&opts.Password, "p", "", "password")
-	flag.StringVar(&opts.Addr, "a", "", "address")
+	flag.StringVar(&opts.Addr, "a", "localhost:5432", "address")
 	flag.StringVar(&opts.Database, "d", "", "db name")
 	flag.StringVar(&opts.User, "u", "", "username")
-	flag.StringVar(&opts.Path, "src", "", "path to migrations")
+	flag.StringVar(&opts.Path, "src", "./migrations", "path to migrations")
 	flag.StringVar(&opts.Type, "t", "", "migrate action up/down")
 	flag.IntVar(&opts.Steps, "s", 0, "steps")
 
