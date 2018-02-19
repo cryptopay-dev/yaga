@@ -95,13 +95,13 @@ func doMigrate(version int64, sql string, fn updateVersion) func(db DB) error {
 	}
 }
 
-// extractMigrations, find files in migration folder and convert to migration-item
-func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (migrations, error) {
+// extractMigrations, find files in migration folder and convert to Migration-item
+func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (Migrations, error) {
 	var (
 		err          error
 		data         []byte
-		migrateParts = make(map[string]*migration)
-		items        migrations
+		migrateParts = make(map[string]*Migration)
+		items        Migrations
 	)
 
 	for _, file := range files {
@@ -123,7 +123,7 @@ func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (mig
 
 		m, ok := migrateParts[name]
 		if !ok {
-			m = &migration{
+			m = &Migration{
 				Version: ver,
 				Name:    name,
 			}
@@ -141,7 +141,7 @@ func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (mig
 		migrateParts[name] = m
 	}
 
-	items = make(migrations, 0, len(migrateParts))
+	items = make(Migrations, 0, len(migrateParts))
 	for name, m := range migrateParts {
 		log.Infof("Prepare migration: %s", name)
 

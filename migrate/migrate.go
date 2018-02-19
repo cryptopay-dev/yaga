@@ -3,6 +3,7 @@ package migrate
 import (
 	"os"
 	"sort"
+	"time"
 
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/go-pg/pg"
@@ -23,6 +24,7 @@ type Options struct {
 type Migrator interface {
 	Up(steps int) error
 	Down(steps int) error
+	List() (Migrations, error)
 	Version() (int64, error)
 }
 
@@ -38,25 +40,26 @@ type DB interface {
 // migrate is implementation of Migrator
 type migrate struct {
 	Options
-	migrations
+	Migrations
 }
 
-// migration item
-type migration struct {
-	Version int64
-	Name    string
-	Up      func(DB) error
-	Down    func(DB) error
+// Migration item
+type Migration struct {
+	Version   int64
+	Name      string
+	CreatedAt time.Time
+	Up        func(DB) error
+	Down      func(DB) error
 }
 
-// migrations slice
-type migrations []*migration
+// Migrations slice
+type Migrations []*Migration
 
 // New creates new Migrator
 func New(opts Options) (Migrator, error) {
 	var (
 		err   error
-		items migrations
+		items Migrations
 		files []os.FileInfo
 	)
 
@@ -78,7 +81,7 @@ func New(opts Options) (Migrator, error) {
 
 	return &migrate{
 		Options:    opts,
-		migrations: items,
+		Migrations: items,
 	}, nil
 }
 
@@ -104,11 +107,11 @@ func (m *migrate) Up(steps int) error {
 	var (
 		err     error
 		version int64
-		count   = len(m.migrations)
+		count   = len(m.Migrations)
 	)
 
 	if steps < 0 {
-		return nil
+		return ErrPositiveSteps
 	}
 
 	if steps == 0 {
@@ -119,9 +122,9 @@ func (m *migrate) Up(steps int) error {
 		return err
 	}
 
-	items := make(migrations, count)
+	items := make(Migrations, count)
 
-	copy(items, m.migrations)
+	copy(items, m.Migrations)
 
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].Version < items[j].Version
@@ -152,11 +155,11 @@ func (m *migrate) Down(steps int) error {
 	var (
 		err     error
 		version int64
-		count   = len(m.migrations)
+		count   = len(m.Migrations)
 	)
 
 	if steps < 0 {
-		return nil
+		return ErrPositiveSteps
 	}
 
 	if steps > count || steps == 0 {
@@ -167,13 +170,9 @@ func (m *migrate) Down(steps int) error {
 		return err
 	}
 
-	if version <= 0 {
-		return nil
-	}
+	items := make(Migrations, count)
 
-	items := make(migrations, count)
-
-	copy(items, m.migrations)
+	copy(items, m.Migrations)
 
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].Version > items[j].Version
@@ -197,6 +196,31 @@ func (m *migrate) Down(steps int) error {
 	}
 
 	return nil
+}
+
+func (m *migrate) List() (Migrations, error) {
+	var v []struct {
+		Version   int64
+		CreatedAt time.Time
+	}
+
+	if _, err := m.DB.Query(&v, sqlSelectVersion, getTableName()); err != nil {
+		return nil, err
+	}
+
+	result := make(Migrations, 0, len(v))
+
+	for _, item := range v {
+		for _, mig := range m.Migrations {
+			if mig.Version == item.Version {
+				mig.CreatedAt = item.CreatedAt
+				result = append(result, mig)
+				break
+			}
+		}
+	}
+
+	return result, nil
 }
 
 // Version fetching from database

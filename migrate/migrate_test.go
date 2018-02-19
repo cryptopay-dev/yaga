@@ -60,71 +60,199 @@ func (m *mockDB) QueryOne(model, query interface{}, params ...interface{}) (orm.
 	return m.Tx.QueryOne(model, query, params...)
 }
 
+func TestMigrate_List(t *testing.T) {
+	var db = testdb.GetTestDB().DB
+
+	t.Run("Good", func(t *testing.T) {
+		db.RunInTransaction(func(tx *pg.Tx) error {
+			m, errNew := New(Options{
+				DB:     &mockDB{DB: db, Tx: tx},
+				Path:   "./fixtures/good",
+				Logger: defaultLogger,
+			})
+
+			if !assert.NoError(t, errNew) {
+				return errNew
+			}
+
+			if errUp := m.Up(0); !assert.NoError(t, errUp) {
+				return errUp
+			}
+
+			items, errList := m.List()
+			if !assert.NoError(t, errList) {
+				return errList
+			}
+
+			assert.True(t, len(m.(*migrate).Migrations) == len(items))
+
+			return errEmpty
+		})
+	})
+
+	t.Run("Bad", func(t *testing.T) {
+		db.RunInTransaction(func(tx *pg.Tx) error {
+			m, errNew := New(Options{
+				DB:     &mockDB{DB: db, Tx: tx},
+				Path:   "./fixtures/good",
+				Logger: defaultLogger,
+			})
+
+			if !assert.NoError(t, errNew) {
+				return errNew
+			}
+
+			if errUp := m.Up(0); !assert.NoError(t, errUp) {
+				return errUp
+			}
+
+			m.(*migrate).DB = &mockDB{DB: db, Tx: nil}
+
+			_, errList := m.List()
+			if !assert.Error(t, errList) {
+				return errors.New("must be error")
+			}
+
+			return errEmpty
+		})
+	})
+}
+
 func TestUpDown(t *testing.T) {
 	var db = testdb.GetTestDB().DB
 
 	t.Run("Good", func(t *testing.T) {
-		m, errNew := New(Options{
-			DB:     db,
-			Path:   "./fixtures/good",
-			Logger: defaultLogger,
+		db.RunInTransaction(func(tx *pg.Tx) error {
+			m, errNew := New(Options{
+				DB: &mockDB{
+					DB: db,
+					Tx: tx,
+				},
+				Path:   "./fixtures/good",
+				Logger: defaultLogger,
+			})
+
+			if !assert.NoError(t, errNew) {
+				return errNew
+			}
+
+			if errUp := m.Up(0); !assert.NoError(t, errUp) {
+				return errUp
+			}
+
+			if errDown := m.Down(0); !assert.NoError(t, errDown) {
+				return errDown
+			}
+
+			return errEmpty
 		})
 
-		if !assert.NoError(t, errNew) {
-			t.FailNow()
-		}
-
-		if errUp := m.Up(0); !assert.NoError(t, errUp) {
-			t.FailNow()
-		}
-
-		if errDown := m.Down(0); !assert.NoError(t, errDown) {
-			t.FailNow()
-		}
 	})
 
 	t.Run("Bad", func(t *testing.T) {
-		m, errNew := New(Options{
-			DB:     db,
-			Path:   "./fixtures/bad",
-			Logger: defaultLogger,
-		})
-
-		if !assert.NoError(t, errNew) {
-			t.FailNow()
-		}
-
-		if errUp := m.Up(0); !assert.Error(t, errUp) {
-			t.FailNow()
-		}
-
-		mig, ok := m.(*migrate)
-		if !assert.True(t, ok) {
-			t.FailNow()
-		}
-
 		db.RunInTransaction(func(tx *pg.Tx) error {
-			for _, item := range mig.migrations {
+
+			m, errNew := New(Options{
+				DB: &mockDB{
+					DB: db,
+					Tx: tx,
+				},
+				Path:   "./fixtures/bad",
+				Logger: defaultLogger,
+			})
+
+			if !assert.NoError(t, errNew) {
+				return errNew
+			}
+
+			if errUp := m.Up(0); !assert.Error(t, errUp) {
+				return errUp
+			}
+
+			mig, ok := m.(*migrate)
+			if !assert.True(t, ok) {
+				return errors.New("not migrate")
+			}
+
+			for _, item := range mig.Migrations {
 				if errVer := addVersion(tx, item.Version); !assert.NoError(t, errVer) {
 					return errVer
 				}
 			}
 
-			return nil
-		})
+			if errDown := m.Down(0); !assert.Error(t, errDown) {
+				return errDown
+			}
 
-		if errDown := m.Down(0); !assert.Error(t, errDown) {
-			t.FailNow()
-		}
-
-		db.RunInTransaction(func(tx *pg.Tx) error {
-			for _, item := range mig.migrations {
+			for _, item := range mig.Migrations {
 				if errVer := remVersion(tx, item.Version); !assert.NoError(t, errVer) {
 					return errVer
 				}
 			}
 
-			return nil
+			return errEmpty
+		})
+	})
+
+	t.Run("Bad Up / Down / Version", func(t *testing.T) {
+		db.RunInTransaction(func(tx *pg.Tx) error {
+
+			var (
+				mEmpty  = new(mockDB)
+				mNormal = &mockDB{
+					DB: db,
+					Tx: tx,
+				}
+			)
+
+			m, errNew := New(Options{
+				DB:     mNormal,
+				Path:   "./fixtures/bad",
+				Logger: defaultLogger,
+			})
+
+			if !assert.NoError(t, errNew) {
+				return errNew
+			}
+
+			t.Run("UP", func(t *testing.T) {
+				if errUp := m.Up(-1); !assert.Error(t, errUp) {
+					t.Fatal("must be error", errUp)
+				}
+			})
+
+			t.Run("UP cannot fetch version", func(t *testing.T) {
+				m.(*migrate).DB = mEmpty
+				if errUp := m.Up(0); !assert.Error(t, errUp) {
+					t.Fatal("must be error", errUp)
+				}
+			})
+
+			m.(*migrate).DB = mNormal
+
+			t.Run("DOWN", func(t *testing.T) {
+				if errDown := m.Down(-1); !assert.Error(t, errDown) {
+					t.Fatal("must be error", errDown)
+				}
+			})
+
+			t.Run("Down cannot fetch version", func(t *testing.T) {
+				m.(*migrate).DB = mEmpty
+				if errDown := m.Down(0); !assert.Error(t, errDown) {
+					t.Fatal("must be error", errDown)
+				}
+			})
+
+			m.(*migrate).DB = mNormal
+
+			t.Run("Version", func(t *testing.T) {
+				m.(*migrate).DB = &mockDB{}
+				if _, errVer := m.Version(); !assert.Error(t, errVer) {
+					t.Fatal("must be error", errVer)
+				}
+			})
+
+			return errEmpty
 		})
 	})
 }

@@ -11,6 +11,7 @@ import (
 const (
 	Up   = "up"
 	Down = "down"
+	List = "list"
 )
 
 type Options struct {
@@ -29,7 +30,7 @@ func (o Options) Validate() bool {
 		len(o.Database) > 0 &&
 		len(o.Password) > 0 &&
 		len(o.Path) > 0 &&
-		(o.Type == Up || o.Type == Down)
+		(o.Type == Up || o.Type == Down || o.Type == List)
 }
 
 func (o Options) PG() *pg.Options {
@@ -81,6 +82,15 @@ func main() {
 	case Down:
 		if err = m.Down(opts.Steps); err != nil {
 			log.Fatal(err)
+		}
+	case List:
+		items, err := m.List()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for _, item := range items {
+			log.Infof("%d %s -> %s", item.Version, item.Name, item.CreatedAt)
 		}
 	default:
 		log.Fatal("unknown migrate action")
