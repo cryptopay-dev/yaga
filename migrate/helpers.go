@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -156,7 +157,7 @@ func extractMigrations(log logger.Logger, path string, files []os.FileInfo) (Mig
 }
 
 // CreateMigration files
-func CreateMigration(path, name string) error {
+func CreateMigration(folder, name string) error {
 	var (
 		err   error
 		f     *os.File
@@ -165,7 +166,8 @@ func CreateMigration(path, name string) error {
 	)
 
 	for _, item := range items {
-		if f, err = os.Create(path + "/" + fmt.Sprintf(fileNameTpl, dt, name, item)); err != nil {
+		filename := path.Join(folder, fmt.Sprintf(fileNameTpl, dt, name, item))
+		if f, err = os.Create(filename); err != nil {
 			return err
 		}
 
