@@ -91,5 +91,9 @@ func format(ctx web.Context, opts *Options, response Collection) (err error) {
 		return errors.NewError(http.StatusInternalServerError, err.Error())
 	}
 
+	if response.Items == nil {
+		response.Items = make(Items, 0)
+	}
+
 	return ctx.JSON(http.StatusOK, response)
 }
