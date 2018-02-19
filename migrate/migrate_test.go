@@ -26,8 +26,9 @@ const (
 
 func init() {
 	var db = testdb.GetTestDB().DB
-
 	createTables(db)
+
+	db.Exec("TRUNCATE ?", getTableName())
 }
 
 type mockDB struct {
