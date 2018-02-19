@@ -227,6 +227,46 @@ func dbCommands(opts Options) cli.Commands {
 		},
 
 		{
+			Name:   "migrate:list",
+			Usage:  "List current migrations state",
+			Before: setDatabase(&opts),
+			After: func(context *cli.Context) error {
+				shutdownApplication(&opts)
+				return nil
+			},
+			Action: func(c *cli.Context) error {
+				var (
+					err      error
+					migrator migrate.Migrator
+					items    migrate.Migrations
+				)
+
+				if migrator, err = migrate.New(migrate.Options{
+					DB:     opts.DB,
+					Path:   opts.migrationPath,
+					Logger: opts.Logger,
+				}); err != nil {
+					return err
+				}
+
+				if items, err = migrator.List(); err != nil {
+					opts.Logger.Fatal("Migration failure", zap.Error(err))
+				}
+
+				for _, item := range items {
+					opts.Logger.Infof(
+						"%d %s -> %s",
+						item.Version,
+						item.Name,
+						item.CreatedAt,
+					)
+				}
+
+				return nil
+			},
+		},
+
+		{
 			Name:  "migrate:create",
 			Usage: "Create new migration",
 			Flags: []cli.Flag{
