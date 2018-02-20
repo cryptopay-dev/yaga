@@ -6,14 +6,14 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-// NewUUIDv4 returns random generated canonical string representation of UUID:
+// NewUUID returns random generated canonical string representation of UUID:
 // xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
-func NewUUIDv4() string {
+func NewUUID() string {
 	return uuid.NewV4().String()
 }
 
-// ValidateUUIDv4 verification UUID as string for conformity with version 4
-func ValidateUUIDv4(src string) error {
+// ValidateUUID verification UUID as string for conformity with version 4
+func ValidateUUID(src string) error {
 	if len(src) < uuid.Size*2 {
 		return fmt.Errorf("uuid: incorrect UUID length: %s", src)
 	}
@@ -34,7 +34,7 @@ func ValidateUUIDs(uuids []string) (err error) {
 	}
 
 	for _, id := range uuids {
-		if err = ValidateUUIDv4(id); err != nil {
+		if err = ValidateUUID(id); err != nil {
 			return
 		}
 	}

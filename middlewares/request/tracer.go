@@ -36,8 +36,8 @@ func RayTraceID(logger logger.Logger) web.MiddlewareFunc {
 				id  = req.Header.Get(RayTraceHeader)
 			)
 
-			if err := helpers.ValidateUUIDv4(id); err != nil {
-				id = helpers.NewUUIDv4()
+			if err := helpers.ValidateUUID(id); err != nil {
+				id = helpers.NewUUID()
 				req.Header.Set(RayTraceHeader, id)
 			}
 

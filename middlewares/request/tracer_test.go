@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var fakeRayTraceID = helpers.NewUUIDv4()
+var fakeRayTraceID = helpers.NewUUID()
 
 func TestRayTraceID(t *testing.T) {
 	e := web.New(web.Options{})

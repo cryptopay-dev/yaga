@@ -66,34 +66,34 @@ var okUUIDs = []string{
 
 var positionsUUID = []int{0, len(okUUIDs) / 2, len(okUUIDs) - 1}
 
-func TestNewUUIDv4(t *testing.T) {
+func TestNewUUID(t *testing.T) {
 	for i := 0; i < 10; i++ {
-		assert.NoError(t, ValidateUUIDv4(NewUUIDv4()))
+		assert.NoError(t, ValidateUUID(NewUUID()))
 	}
 
-	assert.NoError(t, ValidateUUIDv4("{"+NewUUIDv4()+"}"))
-	assert.Error(t, ValidateUUIDv4("["+NewUUIDv4()+"]"))
+	assert.NoError(t, ValidateUUID("{"+NewUUID()+"}"))
+	assert.Error(t, ValidateUUID("["+NewUUID()+"]"))
 }
 
-func TestValidateUUIDv4(t *testing.T) {
-	assert.Error(t, ValidateUUIDv4(""))
-	assert.Error(t, ValidateUUIDv4("empty"))
-	assert.Error(t, ValidateUUIDv4("b610263c-a361-1c15-b17f-2152ee115f0a")) // UUIDv1
+func TestValidateUUID(t *testing.T) {
+	assert.Error(t, ValidateUUID(""))
+	assert.Error(t, ValidateUUID("empty"))
+	assert.Error(t, ValidateUUID("b610263c-a361-1c15-b17f-2152ee115f0a")) // UUIDv1
 
-	assert.NoError(t, ValidateUUIDv4("b17c7f4b981e43658679d16d5837a7eb"))
-	assert.NoError(t, ValidateUUIDv4("b17c7f4b-981e-4365-8679-d16d5837a7eb"))
-	assert.Error(t, ValidateUUIDv4("b17c7f4b-981e-6365-8679-d16d5837a7eb")) // not UUIDv4
-	assert.Error(t, ValidateUUIDv4("k17c7f4b-981e-4365-8679-d16d5837a7eb")) // not valid symbols
+	assert.NoError(t, ValidateUUID("b17c7f4b981e43658679d16d5837a7eb"))
+	assert.NoError(t, ValidateUUID("b17c7f4b-981e-4365-8679-d16d5837a7eb"))
+	assert.Error(t, ValidateUUID("b17c7f4b-981e-6365-8679-d16d5837a7eb")) // not UUIDv4
+	assert.Error(t, ValidateUUID("k17c7f4b-981e-4365-8679-d16d5837a7eb")) // not valid symbols
 
 	for _, id := range okUUIDs {
-		assert.NoError(t, ValidateUUIDv4(id))
+		assert.NoError(t, ValidateUUID(id))
 	}
 
 	for _, item := range uuids {
 		if item.result {
-			assert.NoError(t, ValidateUUIDv4(item.uuid))
+			assert.NoError(t, ValidateUUID(item.uuid))
 		} else {
-			assert.Error(t, ValidateUUIDv4(item.uuid))
+			assert.Error(t, ValidateUUID(item.uuid))
 		}
 	}
 }
