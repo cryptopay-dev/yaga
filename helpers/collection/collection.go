@@ -30,9 +30,8 @@ type (
 
 	// Collection response answer
 	Collection struct {
-		Total  int   `json:"total"`
-		Offset int   `json:"offset"`
-		Items  Items `json:"items"`
+		Total int   `json:"total"`
+		Items Items `json:"items"`
 	}
 
 	// Options to Format list-response
