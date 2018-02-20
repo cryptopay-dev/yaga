@@ -23,6 +23,7 @@ type Options struct {
 	BuildTime       string
 	BuildVersion    string
 
+	commands      []Command
 	migrationPath string
 }
 
@@ -112,6 +113,17 @@ func Debug(args ...bool) Option {
 
 		if len(args) > 1 {
 			o.Quiet = args[1]
+		}
+	}
+}
+
+// Commands closure to set additional commands for CLI
+func Commands(cmds ...Commandor) Option {
+	return func(o *Options) {
+		o.commands = make([]Command, 0, len(cmds))
+
+		for _, cmd := range cmds {
+			o.commands = append(o.commands, cmd(o))
 		}
 	}
 }

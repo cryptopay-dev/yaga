@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cryptopay-dev/yaga/cli"
 	"github.com/cryptopay-dev/yaga/config"
@@ -34,6 +35,16 @@ func main() {
 		cli.App(&instance),
 		cli.Config(Config, &instance.Config),
 		cli.Debug(true, true), // Debug & Quiet
+		cli.Commands(func(opts *cli.Options) (c cli.Command) {
+			c.Name = "test"
+			c.Aliases = []string{"t"}
+			c.Usage = "run test command"
+			c.Action = func(c *cli.Context) error {
+				fmt.Println("test: Hello world!")
+				return nil
+			}
+			return
+		}),
 	); err != nil {
 		panic(err)
 	}
