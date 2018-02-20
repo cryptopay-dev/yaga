@@ -2,16 +2,19 @@ package collection
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/go-pg/pg/orm"
 )
 
+const errNumericField = "'%s' must be a number"
+
 // Form is part of filter structure
 type Form struct {
 	Order  string      `query:"order" form:"order" json:"order"`
-	Offset json.Number `query:"offset" form:"offset" json:"offset" validate:"omitempty,gte=0"`
-	Limit  json.Number `query:"limit" form:"limit" json:"limit" validate:"omitempty,gte=0"`
+	Offset json.Number `query:"offset" form:"offset" json:"offset" validate:"omitempty,numeric"`
+	Limit  json.Number `query:"limit" form:"limit" json:"limit" validate:"omitempty,numeric"`
 }
 
 type sorter interface {
@@ -85,17 +88,26 @@ func (f *Form) ApplyPager(opts *Options) (err error) {
 		val   int64
 	)
 
-	if val, err = f.Limit.Int64(); err != nil {
-		return err
-	} else if val > 0 {
-		limit = int(val)
+	if len(f.Limit) > 0 {
+		if val, err = f.Limit.Int64(); err != nil {
+			return fmt.Errorf(errNumericField, "limit")
+		} else if val <= 0 {
+			return fmt.Errorf("'limit' must be greater than '0'")
+		}
+		if val > 0 {
+			limit = int(val)
+		}
 	}
 	opts.Query.Limit(limit)
 
-	if val, err = f.Offset.Int64(); err != nil {
-		return err
+	if len(f.Offset) > 0 {
+		if val, err = f.Offset.Int64(); err != nil {
+			return fmt.Errorf(errNumericField, "offset")
+		} else if val < 0 {
+			return fmt.Errorf("'offset' must be greater or equal than '0'")
+		}
+		opts.Query.Offset(int(val))
 	}
-	opts.Query.Offset(int(val))
 
 	return nil
 }
