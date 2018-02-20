@@ -2,11 +2,13 @@ package collection
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/go-pg/pg/orm"
 )
+
+const errNumericField = "'%s' must be a number"
 
 // Form is part of filter structure
 type Form struct {
@@ -88,9 +90,9 @@ func (f *Form) ApplyPager(opts *Options) (err error) {
 
 	if len(f.Limit) > 0 {
 		if val, err = f.Limit.Int64(); err != nil {
-			return err
+			return fmt.Errorf(errNumericField, "limit")
 		} else if val <= 0 {
-			return errors.New("'limit' must be greater than '0'")
+			return fmt.Errorf("'limit' must be greater than '0'")
 		}
 		if val > 0 {
 			limit = int(val)
@@ -100,9 +102,9 @@ func (f *Form) ApplyPager(opts *Options) (err error) {
 
 	if len(f.Offset) > 0 {
 		if val, err = f.Offset.Int64(); err != nil {
-			return err
+			return fmt.Errorf(errNumericField, "offset")
 		} else if val < 0 {
-			return errors.New("'offset' must be greater or equal than '0'")
+			return fmt.Errorf("'offset' must be greater or equal than '0'")
 		}
 		opts.Query.Offset(int(val))
 	}
