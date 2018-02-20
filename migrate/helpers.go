@@ -65,29 +65,29 @@ func findMigrations(path string) ([]os.FileInfo, error) {
 }
 
 // updateVersion abstraction
-type updateVersion func(tx *pg.Tx, version int64) error
+type updateVersion func(tx *pg.Tx, version int64, name string) error
 
 // remVersion migration from database
-func remVersion(tx *pg.Tx, version int64) error {
-	_, err := tx.Exec(sqlRemVersion, getTableName(), version)
+func remVersion(tx *pg.Tx, version int64, name string) error {
+	_, err := tx.Exec(sqlRemVersion, getTableName(), version, name)
 	return err
 }
 
 // addVersion migration to database
-func addVersion(tx *pg.Tx, version int64) error {
-	_, err := tx.Exec(sqlNewVersion, getTableName(), version)
+func addVersion(tx *pg.Tx, version int64, name string) error {
+	_, err := tx.Exec(sqlNewVersion, getTableName(), version, name)
 	return err
 }
 
 // doMigrate closure
-func doMigrate(version int64, sql string, fn updateVersion) func(db DB) error {
+func doMigrate(version int64, name, sql string, fn updateVersion) func(db DB) error {
 	return func(db DB) error {
 		return db.RunInTransaction(func(tx *pg.Tx) error {
 			if _, errQuery := tx.Exec(sql); errQuery != nil {
 				return errQuery
 			}
 
-			if errVersion := fn(tx, version); errVersion != nil {
+			if errVersion := fn(tx, version, name); errVersion != nil {
 				return errVersion
 			}
 
@@ -134,9 +134,9 @@ func extractMigrations(log logger.Logger, folder string, files []os.FileInfo) (M
 
 		switch mType {
 		case "up":
-			m.Up = doMigrate(ver, string(data), addVersion)
+			m.Up = doMigrate(m.Version, m.RealName(), string(data), addVersion)
 		case "down":
-			m.Down = doMigrate(ver, string(data), remVersion)
+			m.Down = doMigrate(m.Version, m.RealName(), string(data), remVersion)
 		}
 
 		migrateParts[name] = m

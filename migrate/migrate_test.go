@@ -3,10 +3,12 @@ package migrate
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/cryptopay-dev/yaga/helpers/testdb"
 	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
 	"github.com/stretchr/testify/assert"
@@ -125,6 +127,91 @@ func TestMigrate_List(t *testing.T) {
 	})
 }
 
+func TestMigrate_Plan(t *testing.T) {
+	var db = testdb.GetTestDB().DB
+
+	t.Run("Good case #1", func(t *testing.T) {
+		db.RunInTransaction(func(tx *pg.Tx) error {
+			m, errNew := New(Options{
+				DB:     &mockDB{DB: db, Tx: tx},
+				Path:   "./fixtures/good",
+				Logger: defaultLogger,
+			})
+
+			if !assert.NoError(t, errNew) {
+				return errNew
+			}
+
+			if errUp := m.Up(0); !assert.NoError(t, errUp) {
+				return errUp
+			}
+
+			items, errList := m.Plan()
+			if !assert.NoError(t, errList) {
+				return errList
+			}
+
+			assert.True(t, len(items) == 0)
+
+			return errEmpty
+		})
+	})
+
+	t.Run("Good case #2", func(t *testing.T) {
+		db.RunInTransaction(func(tx *pg.Tx) error {
+			m, errNew := New(Options{
+				DB:     &mockDB{DB: db, Tx: tx},
+				Path:   "./fixtures/good",
+				Logger: defaultLogger,
+			})
+
+			if !assert.NoError(t, errNew) {
+				return errNew
+			}
+
+			if errDown := m.Down(2); !assert.NoError(t, errDown) {
+				return errDown
+			}
+
+			items, errList := m.Plan()
+			if !assert.NoError(t, errList) {
+				return errList
+			}
+
+			assert.True(t, len(m.(*migrate).Migrations) == len(items), spew.Sdump(items, m.(*migrate).Migrations))
+
+			return errEmpty
+		})
+	})
+
+	t.Run("Bad", func(t *testing.T) {
+		db.RunInTransaction(func(tx *pg.Tx) error {
+			m, errNew := New(Options{
+				DB:     &mockDB{DB: db, Tx: tx},
+				Path:   "./fixtures/good",
+				Logger: defaultLogger,
+			})
+
+			if !assert.NoError(t, errNew) {
+				return errNew
+			}
+
+			if errUp := m.Up(0); !assert.NoError(t, errUp) {
+				return errUp
+			}
+
+			m.(*migrate).DB = &mockDB{DB: db, Tx: nil}
+
+			_, errList := m.Plan()
+			if !assert.Error(t, errList) {
+				return errors.New("must be error")
+			}
+
+			return errEmpty
+		})
+	})
+}
+
 func TestUpDown(t *testing.T) {
 	var db = testdb.GetTestDB().DB
 
@@ -182,7 +269,7 @@ func TestUpDown(t *testing.T) {
 			}
 
 			for _, item := range mig.Migrations {
-				if errVer := addVersion(tx, item.Version); !assert.NoError(t, errVer) {
+				if errVer := addVersion(tx, item.Version, item.RealName()); !assert.NoError(t, errVer) {
 					return errVer
 				}
 			}
@@ -192,7 +279,7 @@ func TestUpDown(t *testing.T) {
 			}
 
 			for _, item := range mig.Migrations {
-				if errVer := remVersion(tx, item.Version); !assert.NoError(t, errVer) {
+				if errVer := remVersion(tx, item.Version, item.RealName()); !assert.NoError(t, errVer) {
 					return errVer
 				}
 			}
@@ -280,7 +367,7 @@ func TestNew(t *testing.T) {
 			})
 
 			if !assert.NoError(t, errNew) {
-				return errNew
+				return fmt.Errorf("new err: %v", errNew)
 			}
 
 			if !assert.NotNil(t, m) {
@@ -288,7 +375,7 @@ func TestNew(t *testing.T) {
 			}
 
 			if ver, errVer := m.Version(); !assert.NoError(t, errVer) {
-				return errVer
+				return fmt.Errorf("version err: %v", errVer)
 			} else if !assert.Equal(t, zero, ver) {
 				return fmt.Errorf("wrong migration version: %d != %d", zero, ver)
 			}
@@ -296,12 +383,17 @@ func TestNew(t *testing.T) {
 			var i int64
 
 			for i = 1; i <= 10; i++ {
-				if _, errVer := tx.Exec(sqlNewVersion, getTableName(), i); errVer != nil {
-					return errVer
+				if _, errVer := tx.Exec(
+					sqlNewVersion,
+					getTableName(),
+					i,
+					strconv.FormatInt(i, 10)+"_test",
+				); errVer != nil {
+					return fmt.Errorf("version err: %v", errVer)
 				}
 
 				if ver, errVer := m.Version(); !assert.NoError(t, errVer) {
-					return errVer
+					return fmt.Errorf("version err: %v", errVer)
 				} else if !assert.Equal(t, i, ver) {
 					return fmt.Errorf("wrong migration version: %d != %d", i, ver)
 				}

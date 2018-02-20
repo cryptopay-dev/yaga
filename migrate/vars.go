@@ -12,15 +12,16 @@ const (
 
 	fileNameTpl = "%d_%s.%s.sql"
 
-	sqlSelectVersion = `SELECT version, created_at FROM ? ORDER BY id ASC`
+	sqlSelectVersion = `SELECT version, name, created_at FROM ? ORDER BY id ASC`
 	sqlCreateSchema  = `CREATE SCHEMA IF NOT EXISTS ?`
-	sqlNewVersion    = `INSERT INTO ? (version, created_at) VALUES (?, now())`
-	sqlRemVersion    = `DELETE FROM ? WHERE version = ?`
+	sqlNewVersion    = `INSERT INTO ? (version, name, created_at) VALUES (?, ?, now())`
+	sqlRemVersion    = `DELETE FROM ? WHERE version = ? AND name = ?`
 	sqlGetVersion    = `SELECT version FROM ? ORDER BY id DESC LIMIT 1`
 	sqlCreateTable   = `
 CREATE TABLE IF NOT EXISTS ? (
 	id serial,
 	version bigint UNIQUE,
+	name varchar(32) UNIQUE,
 	created_at timestamptz,
 	PRIMARY KEY(id)
 )`

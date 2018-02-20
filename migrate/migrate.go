@@ -3,6 +3,7 @@ package migrate
 import (
 	"os"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/cryptopay-dev/yaga/logger"
@@ -25,6 +26,7 @@ type Migrator interface {
 	Up(steps int) error
 	Down(steps int) error
 	List() (Migrations, error)
+	Plan() (Migrations, error)
 	Version() (int64, error)
 }
 
@@ -50,6 +52,11 @@ type Migration struct {
 	CreatedAt time.Time
 	Up        func(DB) error
 	Down      func(DB) error
+}
+
+// RealName return formatted filename
+func (m Migration) RealName() string {
+	return strconv.FormatInt(m.Version, 10) + "_" + m.Name
 }
 
 // Migrations slice
@@ -205,6 +212,7 @@ func (m *migrate) Down(steps int) error {
 func (m *migrate) List() (Migrations, error) {
 	var v []struct {
 		Version   int64
+		Name      string
 		CreatedAt time.Time
 	}
 
@@ -221,6 +229,24 @@ func (m *migrate) List() (Migrations, error) {
 				result = append(result, mig)
 				break
 			}
+		}
+	}
+
+	return result, nil
+}
+
+func (m *migrate) Plan() (Migrations, error) {
+	var v, err = m.Version()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var result Migrations
+
+	for _, mig := range m.Migrations {
+		if mig.Version > v {
+			result = append(result, mig)
 		}
 	}
 

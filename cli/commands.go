@@ -227,6 +227,39 @@ func dbCommands(opts Options) cli.Commands {
 		},
 
 		{
+			Name:   "migrate:version",
+			Usage:  "Current migration version",
+			Before: setDatabase(&opts),
+			After: func(context *cli.Context) error {
+				shutdownApplication(&opts)
+				return nil
+			},
+			Action: func(c *cli.Context) error {
+				var (
+					err      error
+					migrator migrate.Migrator
+					version  int64
+				)
+
+				if migrator, err = migrate.New(migrate.Options{
+					DB:     opts.DB,
+					Path:   opts.migrationPath,
+					Logger: opts.Logger,
+				}); err != nil {
+					return err
+				}
+
+				if version, err = migrator.Version(); err != nil {
+					opts.Logger.Fatal("Migration failure", zap.Error(err))
+				}
+
+				opts.Logger.Infof("Current version %d", version)
+
+				return nil
+			},
+		},
+
+		{
 			Name:   "migrate:list",
 			Usage:  "List current migrations state",
 			Before: setDatabase(&opts),
@@ -255,11 +288,45 @@ func dbCommands(opts Options) cli.Commands {
 
 				for _, item := range items {
 					opts.Logger.Infof(
-						"%d %s -> %s",
-						item.Version,
-						item.Name,
+						"%s -> %s",
+						item.RealName(),
 						item.CreatedAt,
 					)
+				}
+
+				return nil
+			},
+		},
+
+		{
+			Name:   "migrate:plan",
+			Usage:  "Current migrations plan",
+			Before: setDatabase(&opts),
+			After: func(context *cli.Context) error {
+				shutdownApplication(&opts)
+				return nil
+			},
+			Action: func(c *cli.Context) error {
+				var (
+					err      error
+					migrator migrate.Migrator
+					items    migrate.Migrations
+				)
+
+				if migrator, err = migrate.New(migrate.Options{
+					DB:     opts.DB,
+					Path:   opts.migrationPath,
+					Logger: opts.Logger,
+				}); err != nil {
+					return err
+				}
+
+				if items, err = migrator.Plan(); err != nil {
+					opts.Logger.Fatal("Migration failure", zap.Error(err))
+				}
+
+				for _, item := range items {
+					opts.Logger.Infof("%s -> not applied", item.RealName())
 				}
 
 				return nil
