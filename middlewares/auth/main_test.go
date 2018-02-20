@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/cryptopay-dev/yaga/helpers/testdb"
 	"github.com/cryptopay-dev/yaga/logger/nop"
-	"github.com/cryptopay-dev/yaga/testdb"
 	"github.com/go-pg/pg"
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"

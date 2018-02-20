@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cryptopay-dev/yaga/migrate"
 	"github.com/go-pg/pg"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -89,6 +90,11 @@ func addCommands(cliApp *cli.App, opts Options) {
 
 func dbCommands(opts Options) cli.Commands {
 	var (
+		setNameFlag = cli.StringFlag{
+			Name:  "name",
+			Value: "",
+			Usage: "migration name",
+		}
 		setStepsFlag = cli.IntFlag{
 			Name:  "steps",
 			Value: 1,
@@ -129,7 +135,7 @@ func dbCommands(opts Options) cli.Commands {
 				}
 
 				var (
-					querySelect   = `SELECT table_name as name FROM information_schema.tables WHERE table_schema = 'public' AND table_name != 'schema_migrations' ORDER BY table_name;`
+					querySelect   = `SELECT table_name as name FROM information_schema.tables WHERE table_schema = 'public' AND table_name != 'migrations' ORDER BY table_name;`
 					queryTruncate = `TRUNCATE %s RESTART IDENTITY;`
 				)
 
@@ -160,9 +166,20 @@ func dbCommands(opts Options) cli.Commands {
 				return nil
 			},
 			Action: func(c *cli.Context) error {
-				if err := opts.Migrate(
-					MigrateDirection(MigrationUp),
-				); err != nil {
+				var (
+					err      error
+					migrator migrate.Migrator
+				)
+
+				if migrator, err = migrate.New(migrate.Options{
+					DB:     opts.DB,
+					Path:   opts.migrationPath,
+					Logger: opts.Logger,
+				}); err != nil {
+					return err
+				}
+
+				if err := migrator.Up(0); err != nil {
 					opts.Logger.Fatal("Migration failure", zap.Error(err))
 				}
 
@@ -183,20 +200,153 @@ func dbCommands(opts Options) cli.Commands {
 				return nil
 			},
 			Action: func(c *cli.Context) error {
-				var steps = 1
+				var (
+					err      error
+					steps    = 1
+					migrator migrate.Migrator
+				)
 
 				if c.Int("steps") > 0 {
 					steps = c.Int("steps")
 				}
 
-				if err := opts.Migrate(
-					MigrateDirection(MigrationDown),
-					MigrateSteps(steps),
-				); err != nil {
+				if migrator, err = migrate.New(migrate.Options{
+					DB:     opts.DB,
+					Path:   opts.migrationPath,
+					Logger: opts.Logger,
+				}); err != nil {
+					return err
+				}
+
+				if err := migrator.Down(steps); err != nil {
 					opts.Logger.Fatal("Migration failure", zap.Error(err))
 				}
 
 				return nil
+			},
+		},
+
+		{
+			Name:   "migrate:version",
+			Usage:  "Current migration version",
+			Before: setDatabase(&opts),
+			After: func(context *cli.Context) error {
+				shutdownApplication(&opts)
+				return nil
+			},
+			Action: func(c *cli.Context) error {
+				var (
+					err      error
+					migrator migrate.Migrator
+					version  int64
+				)
+
+				if migrator, err = migrate.New(migrate.Options{
+					DB:     opts.DB,
+					Path:   opts.migrationPath,
+					Logger: opts.Logger,
+				}); err != nil {
+					return err
+				}
+
+				if version, err = migrator.Version(); err != nil {
+					opts.Logger.Fatal("Migration failure", zap.Error(err))
+				}
+
+				opts.Logger.Infof("Current version %d", version)
+
+				return nil
+			},
+		},
+
+		{
+			Name:   "migrate:list",
+			Usage:  "List current migrations state",
+			Before: setDatabase(&opts),
+			After: func(context *cli.Context) error {
+				shutdownApplication(&opts)
+				return nil
+			},
+			Action: func(c *cli.Context) error {
+				var (
+					err      error
+					migrator migrate.Migrator
+					items    migrate.Migrations
+				)
+
+				if migrator, err = migrate.New(migrate.Options{
+					DB:     opts.DB,
+					Path:   opts.migrationPath,
+					Logger: opts.Logger,
+				}); err != nil {
+					return err
+				}
+
+				if items, err = migrator.List(); err != nil {
+					opts.Logger.Fatal("Migration failure", zap.Error(err))
+				}
+
+				for _, item := range items {
+					opts.Logger.Infof(
+						"%s -> %s",
+						item.RealName(),
+						item.CreatedAt,
+					)
+				}
+
+				return nil
+			},
+		},
+
+		{
+			Name:   "migrate:plan",
+			Usage:  "Current migrations plan",
+			Before: setDatabase(&opts),
+			After: func(context *cli.Context) error {
+				shutdownApplication(&opts)
+				return nil
+			},
+			Action: func(c *cli.Context) error {
+				var (
+					err      error
+					migrator migrate.Migrator
+					items    migrate.Migrations
+				)
+
+				if migrator, err = migrate.New(migrate.Options{
+					DB:     opts.DB,
+					Path:   opts.migrationPath,
+					Logger: opts.Logger,
+				}); err != nil {
+					return err
+				}
+
+				if items, err = migrator.Plan(); err != nil {
+					opts.Logger.Fatal("Migration failure", zap.Error(err))
+				}
+
+				for _, item := range items {
+					opts.Logger.Infof("%s -> not applied", item.RealName())
+				}
+
+				return nil
+			},
+		},
+
+		{
+			Name:  "migrate:create",
+			Usage: "Create new migration",
+			Flags: []cli.Flag{
+				setNameFlag,
+			},
+			Before: setDatabase(&opts),
+			After: func(context *cli.Context) error {
+				shutdownApplication(&opts)
+				return nil
+			},
+			Action: func(c *cli.Context) error {
+				var name = c.String("name")
+				return migrate.CreateMigration(opts.migrationPath, name)
 			},
 		},
 	}
