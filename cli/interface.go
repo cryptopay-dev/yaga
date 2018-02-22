@@ -30,6 +30,8 @@ type (
 	IntFlag    = cli.IntFlag
 	StringFlag = cli.StringFlag
 
+	Author = cli.Author
+
 	Context = cli.Context
 
 	Command = cli.Command
