@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/cryptopay-dev/yaga/migrate"
-	"github.com/go-pg/pg"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -25,74 +24,70 @@ func shutdownApplication(opts *Options) {
 	}
 }
 
-func setDatabase(opts *Options) func(ctx *cli.Context) error {
-	return func(ctx *cli.Context) error {
-		var db = ctx.String("db")
-
-		if len(db) == 0 || db == opts.DB.Options().Database {
-			return nil
+func setDatabaseConnector(opts *Options) func(ctx *cli.Context) error {
+	return func(ctx *cli.Context) (err error) {
+		if err = setDatabase(opts, ctx.String("db")); err != nil {
+			return err
 		}
 
-		opts.DB = pg.Connect(&pg.Options{
-			Addr:     opts.DB.Options().Addr,
-			User:     opts.DB.Options().User,
-			Database: db,
-			Password: opts.DB.Options().Password,
-		})
+		if opts.DB == nil {
+			return errors.New("database is undefined")
+		}
 
 		return nil
 	}
 }
 
-func addCommands(cliApp *cli.App, opts Options) {
-	if opts.App != nil {
-		cliApp.Commands = cli.Commands{
-			{
-				Name:    "start",
-				Aliases: []string{"s"},
-				Usage:   "start main server",
-				After: func(context *cli.Context) error {
-					shutdownApplication(&opts)
-					return nil
-				},
-				Action: func(c *cli.Context) error {
-					// Create context
-					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-					defer cancel()
-
-					go func() {
-						// Stopping server
-						if err := opts.App.Shutdown(ctx); err != nil {
-							opts.Logger.Fatal("Error stopping server", zap.Error(err))
-						}
-					}()
-
-					// Running main server
-					if err := opts.App.Run(RunOptions{
-						DB:           opts.DB,
-						Redis:        opts.Redis,
-						Logger:       opts.Logger,
-						Debug:        opts.Debug,
-						BuildTime:    opts.BuildTime,
-						BuildVersion: opts.BuildVersion,
-					}); err != nil {
-						opts.Logger.Fatal("Application failure", zap.Error(err))
-					}
-
-					opts.Logger.Info("Application stopped")
-					return nil
-				},
-			},
-		}
+func appCommands(opts *Options) {
+	if opts.App == nil {
+		return
 	}
 
-	if opts.DB != nil {
-		cliApp.Commands = append(cliApp.Commands, dbCommands(opts)...)
-	}
+	opts.commands = append(opts.commands, Command{
+		Name:    "start",
+		Aliases: []string{"s"},
+		Usage:   "start main server",
+		After: func(context *cli.Context) error {
+			shutdownApplication(opts)
+			return nil
+		},
+		Action: func(c *cli.Context) error {
+			// Create context
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
 
+			go func() {
+				// Stopping server
+				if err := opts.App.Shutdown(ctx); err != nil {
+					opts.Logger.Fatal("Error stopping server", zap.Error(err))
+				}
+			}()
+
+			// Running main server
+			if err := opts.App.Run(RunOptions{
+				DB:           opts.DB,
+				Redis:        opts.Redis,
+				Logger:       opts.Logger,
+				Debug:        opts.Debug,
+				BuildTime:    opts.BuildTime,
+				BuildVersion: opts.BuildVersion,
+			}); err != nil {
+				opts.Logger.Fatal("Application failure", zap.Error(err))
+			}
+
+			opts.Logger.Info("Application stopped")
+			return nil
+		},
+	})
 }
 
-func dbCommands(opts Options) cli.Commands {
+func dbCommands(opts *Options) {
+	if opts.enableMigration {
+		opts.commands = append(opts.commands, dbCommandSlice(opts)...)
+	}
+}
+
+func dbCommandSlice(opts *Options) []Command {
 	var (
 		setNameFlag = cli.StringFlag{
 			Name:  "name",
@@ -106,7 +101,6 @@ func dbCommands(opts Options) cli.Commands {
 		}
 		setDBFlag = cli.StringFlag{
 			Name:  "db",
-			Value: opts.DB.Options().Database,
 			Usage: "set database",
 		}
 		requiredDBFlag = cli.StringFlag{
@@ -122,9 +116,9 @@ func dbCommands(opts Options) cli.Commands {
 			Flags: []cli.Flag{
 				requiredDBFlag,
 			},
-			Before: setDatabase(&opts),
+			Before: setDatabaseConnector(opts),
 			After: func(context *cli.Context) error {
-				shutdownApplication(&opts)
+				shutdownApplication(opts)
 				return nil
 			},
 			Action: func(c *cli.Context) error {
@@ -164,9 +158,9 @@ func dbCommands(opts Options) cli.Commands {
 			Flags: []cli.Flag{
 				setDBFlag,
 			},
-			Before: setDatabase(&opts),
+			Before: setDatabaseConnector(opts),
 			After: func(context *cli.Context) error {
-				shutdownApplication(&opts)
+				shutdownApplication(opts)
 				return nil
 			},
 			Action: func(c *cli.Context) error {
@@ -198,9 +192,9 @@ func dbCommands(opts Options) cli.Commands {
 				setDBFlag,
 				setStepsFlag,
 			},
-			Before: setDatabase(&opts),
+			Before: setDatabaseConnector(opts),
 			After: func(context *cli.Context) error {
-				shutdownApplication(&opts)
+				shutdownApplication(opts)
 				return nil
 			},
 			Action: func(c *cli.Context) error {
@@ -233,9 +227,9 @@ func dbCommands(opts Options) cli.Commands {
 		{
 			Name:   "migrate:version",
 			Usage:  "Current migration version",
-			Before: setDatabase(&opts),
+			Before: setDatabaseConnector(opts),
 			After: func(context *cli.Context) error {
-				shutdownApplication(&opts)
+				shutdownApplication(opts)
 				return nil
 			},
 			Action: func(c *cli.Context) error {
@@ -266,9 +260,9 @@ func dbCommands(opts Options) cli.Commands {
 		{
 			Name:   "migrate:list",
 			Usage:  "List current migrations state",
-			Before: setDatabase(&opts),
+			Before: setDatabaseConnector(opts),
 			After: func(context *cli.Context) error {
-				shutdownApplication(&opts)
+				shutdownApplication(opts)
 				return nil
 			},
 			Action: func(c *cli.Context) error {
@@ -305,9 +299,9 @@ func dbCommands(opts Options) cli.Commands {
 		{
 			Name:   "migrate:plan",
 			Usage:  "Current migrations plan",
-			Before: setDatabase(&opts),
+			Before: setDatabaseConnector(opts),
 			After: func(context *cli.Context) error {
-				shutdownApplication(&opts)
+				shutdownApplication(opts)
 				return nil
 			},
 			Action: func(c *cli.Context) error {
@@ -343,9 +337,9 @@ func dbCommands(opts Options) cli.Commands {
 			Flags: []cli.Flag{
 				setNameFlag,
 			},
-			Before: setDatabase(&opts),
+			Before: setDatabaseConnector(opts),
 			After: func(context *cli.Context) error {
-				shutdownApplication(&opts)
+				shutdownApplication(opts)
 				return nil
 			},
 			Action: func(c *cli.Context) error {

@@ -26,44 +26,7 @@ var (
 // - App instance
 // - Logger
 func Run(opts ...Option) error {
-	var (
-		err     error
-		options = newOptions(opts...)
-	)
-
-	if options.Logger == nil {
-		if options.Debug == false { // Debug = false
-			options.Logger = zap.New(zap.Production)
-		} else if options.Quiet { // Debug = true && Quiet = true
-			options.Logger = nop.New()
-		} else { // Debug = true && Quiet = false
-			options.Logger = zap.New(zap.Development)
-		}
-	}
-
-	// If we have config-source/interface - loading config:
-	if options.ConfigSource != nil &&
-		options.ConfigInterface != nil {
-		if reflect.TypeOf(options.ConfigInterface).Kind() != reflect.Ptr {
-			return ErrConfigNotPointer
-		}
-
-		if err = config.Load(
-			options.ConfigSource,
-			options.ConfigInterface,
-		); err != nil {
-			return err
-		}
-	}
-
-	if options.App != nil && reflect.TypeOf(options.App).Kind() != reflect.Ptr {
-		return ErrAppNotPointer
-	}
-
-	// Validate options:
-	if err = validator.New().Struct(options); err != nil {
-		return err
-	}
+	var options = newOptions(opts...)
 
 	cliApp := cli.NewApp()
 	cliApp.Name = options.Name
@@ -71,25 +34,106 @@ func Run(opts ...Option) error {
 	cliApp.Version = options.BuildVersion
 	cliApp.Authors = options.Users
 
-	if dbConf, ok := hasDB(options.ConfigInterface); ok {
-		if options.DB, err = dbConf.Connect(); err != nil {
-			return err
-		}
+	cliApp.Before = before(options)
+
+	if options.action != nil {
+		cliApp.Action = options.action
+	}
+	if options.after != nil {
+		cliApp.After = options.after
+	}
+	if len(options.flags) > 0 {
+		cliApp.Flags = append(cliApp.Flags, options.flags...)
 	}
 
-	if redisConf, ok := hasRedis(options.ConfigInterface); ok {
-		if options.Redis, err = redisConf.Connect(); err != nil {
-			return err
-		}
-	}
-
-	addCommands(cliApp, options)
+	appCommands(options)
+	dbCommands(options)
 	if len(options.commands) > 0 {
 		cliApp.Commands = append(cliApp.Commands, options.commands...)
 	}
 	sort.Sort(cli.CommandsByName(cliApp.Commands))
 
 	return cliApp.Run(os.Args)
+}
+
+func before(options *Options) func(ctx *Context) error {
+	return func(ctx *Context) (err error) {
+		if options.before != nil {
+			if err = options.before(ctx); err != nil {
+				return err
+			}
+		}
+
+		if options.Logger == nil {
+			if options.Debug == false { // Debug = false
+				options.Logger = zap.New(zap.Production)
+			} else if options.Quiet { // Debug = true && Quiet = true
+				options.Logger = nop.New()
+			} else { // Debug = true && Quiet = false
+				options.Logger = zap.New(zap.Development)
+			}
+		}
+
+		// If we have config-source/interface - loading config:
+		if options.ConfigSource != nil &&
+			options.ConfigInterface != nil {
+			if reflect.TypeOf(options.ConfigInterface).Kind() != reflect.Ptr {
+				return ErrConfigNotPointer
+			}
+
+			if err = config.Load(
+				options.ConfigSource,
+				options.ConfigInterface,
+			); err != nil {
+				return err
+			}
+		}
+
+		if options.App != nil && reflect.TypeOf(options.App).Kind() != reflect.Ptr {
+			return ErrAppNotPointer
+		}
+
+		if err = setDatabase(options, ""); err != nil {
+			return err
+		}
+
+		if options.ConfigInterface != nil {
+			if redisConf, ok := hasRedis(options.ConfigInterface); ok {
+				if options.Redis, err = redisConf.Connect(); err != nil {
+					return err
+				}
+			}
+		}
+
+		// Validate options:
+		if err = validator.New().Struct(options); err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
+func setDatabase(opts *Options, dbname string) (err error) {
+	if opts.DB != nil || opts.ConfigInterface == nil {
+		return nil
+	}
+
+	dbConf, ok := hasDB(opts.ConfigInterface)
+	if !ok {
+		// TODO or return an error?
+		return nil
+	}
+
+	if len(dbname) != 0 {
+		dbConf.Database = dbname
+	}
+
+	if opts.DB, err = dbConf.Connect(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func hasRedis(conf interface{}) (*config.Redis, bool) {

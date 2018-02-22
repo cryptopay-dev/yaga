@@ -26,9 +26,17 @@ type Instance interface {
 }
 
 type (
+	Flag       = cli.Flag
+	IntFlag    = cli.IntFlag
+	StringFlag = cli.StringFlag
+
 	Context = cli.Context
 
 	Command = cli.Command
 
 	Commandor func(*Options) Command
+
+	Flager func(*Options) Flag
+
+	Handler func(*Options) func(*Context) error
 )
