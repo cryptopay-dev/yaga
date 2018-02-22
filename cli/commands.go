@@ -14,6 +14,10 @@ import (
 )
 
 func shutdownApplication(opts *Options) {
+	if opts.App == nil {
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := opts.App.Shutdown(ctx); err != nil {
@@ -41,45 +45,45 @@ func setDatabase(opts *Options) func(ctx *cli.Context) error {
 }
 
 func addCommands(cliApp *cli.App, opts Options) {
+	if opts.App != nil {
+		cliApp.Commands = cli.Commands{
+			{
+				Name:    "start",
+				Aliases: []string{"s"},
+				Usage:   "start main server",
+				After: func(context *cli.Context) error {
+					shutdownApplication(&opts)
+					return nil
+				},
+				Action: func(c *cli.Context) error {
+					// Create context
+					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					defer cancel()
 
-	cliApp.Commands = cli.Commands{
+					go func() {
+						// Stopping server
+						if err := opts.App.Shutdown(ctx); err != nil {
+							opts.Logger.Fatal("Error stopping server", zap.Error(err))
+						}
+					}()
 
-		{
-			Name:    "start",
-			Aliases: []string{"s"},
-			Usage:   "start main server",
-			After: func(context *cli.Context) error {
-				shutdownApplication(&opts)
-				return nil
-			},
-			Action: func(c *cli.Context) error {
-				// Create context
-				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-				defer cancel()
-
-				go func() {
-					// Stopping server
-					if err := opts.App.Shutdown(ctx); err != nil {
-						opts.Logger.Fatal("Error stopping server", zap.Error(err))
+					// Running main server
+					if err := opts.App.Run(RunOptions{
+						DB:           opts.DB,
+						Redis:        opts.Redis,
+						Logger:       opts.Logger,
+						Debug:        opts.Debug,
+						BuildTime:    opts.BuildTime,
+						BuildVersion: opts.BuildVersion,
+					}); err != nil {
+						opts.Logger.Fatal("Application failure", zap.Error(err))
 					}
-				}()
 
-				// Running main server
-				if err := opts.App.Run(RunOptions{
-					DB:           opts.DB,
-					Redis:        opts.Redis,
-					Logger:       opts.Logger,
-					Debug:        opts.Debug,
-					BuildTime:    opts.BuildTime,
-					BuildVersion: opts.BuildVersion,
-				}); err != nil {
-					opts.Logger.Fatal("Application failure", zap.Error(err))
-				}
-
-				opts.Logger.Info("Application stopped")
-				return nil
+					opts.Logger.Info("Application stopped")
+					return nil
+				},
 			},
-		},
+		}
 	}
 
 	if opts.DB != nil {

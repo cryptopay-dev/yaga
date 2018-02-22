@@ -56,7 +56,7 @@ func Run(opts ...Option) error {
 		}
 	}
 
-	if reflect.TypeOf(options.App).Kind() != reflect.Ptr {
+	if options.App != nil && reflect.TypeOf(options.App).Kind() != reflect.Ptr {
 		return ErrAppNotPointer
 	}
 
@@ -84,6 +84,9 @@ func Run(opts ...Option) error {
 	}
 
 	addCommands(cliApp, options)
+	if len(options.commands) > 0 {
+		cliApp.Commands = append(cliApp.Commands, options.commands...)
+	}
 	sort.Sort(cli.CommandsByName(cliApp.Commands))
 
 	return cliApp.Run(os.Args)
