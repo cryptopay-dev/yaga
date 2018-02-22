@@ -11,8 +11,8 @@ type Redis struct {
 	Address     string        `yaml:"address" validate:"required"`
 	Database    int           `yaml:"database"`
 	Password    string        `yaml:"password"`
-	PoolSize    int           `yaml:"pool_size" validate:"required,gte=0"`
-	PoolTimeout time.Duration `yaml:"pool_timeout" validate:"required,gte=0"`
+	PoolSize    int           `yaml:"pool_size" validate:"gte=0"`
+	PoolTimeout time.Duration `yaml:"pool_timeout" validate:"gte=0"`
 }
 
 // Connect to Redis and check connection:
