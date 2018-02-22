@@ -32,7 +32,5 @@ type (
 
 	Command = cli.Command
 
-	Commands = cli.Commands
-
 	Commandor func(*Options) Command
 )
