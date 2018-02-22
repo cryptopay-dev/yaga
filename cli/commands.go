@@ -82,9 +82,7 @@ func appCommands(opts *Options) {
 }
 
 func dbCommands(opts *Options) {
-	if opts.enableMigration {
-		opts.commands = append(opts.commands, dbCommandSlice(opts)...)
-	}
+	opts.commands = append(opts.commands, dbCommandSlice(opts)...)
 }
 
 func dbCommandSlice(opts *Options) []Command {

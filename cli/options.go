@@ -23,13 +23,12 @@ type Options struct {
 	BuildTime       string
 	BuildVersion    string
 
-	action          func(*Context) error
-	before          func(*Context) error
-	after           func(*Context) error
-	commands        []Command
-	flags           []Flag
-	enableMigration bool
-	migrationPath   string
+	action        func(*Context) error
+	before        func(*Context) error
+	after         func(*Context) error
+	commands      []Command
+	flags         []Flag
+	migrationPath string
 }
 
 // Option closure
@@ -109,7 +108,6 @@ func Config(src, conf interface{}) Option {
 func MigrationsPath(path string) Option {
 	return func(o *Options) {
 		o.migrationPath = path
-		o.enableMigration = true
 	}
 }
 
