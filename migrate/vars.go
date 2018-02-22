@@ -21,7 +21,7 @@ const (
 CREATE TABLE IF NOT EXISTS ? (
 	id serial,
 	version bigint UNIQUE,
-	name varchar(32) UNIQUE,
+	name varchar(255) UNIQUE,
 	created_at timestamptz,
 	PRIMARY KEY(id)
 )`

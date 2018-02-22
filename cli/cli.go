@@ -36,7 +36,7 @@ func Run(opts ...Option) error {
 
 	cliApp.Before = before(options)
 
-	if options.action != nil {
+  if options.action != nil {
 		cliApp.Action = options.action
 	}
 	if options.after != nil {
