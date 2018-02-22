@@ -26,9 +26,13 @@ type Instance interface {
 }
 
 type (
+	Author = cli.Author
+
 	Context = cli.Context
 
 	Command = cli.Command
+
+	Commands = cli.Commands
 
 	Commandor func(*Options) Command
 )

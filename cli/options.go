@@ -9,7 +9,7 @@ import (
 
 // Options for creating cli.App instance
 type Options struct {
-	App             Instance      `validate:"required"`
+	App             Instance
 	Logger          logger.Logger `validate:"required"`
 	ConfigSource    interface{}   `validate:"required"`
 	ConfigInterface interface{}   `validate:"required"`
