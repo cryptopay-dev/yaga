@@ -1,0 +1,15 @@
+bind: :8080
+# example database:
+#database:
+#  address: localhost:5432
+#  database: my-db
+#  user: postgres
+#  password: postgres
+
+# example redis:
+#redis:
+#  address: 127.0.0.1:6379
+#  database: 0
+#  password:
+#  pool_size: 10
+#  pool_timeout: 3

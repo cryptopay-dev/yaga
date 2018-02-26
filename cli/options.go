@@ -23,7 +23,11 @@ type Options struct {
 	BuildTime       string
 	BuildVersion    string
 
+	action        func(*Context) error
+	before        func(*Context) error
+	after         func(*Context) error
 	commands      []Command
+	flags         []Flag
 	migrationPath string
 }
 
@@ -31,11 +35,13 @@ type Options struct {
 type Option func(*Options)
 
 // newOptions converts slice of closures to Options-field
-func newOptions(opts ...Option) (opt Options) {
-	opt.migrationPath = "./migrations"
+func newOptions(opts ...Option) (opt *Options) {
+	opt = &Options{
+		migrationPath: "./migrations",
+	}
 
 	for _, o := range opts {
-		o(&opt)
+		o(opt)
 	}
 	return
 }
@@ -124,6 +130,32 @@ func Commands(cmds ...Commandor) Option {
 
 		for _, cmd := range cmds {
 			o.commands = append(o.commands, cmd(o))
+		}
+	}
+}
+
+// Flags closure to set additional commands for CLI
+func Flags(flags ...Flager) Option {
+	return func(o *Options) {
+		o.flags = make([]Flag, 0, len(flags))
+
+		for _, flag := range flags {
+			o.flags = append(o.flags, flag(o))
+		}
+	}
+}
+
+// Trigger closure to set triggers for CLI
+func Trigger(action, before, after Handler) Option {
+	return func(o *Options) {
+		if action != nil {
+			o.action = action(o)
+		}
+		if before != nil {
+			o.before = before(o)
+		}
+		if after != nil {
+			o.after = after(o)
 		}
 	}
 }

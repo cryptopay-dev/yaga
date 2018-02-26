@@ -28,6 +28,21 @@ type ExampleConfig struct {
 // Config path to config.example.yaml
 const Config = "./config.example.yaml"
 
+var echo string
+
+func beforeHandler() cli.Handler {
+	return func(opts *cli.Options) func(c *cli.Context) error {
+		return func(c *cli.Context) error {
+			val := c.String("echo")
+			if len(val) > 0 {
+				fmt.Println("print echo:", val)
+			}
+
+			return nil
+		}
+	}
+}
+
 func main() {
 	instance := App{}
 
@@ -35,11 +50,22 @@ func main() {
 		cli.App(&instance),
 		cli.Config(Config, &instance.Config),
 		cli.Debug(true, true), // Debug & Quiet
+		cli.Flags(func(*cli.Options) cli.Flag {
+			return cli.StringFlag{
+				Name:        "echo",
+				Usage:       "echo printing",
+				Destination: &echo,
+			}
+		}),
+		cli.Trigger(nil, beforeHandler(), nil),
 		cli.Commands(func(opts *cli.Options) (c cli.Command) {
 			c.Name = "test"
 			c.Aliases = []string{"t"}
 			c.Usage = "run test command"
 			c.Action = func(c *cli.Context) error {
+				if len(echo) > 0 {
+					fmt.Println("echo:", echo)
+				}
 				fmt.Println("test: Hello world!")
 				return nil
 			}

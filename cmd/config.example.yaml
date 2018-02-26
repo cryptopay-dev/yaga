@@ -1,0 +1,5 @@
+database:
+  address: localhost:5432
+  database: project
+  user: postgres
+  password: postgres
