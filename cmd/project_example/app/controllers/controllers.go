@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/cryptopay-dev/yaga/cmd/project_example/app/library/config"
-	"github.com/cryptopay-dev/yaga/cmd/project_example/vars"
+	"github.com/cryptopay-dev/yaga/cmd/project_example/misc"
 	"github.com/cryptopay-dev/yaga/doc"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/pprof"
@@ -45,7 +45,7 @@ func New(opts ...Option) *Controller {
 	ctrl.Engine.GET("/version", ctrl.Version)
 
 	// Doc
-	doc.AddDocumentation(ctrl.Engine, "", vars.Name, swaggerFile)
+	doc.AddDocumentation(ctrl.Engine, "", misc.Name, swaggerFile)
 
 	return &ctrl
 }

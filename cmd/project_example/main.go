@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/cryptopay-dev/yaga/cli"
 	"github.com/cryptopay-dev/yaga/cmd/project_example/app"
-	"github.com/cryptopay-dev/yaga/cmd/project_example/vars"
+	"github.com/cryptopay-dev/yaga/cmd/project_example/misc"
 )
 
 func main() {
@@ -11,13 +11,13 @@ func main() {
 
 	if err := cli.Run(
 		cli.App(instance),
-		cli.Config(vars.Config, &instance.Config),
-		cli.Debug(vars.Debug),
-		cli.Name(vars.Name),
-		cli.Usage(vars.Usage),
+		cli.Config(misc.Config, &instance.Config),
+		cli.Debug(misc.Debug),
+		cli.Name(misc.Name),
+		cli.Usage(misc.Usage),
 		cli.Users(app.Authors()),
-		cli.BuildTime(vars.BuildTime),
-		cli.BuildVersion(vars.Version),
+		cli.BuildTime(misc.BuildTime),
+		cli.BuildVersion(misc.Version),
 	); err != nil {
 		panic(err)
 	}
