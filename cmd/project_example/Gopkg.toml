@@ -2,10 +2,6 @@
   name = "github.com/cryptopay-dev/yaga"
   version = "1.8"
 
-[[constraint]]
-  name = "gopkg.in/go-playground/validator.v9"
-  version = "9.11.0"
-
 [prune]
   non-go = true
   go-tests = true

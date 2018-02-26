@@ -54,3 +54,7 @@
 [[constraint]]
   name = "github.com/robfig/cron"
   version = "v1"
+
+[[constraint]]
+  name = "gopkg.in/go-playground/validator.v9"
+  version = "9.11.0"
