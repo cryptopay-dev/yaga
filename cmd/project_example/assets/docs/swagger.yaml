@@ -1,0 +1,14 @@
+swagger: '2.0'
+info:
+  description: >-
+    Project API service version: 0.0.1
+  title: Project Name
+  version: 0.0.1
+basePath: /
+paths:
+  /api:
+    post:
+      tags:
+      responses:
+        '200':
+          description: OK
