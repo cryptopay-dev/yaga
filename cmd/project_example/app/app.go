@@ -26,12 +26,9 @@ type authors struct {
 // App instance
 type App struct {
 	cliApp.RunOptions
-	Config       config.Config
-	Debug        bool
-	LogicError   *errors.Logic
-	Engine       *web.Engine
-	BuildTime    string
-	BuildVersion string
+	Config     config.Config
+	LogicError *errors.Logic
+	Engine     *web.Engine
 }
 
 var appAuthors = []authors{
