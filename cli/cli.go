@@ -36,7 +36,7 @@ func Run(opts ...Option) error {
 
 	cliApp.Before = before(options)
 
-  if options.action != nil {
+	if options.action != nil {
 		cliApp.Action = options.action
 	}
 	if options.after != nil {
@@ -106,11 +106,7 @@ func before(options *Options) func(ctx *Context) error {
 		}
 
 		// Validate options:
-		if err = validator.New().Struct(options); err != nil {
-			return err
-		}
-
-		return nil
+		return validator.New().Struct(options)
 	}
 }
 
@@ -129,11 +125,9 @@ func setDatabase(opts *Options, dbname string) (err error) {
 		dbConf.Database = dbname
 	}
 
-	if opts.DB, err = dbConf.Connect(); err != nil {
-		return err
-	}
+	opts.DB, err = dbConf.Connect()
 
-	return nil
+	return err
 }
 
 func hasRedis(conf interface{}) (*config.Redis, bool) {

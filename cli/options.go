@@ -37,7 +37,6 @@ type Option func(*Options)
 // newOptions converts slice of closures to Options-field
 func newOptions(opts ...Option) (opt *Options) {
 	opt = &Options{
-		// TODO need?
 		migrationPath: "./migrations",
 	}
 
