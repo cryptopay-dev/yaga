@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/web"
 	"github.com/go-pg/pg"
 	"github.com/go-redis/redis"
 	"github.com/urfave/cli"
@@ -17,6 +18,9 @@ type Options struct {
 	Redis           *redis.Client
 	Users           []cli.Author
 	Debug           bool
+	Engine          *web.Engine
+	PprofEnable     bool
+	PprofBind       string
 	Quiet           bool
 	Usage           string
 	Name            string
@@ -120,6 +124,14 @@ func Debug(args ...bool) Option {
 		if len(args) > 1 {
 			o.Quiet = args[1]
 		}
+	}
+}
+
+func Pprof(engine *web.Engine, port string) Option {
+	return func(o *Options) {
+		o.Engine = engine
+		o.PprofEnable = true
+		o.PprofBind = port
 	}
 }
 

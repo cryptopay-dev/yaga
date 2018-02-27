@@ -2,10 +2,38 @@ package pprof
 
 import (
 	"net/http/pprof"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
+	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/web"
 )
+
+const defaultPprofPort = ":6060"
+
+// Wrap adds several routes from package `net/http/pprof` to *echo.Echo object.
+func Add(logger logger.Logger, e *web.Engine, port string) {
+	if e != nil {
+		Wrap(e)
+		return
+	}
+	pprofWeb := web.New(web.Options{})
+	Wrap(pprofWeb)
+
+	if len(port) == 0 {
+		port = defaultPprofPort
+	}
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGABRT)
+	go func() {
+		if err := web.StartServer(pprofWeb, port); err != nil {
+			logger.Error(err)
+			ch <- syscall.SIGABRT
+		}
+	}()
+}
 
 // Wrap adds several routes from package `net/http/pprof` to *echo.Echo object.
 func Wrap(e *web.Engine) {

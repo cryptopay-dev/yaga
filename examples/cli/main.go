@@ -57,6 +57,7 @@ func main() {
 				Destination: &echo,
 			}
 		}),
+		cli.Pprof(nil, ":6061"),
 		cli.Trigger(nil, beforeHandler(), nil),
 		cli.Commands(func(opts *cli.Options) (c cli.Command) {
 			c.Name = "test"
