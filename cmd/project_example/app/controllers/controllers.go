@@ -39,7 +39,7 @@ func New(opts ...Option) *Controller {
 	)
 
 	// Debug:
-	pprof.Wrap(ctrl.Engine)
+	pprof.Wrap(options.Logger, ctrl.Engine)
 
 	// Version:
 	ctrl.Engine.GET("/version", ctrl.Version)

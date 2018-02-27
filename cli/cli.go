@@ -9,7 +9,6 @@ import (
 	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/logger/zap"
-	"github.com/cryptopay-dev/yaga/pprof"
 	"github.com/urfave/cli"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -104,11 +103,6 @@ func before(options *Options) func(ctx *Context) error {
 					return err
 				}
 			}
-		}
-
-		// Pprof:
-		if options.PprofEnable {
-			pprof.Add(options.Logger, options.Engine, options.PprofBind)
 		}
 
 		// Validate options:

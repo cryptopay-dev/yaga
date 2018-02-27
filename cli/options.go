@@ -18,9 +18,6 @@ type Options struct {
 	Redis           *redis.Client
 	Users           []cli.Author
 	Debug           bool
-	Engine          *web.Engine
-	PprofEnable     bool
-	PprofBind       string
 	Quiet           bool
 	Usage           string
 	Name            string
