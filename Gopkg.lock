@@ -4,8 +4,8 @@
 [[projects]]
   name = "github.com/bsm/redis-lock"
   packages = ["."]
-  revision = "3296d395938a9d5e351f969884ddf6946d10bf2e"
-  version = "v7.0.0"
+  revision = "1dfc459b28b179b4ff73d82b7b58d8d2b10ec3be"
+  version = "v8.0.0"
 
 [[projects]]
   name = "github.com/certifi/gocertifi"
@@ -238,8 +238,8 @@
 [[projects]]
   name = "gopkg.in/go-playground/validator.v9"
   packages = ["."]
-  revision = "535f85221eb67ab842438877b22cac6274380cf2"
-  version = "v9.10.0"
+  revision = "150fe5b6a4ccc9cd6ffdbf5d184b67fbea75efcc"
+  version = "v9.11.0"
 
 [[projects]]
   branch = "v2"
@@ -250,6 +250,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "11fb312087861aac9bdd114182587abd0592ccd1bb91db30c08aa6194add5dc5"
+  inputs-digest = "30c88c4df5a666dd1ec69f561cc661c9902966a2d21ffc83e78e4e65b19abe95"
   solver-name = "gps-cdcl"
   solver-version = 1

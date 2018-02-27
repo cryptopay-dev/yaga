@@ -10,7 +10,7 @@ import (
 
 // Locker interface to abstract bsm/redis-lock
 type Locker interface {
-	Run(key string, timeout time.Duration, handler func() error)
+	Run(key string, timeout time.Duration, handler func())
 }
 
 // Lock struct to abstract bsm/redis-lock
@@ -34,7 +34,7 @@ func New(opts ...Option) Locker {
 }
 
 // Run runs a callback handler with a Redis lock.
-func (l *Lock) Run(key string, timeout time.Duration, handler func() error) {
+func (l *Lock) Run(key string, timeout time.Duration, handler func()) {
 	l.locker.LockTimeout = timeout
 	if err := lock.Run(l.redis, key, l.locker, handler); err != nil {
 		l.logger.Errorf("Locker error: %v", err.Error())

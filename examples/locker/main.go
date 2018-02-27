@@ -27,14 +27,12 @@ func main() {
 	for i := 0; i <= 10; i++ {
 		wg.Add(1)
 		go func(index int) {
-			lock.Run("my-key", time.Second*10, func() error {
+			lock.Run("my-key", time.Second*10, func() {
 				// Do some thing ... //
 
 				// For example
 				fmt.Println("Step :", index)
 				wg.Done()
-
-				return nil
 			})
 		}(i)
 	}
