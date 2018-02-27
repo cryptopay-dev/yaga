@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	pprofPortEnv    = "PPROF_PORT"
+	pprofPortEnv    = "PPROF_BIND"
 	tplInfoPprof    = "Pprof start on port: %s"
 	errNilWebEngine = "web.Engine is nil, can't add pprof"
 )
