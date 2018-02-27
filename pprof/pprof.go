@@ -3,9 +3,7 @@ package pprof
 import (
 	"net/http/pprof"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/web"
@@ -32,13 +30,10 @@ func Wrap(logger logger.Logger, e *web.Engine) {
 	pprofWeb := web.New(web.Options{})
 	WrapGroup("", pprofWeb.Group("/debug"))
 
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGABRT)
 	go func() {
 		logger.Infof(tplInfoPprof, port)
 		if err := web.StartServer(pprofWeb, port); err != nil {
 			logger.Error(err)
-			ch <- syscall.SIGABRT
 		}
 	}()
 }
