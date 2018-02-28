@@ -111,7 +111,7 @@ func before(options *Options) func(ctx *Context) error {
 }
 
 func setDatabase(opts *Options, dbname string) (err error) {
-	if opts.DB != nil || opts.ConfigInterface == nil {
+	if (opts.DB != nil || len(dbname) == 0) || opts.ConfigInterface == nil {
 		return nil
 	}
 
