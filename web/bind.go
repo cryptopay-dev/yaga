@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"net/http"
+	"net/http/httputil"
 	"reflect"
 	"strconv"
 	"strings"
@@ -18,6 +19,7 @@ type (
 
 // Bind implements the `Binder#Bind` function.
 func (b *DefaultBinder) Bind(i interface{}, c Context) (err error) {
+	defer dumpError(err, c.Logger(), *c.Request())
 	req := c.Request()
 	if req.ContentLength == 0 {
 		if req.Method == "GET" || req.Method == "DELETE" {
@@ -50,6 +52,17 @@ func (b *DefaultBinder) Bind(i interface{}, c Context) (err error) {
 		return ErrUnsupportedMediaType
 	}
 	return
+}
+
+func dumpError(err error, logger echo.Logger, req http.Request) {
+	if err != nil {
+		dump, err := httputil.DumpRequest(&req, true)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+		logger.Debug(string(dump))
+	}
 }
 
 func (b *DefaultBinder) bindData(ptr interface{}, data map[string][]string, tag string) error {
