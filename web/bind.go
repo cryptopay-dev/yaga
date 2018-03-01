@@ -19,8 +19,13 @@ type (
 
 // Bind implements the `Binder#Bind` function.
 func (b *DefaultBinder) Bind(i interface{}, c Context) (err error) {
-	defer dumpError(err, c.Logger(), *c.Request())
 	req := c.Request()
+	dump, _ := httputil.DumpRequest(req, true)
+
+	defer func(){
+		dumpError(err, c.Logger(), dump)
+	}()
+
 	if req.ContentLength == 0 {
 		if req.Method == "GET" || req.Method == "DELETE" {
 			if err = b.bindData(i, c.QueryParams(), "query"); err != nil {
@@ -54,14 +59,9 @@ func (b *DefaultBinder) Bind(i interface{}, c Context) (err error) {
 	return
 }
 
-func dumpError(err error, logger echo.Logger, req http.Request) {
+func dumpError(err error, logger echo.Logger, dump []byte) {
 	if err != nil {
-		dump, err := httputil.DumpRequest(&req, true)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-		logger.Debug(string(dump))
+		logger.Debug(string(dump), "test")
 	}
 }
 
