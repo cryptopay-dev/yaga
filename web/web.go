@@ -102,6 +102,8 @@ func New(opts Options) *Engine {
 		e.Validator = opts.Validator
 	}
 
+	e.Binder = new(DefaultBinder)
+
 	if opts.Error != nil {
 		e.HTTPErrorHandler = opts.Error.Capture
 		e.Use(opts.Error.Recover())
