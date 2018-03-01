@@ -1,7 +1,10 @@
 package errors
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"sync"
@@ -60,12 +63,20 @@ func New(opts Options) (*Logic, error) {
 
 // Capture web-errors and formatting answer
 func (c *Logic) Capture(err error, ctx echo.Context) {
-	code := http.StatusInternalServerError
+	code := http.StatusBadRequest
 	result := make([]string, 0)
 	trace := make([]string, 0)
 	message := err.Error()
 
 	switch custom := err.(type) {
+	case *json.UnmarshalTypeError:
+		message = fmt.Sprintf("JSON parse error: expected=%v, got=%v, offset=%v", custom.Type, custom.Value, custom.Offset)
+	case *json.SyntaxError:
+		message = fmt.Sprintf("JSON parse error: offset=%v, error=%v", custom.Offset, custom.Error())
+	case *xml.UnsupportedTypeError:
+		message = fmt.Sprintf("XML parse error: type=%v, error=%v", custom.Type, custom.Error())
+	case *xml.SyntaxError:
+		message = fmt.Sprintf("XML parse error: line=%v, error=%v", custom.Line, custom.Error())
 	case *echo.HTTPError:
 		code = custom.Code
 		message = custom.Message.(string)
