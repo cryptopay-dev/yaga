@@ -61,7 +61,7 @@ func (b *DefaultBinder) Bind(i interface{}, c Context) (err error) {
 
 func dumpError(err error, logger echo.Logger, dump []byte) {
 	if err != nil {
-		logger.Debug(string(dump), "test")
+		logger.Debug(string(dump))
 	}
 }
 
