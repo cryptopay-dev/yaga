@@ -22,7 +22,7 @@ func (b *DefaultBinder) Bind(i interface{}, c Context) (err error) {
 	req := c.Request()
 	dump, _ := httputil.DumpRequest(req, true)
 
-	defer func(){
+	defer func() {
 		dumpError(err, c.Logger(), dump)
 	}()
 
