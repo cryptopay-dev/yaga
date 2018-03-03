@@ -47,6 +47,11 @@ func (s *service) Del(key string) error {
 	return s.redis.Del(key).Err()
 }
 
+// Exists check key in redis-cache
+func (s *service) Exists(key string) (int64, error) {
+	return s.redis.Exists(key).Result()
+}
+
 // Keys fetch from redis-cache by pattern
 func (s *service) Keys(pattern string) ([]string, error) {
 	return s.redis.Keys(pattern).Result()
