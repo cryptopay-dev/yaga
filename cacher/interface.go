@@ -10,4 +10,5 @@ type Cacher interface {
 	TTL(key string) (time.Duration, error)
 	Expire(key string, duration time.Duration) error
 	Del(key string) error
+	Exists(key string) (int64, error)
 }
