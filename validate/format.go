@@ -11,30 +11,48 @@ import (
 
 type tagParser = func(tag reflect.StructTag) string
 
+var _ = AddTagParsers
+
+var options = []tagParser{
+	// Parse json-tag
+	func(tag reflect.StructTag) string {
+		val := tag.Get("json")
+		return strings.Split(val, ",")[0]
+	},
+
+	// Parse form-tag
+	func(tag reflect.StructTag) string {
+		val := tag.Get("form")
+		return strings.Split(val, ",")[0]
+	},
+
+	// Parse query-tag
+	func(tag reflect.StructTag) string {
+		val := tag.Get("query")
+		return strings.Split(val, ",")[0]
+	},
+
+	// Parse form-tag
+	func(tag reflect.StructTag) string {
+		val := tag.Get("xml")
+		return strings.Split(val, ",")[0]
+	},
+
+	// Parse yaml-tag
+	func(tag reflect.StructTag) string {
+		val := tag.Get("yaml")
+		return strings.Split(val, ",")[0]
+	},
+}
+
+// AddTagParsers used in fieldName
+func AddTagParsers(parser tagParser) {
+	options = append(options, parser)
+}
+
 // fieldName parse struct for field name in json / form / query tags:
 func fieldName(v reflect.Value, field string) string {
-	var (
-		tp      = v.Type()
-		options = []tagParser{
-			// Parse json-tag
-			func(tag reflect.StructTag) string {
-				val := tag.Get("json")
-				return strings.Split(val, ",")[0]
-			},
-
-			// Parse form-tag
-			func(tag reflect.StructTag) string {
-				val := tag.Get("form")
-				return strings.Split(val, ",")[0]
-			},
-
-			// Parse query-tag
-			func(tag reflect.StructTag) string {
-				val := tag.Get("query")
-				return strings.Split(val, ",")[0]
-			},
-		}
-	)
+	var tp = v.Type()
 
 	if f, ok := tp.FieldByName(field); ok {
 		for _, o := range options {
