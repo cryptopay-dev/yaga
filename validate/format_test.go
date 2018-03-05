@@ -10,9 +10,11 @@ import (
 
 func TestCheckErrors(t *testing.T) {
 	var test struct {
-		A int `validate:"gt=0"`
-		B int `validate:"required"`
+		A int `json:"a_custom" validate:"gt=0"`
+		B int `form:"b_custom" validate:"required"`
 		C int
+		D int `query:"someValue" validate:"required"`
+		E int `validate:"required"`
 	}
 
 	test.A = -1
@@ -21,9 +23,12 @@ func TestCheckErrors(t *testing.T) {
 
 	errValidate := v.Struct(test)
 
-	ok, err := CheckErrors(errValidate)
+	ok, err := CheckErrors(Options{
+		Struct: test,
+		Errors: errValidate,
+	})
 
 	assert.True(t, ok)
 	assert.IsType(t, &errors.LogicError{}, err)
-	assert.Equal(t, "bad `a`,`b`", err.Error())
+	assert.Equal(t, "bad `a_custom`, `b_custom`, `someValue`, `e`", err.Error())
 }
