@@ -16,6 +16,7 @@ jobs:
       - image: redis:alpine
     working_directory: /go/src/github.com/cryptopay-dev/yaga
     environment:
+      TEST_REDIS_ADDR: localhost:6379
       TEST_DATABASE_ADDR: localhost:5432
       TEST_DATABASE_USER: postgres
       TEST_DATABASE_DATABASE: sample
