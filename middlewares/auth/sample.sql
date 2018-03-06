@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE users (
@@ -9,5 +7,3 @@ CREATE TABLE users (
   created_at timestamp without time zone NOT NULL,
   updated_at timestamp without time zone NOT NULL
 );
-
-COMMIT;
