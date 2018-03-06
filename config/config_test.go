@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"reflect"
 	"strings"
@@ -25,7 +26,7 @@ d: -3
 `)
 
 func TestLoad(t *testing.T) {
-	t.Run("should work with empty", func(t *testing.T) {
+	t.Run("should fail on empty", func(t *testing.T) {
 		var (
 			err  error
 			buf  = bytes.NewBuffer(nil)
@@ -34,8 +35,8 @@ func TestLoad(t *testing.T) {
 
 		err = Load(buf, &conf)
 
-		if _, ok := err.(validator.ValidationErrors); !ok {
-			t.Fatal("")
+		if err != io.EOF {
+			t.Fatal(err)
 		}
 	})
 

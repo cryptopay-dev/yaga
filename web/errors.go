@@ -1,4 +1,4 @@
-package errors
+package web
 
 import (
 	"encoding/json"
@@ -10,21 +10,21 @@ import (
 	"sync"
 
 	"github.com/cryptopay-dev/yaga/logger"
-	"github.com/cryptopay-dev/yaga/middlewares/request"
 	"github.com/cryptopay-dev/yaga/tracer"
+	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/getsentry/raven-go"
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
 )
 
-// Options for creating new Logic
-type Options struct {
+// LogicOptions for creating new Logic
+type LogicOptions struct {
 	Debug  bool
 	Logger logger.Logger
 }
 
-// Response answer structure
-type Response struct {
+// LogicResponse answer structure
+type LogicResponse struct {
 	Error  string   `json:"error"`
 	Stack  []string `json:"stack"`
 	Result []string `json:"result"`
@@ -33,7 +33,7 @@ type Response struct {
 // Logic is an structure for capture and recover
 // web-errors and panics
 type Logic struct {
-	Opts Options
+	Opts LogicOptions
 }
 
 var (
@@ -43,8 +43,8 @@ var (
 	initRavenOnce = sync.Once{}
 )
 
-// New creates instance of Logic structure
-func New(opts Options) (*Logic, error) {
+// NewLogic creates instance of Logic structure
+func NewLogic(opts LogicOptions) (*Logic, error) {
 	if opts.Logger == nil {
 		return nil, ErrorEmptyLogger
 	}
@@ -80,7 +80,9 @@ func (c *Logic) Capture(err error, ctx echo.Context) {
 	case *echo.HTTPError:
 		code = custom.Code
 		message = custom.Message.(string)
-	case *LogicError:
+	case *Error:
+		code = custom.Code
+	case validate.Error:
 		code = custom.Code
 	default:
 		message = http.StatusText(code)
@@ -88,8 +90,8 @@ func (c *Logic) Capture(err error, ctx echo.Context) {
 
 	// Capture errors:
 	if code >= http.StatusInternalServerError {
-		raven.CaptureErrorAndWait(err, request.TraceTag(ctx))
-		c.Opts.Logger.Error("Request error", zap.Error(err), request.TraceTag(ctx))
+		raven.CaptureErrorAndWait(err, TraceTag(ctx))
+		c.Opts.Logger.Error("Request error", zap.Error(err), TraceTag(ctx))
 	}
 
 	// Capture stack trace:
@@ -97,11 +99,11 @@ func (c *Logic) Capture(err error, ctx echo.Context) {
 		trace = append(trace, tracer.Stack(err)...)
 	}
 
-	if errJSON := ctx.JSON(code, Response{
+	if errJSON := ctx.JSON(code, LogicResponse{
 		Error:  message,
 		Stack:  trace,
 		Result: result,
 	}); errJSON != nil {
-		c.Opts.Logger.Errorf("LogicError.Capture error: %v", err)
+		c.Opts.Logger.Errorf("Error.Capture error: %v", err)
 	}
 }

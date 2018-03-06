@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/cryptopay-dev/yaga/errors"
 	"github.com/cryptopay-dev/yaga/helpers/collection"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/web"
@@ -15,9 +14,13 @@ import (
 func main() {
 	log := nop.New()
 
-	e := web.New(web.Options{
+	e, err := web.New(web.Options{
 		Logger: log,
 	})
+
+	if err != nil {
+		log.Panic(err)
+	}
 
 	ctrl := Controller{
 		DB: pg.Connect(&pg.Options{
@@ -79,8 +82,7 @@ func (c *Controller) ListCollections(ctx web.Context) error {
 	var req FormFilter
 
 	if err := ctx.Bind(&req); err != nil {
-		ctx.Logger().Error(err.Error())
-		return errors.NewError(http.StatusBadRequest, err.Error())
+		return err
 	}
 
 	return collection.Response(ctx, collection.Options{
@@ -90,7 +92,7 @@ func (c *Controller) ListCollections(ctx web.Context) error {
 			models := make([]MyModel, 0)
 
 			if err := opts.Query.Select(&models); err != nil {
-				return nil, errors.NewError(http.StatusInternalServerError, err.Error())
+				return nil, web.NewError(http.StatusInternalServerError, err.Error())
 			}
 
 			items := make(collection.Items, 0, len(models))

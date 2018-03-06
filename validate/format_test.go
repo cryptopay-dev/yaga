@@ -3,7 +3,6 @@ package validate
 import (
 	"testing"
 
-	"github.com/cryptopay-dev/yaga/errors"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -29,6 +28,6 @@ func TestCheckErrors(t *testing.T) {
 	})
 
 	assert.True(t, ok)
-	assert.IsType(t, &errors.LogicError{}, err)
+	assert.IsType(t, Error{}, err)
 	assert.Equal(t, "bad `a_custom`, `b_custom`, `someValue`, `e`", err.Error())
 }

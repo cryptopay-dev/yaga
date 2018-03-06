@@ -26,7 +26,7 @@ type Controller struct {
 type JSON = map[string]interface{}
 
 // New - Create new REST-API
-func New(opts ...Option) *Controller {
+func New(opts ...Option) (*Controller, error) {
 	var (
 		options = newOptions(opts...)
 		ctrl    = Controller{
@@ -39,7 +39,9 @@ func New(opts ...Option) *Controller {
 	)
 
 	// Debug:
-	pprof.Wrap(options.Logger, ctrl.Engine)
+	if err := pprof.Wrap(options.Logger, ctrl.Engine); err != nil {
+		return nil, err
+	}
 
 	// Version:
 	ctrl.Engine.GET("/version", ctrl.Version)
@@ -47,7 +49,7 @@ func New(opts ...Option) *Controller {
 	// Doc
 	doc.AddDocumentation(ctrl.Engine, "", misc.Name, swaggerFile)
 
-	return &ctrl
+	return &ctrl, nil
 }
 
 // Version of application

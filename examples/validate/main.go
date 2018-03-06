@@ -20,10 +20,14 @@ func main() {
 	// ... if need connect custom validators
 	// (see - https://godoc.org/gopkg.in/go-playground/validator.v9#hdr-Custom_Validation_Functions)
 
-	e := web.New(web.Options{
+	e, err := web.New(web.Options{
 		// Creates echo-like validator
 		Validator: validate.New(v),
 	})
+
+	if err != nil {
+		panic(err)
+	}
 
 	// Our test action
 	e.POST("/", func(ctx web.Context) error {
