@@ -36,8 +36,8 @@ func TestService(t *testing.T) {
 		i    = 1
 		val  int
 		key  = fmt.Sprintf(keyTpl, 0)
-		ttl1 = time.Second * time.Duration(100)
-		ttl3 = time.Second * time.Duration(105)
+		ttl1 = 100 * time.Second
+		ttl3 = 105 * time.Second
 	)
 
 	t.Run("cacher.Set", func(t *testing.T) {
