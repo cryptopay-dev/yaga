@@ -1,4 +1,8 @@
 
+<a name="v1.9.11"></a>
+## [v1.9.11](https://github.com/cryptopay-dev/yaga/compare/v1.9.10...v1.9.11) (2018-03-07)
+
+
 <a name="v1.9.10"></a>
 ## [v1.9.10](https://github.com/cryptopay-dev/yaga/compare/v1.9.9...v1.9.10) (2018-03-05)
 
