@@ -3,12 +3,18 @@ package web
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/cryptopay-dev/go-metrics"
+	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 const (
@@ -19,6 +25,10 @@ const (
 	defaultBind = ":8080"
 )
 
+var (
+	defaultLogger = nop.New()
+)
+
 type recoverer interface {
 	Capture(error, echo.Context)
 	Recover() echo.MiddlewareFunc
@@ -26,8 +36,7 @@ type recoverer interface {
 
 // Options contains a parameters for new Echo instance.
 type Options struct {
-	Logger    echo.Logger
-	Error     recoverer
+	Logger    logger.Logger
 	Debug     bool
 	Validator echo.Validator
 }
@@ -74,12 +83,14 @@ type (
 )
 
 // New creates an instance of Echo.
-func New(opts Options) *Engine {
+func New(opts Options) (*Engine, error) {
 	e := echo.New()
 
-	if opts.Logger != nil {
-		e.Logger = opts.Logger
+	if opts.Logger == nil {
+		opts.Logger = defaultLogger
 	}
+
+	e.Logger = opts.Logger
 
 	// TODO may be move to function?
 	initMetricsOnce.Do(func() {
@@ -100,20 +111,44 @@ func New(opts Options) *Engine {
 
 	if opts.Validator != nil {
 		e.Validator = opts.Validator
+	} else {
+		e.Validator = validate.New(validator.New())
 	}
 
 	e.Binder = new(DefaultBinder)
 
-	if opts.Error != nil {
-		e.HTTPErrorHandler = opts.Error.Capture
-		e.Use(opts.Error.Recover())
+	logic, err := NewLogic(LogicOptions{
+		Debug:  opts.Debug,
+		Logger: opts.Logger,
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	return e
+	e.HTTPErrorHandler = logic.Capture
+	e.Use(logic.Recover())
+
+	return e, nil
 }
 
-// StartServer HTTP with custom address.
-func StartServer(e *Engine, bind string) error {
+// StartAsync HTTP with custom address and return stop channel.
+func StartAsync(e *Engine, bind string) <-chan os.Signal {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGABRT)
+
+	go func() {
+		if err := Start(e, bind); err != nil {
+			e.Logger.Error(err)
+			ch <- syscall.SIGABRT
+		}
+	}()
+
+	return ch
+}
+
+// Start HTTP with custom address.
+func Start(e *Engine, bind string) error {
 	// start server
 	if len(bind) == 0 {
 		bind = defaultBind

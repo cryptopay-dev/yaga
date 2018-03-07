@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/cryptopay-dev/yaga/errors"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -43,6 +42,12 @@ var options = []tagParser{
 		val := tag.Get("yaml")
 		return strings.Split(val, ",")[0]
 	},
+
+	// Parse param-tag
+	func(tag reflect.StructTag) string {
+		val := tag.Get("param")
+		return strings.Split(val, ",")[0]
+	},
 }
 
 // AddTagParsers used in fieldName
@@ -56,7 +61,7 @@ func fieldName(v reflect.Value, field string) string {
 
 	if f, ok := tp.FieldByName(field); ok {
 		for _, o := range options {
-			if val := o(f.Tag); len(val) > 0 {
+			if val := o(f.Tag); len(val) > 0 && val != "-" {
 				return val
 			}
 		}
@@ -70,6 +75,23 @@ type Options struct {
 	Struct    interface{}
 	Errors    error
 	Formatter func(fields []string) string
+}
+
+// Error for track validation
+type Error struct {
+	Code    int
+	Message string
+}
+
+func (e Error) Error() string {
+	return e.Message
+}
+
+func newError(code int, message string) Error {
+	return Error{
+		Code:    code,
+		Message: message,
+	}
 }
 
 // defaultFormatter generates "bad `field1`, `field2`"
@@ -103,7 +125,7 @@ func CheckErrors(opts Options) (ok bool, err error) {
 			fields = append(fields, fieldName(val, field.Field()))
 		}
 
-		err = errors.NewError(http.StatusBadRequest, opts.Formatter(fields))
+		err = newError(http.StatusBadRequest, opts.Formatter(fields))
 	}
 
 	return

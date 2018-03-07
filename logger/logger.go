@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
+// Logger interface
 type Logger interface {
 	Output() io.Writer
 	SetOutput(w io.Writer)

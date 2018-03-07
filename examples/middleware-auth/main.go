@@ -12,9 +12,13 @@ import (
 
 func main() {
 	log := nop.New()
-	e := web.New(web.Options{
+	e, err := web.New(web.Options{
 		Logger: log,
 	})
+
+	if err != nil {
+		log.Panic(err)
+	}
 
 	authenticate := auth.New(
 		auth.Logger(log),

@@ -7,7 +7,10 @@ import (
 )
 
 func main() {
-	e := web.New(web.Options{})
+	e, err := web.New(web.Options{})
+	if err != nil {
+		panic(err)
+	}
 	pprof.Wrap(zap.New(zap.Development), e)
 	e.Start(":8080")
 }
