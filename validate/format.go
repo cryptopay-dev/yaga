@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/cryptopay-dev/yaga/errors"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -78,6 +77,23 @@ type Options struct {
 	Formatter func(fields []string) string
 }
 
+// Error for track validation
+type Error struct {
+	Code    int
+	Message string
+}
+
+func (e Error) Error() string {
+	return e.Message
+}
+
+func newError(code int, message string) Error {
+	return Error{
+		Code:    code,
+		Message: message,
+	}
+}
+
 // defaultFormatter generates "bad `field1`, `field2`"
 func defaultFormatter(fields []string) string {
 	return "bad `" + strings.Join(fields, "`, `") + "`"
@@ -109,7 +125,7 @@ func CheckErrors(opts Options) (ok bool, err error) {
 			fields = append(fields, fieldName(val, field.Field()))
 		}
 
-		err = errors.NewError(http.StatusBadRequest, opts.Formatter(fields))
+		err = newError(http.StatusBadRequest, opts.Formatter(fields))
 	}
 
 	return

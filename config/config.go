@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"gopkg.in/go-playground/validator.v9"
@@ -32,16 +31,7 @@ func Load(src, config interface{}) error {
 }
 
 func readAndValidate(reader io.Reader, config interface{}) error {
-	var (
-		err error
-		buf []byte
-	)
-
-	if buf, err = ioutil.ReadAll(reader); err != nil {
-		return err
-	}
-
-	if err = yaml.Unmarshal(buf, config); err != nil {
+	if err := yaml.NewDecoder(reader).Decode(config); err != nil {
 		return err
 	}
 

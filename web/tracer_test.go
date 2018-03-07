@@ -1,4 +1,4 @@
-package request
+package web
 
 import (
 	"net/http"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/cryptopay-dev/yaga/helpers"
 	"github.com/cryptopay-dev/yaga/logger/nop"
-	"github.com/cryptopay-dev/yaga/web"
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,16 +14,18 @@ import (
 var fakeRayTraceID = helpers.NewUUID()
 
 func TestRayTraceID(t *testing.T) {
-	e := web.New(web.Options{})
+	e, err := New(Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	req := httptest.NewRequest(echo.POST, "/", nil)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 	var (
-		err    error
 		rec    = httptest.NewRecorder()
 		c      = e.NewContext(req, rec)
-		handle = RayTraceID(nop.New())(func(c web.Context) error {
+		handle = RayTraceID(nop.New())(func(c Context) error {
 			return c.NoContent(http.StatusOK)
 		})
 	)

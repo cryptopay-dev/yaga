@@ -77,7 +77,7 @@ func (f *Form) ApplySorter(opts *Options) error {
 	return nil
 }
 
-// ApplyPager
+// ApplyPager to the opts.Query
 func (f *Form) ApplyPager(opts *Options) (err error) {
 	if opts.Query == nil {
 		return nil

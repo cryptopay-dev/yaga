@@ -16,26 +16,32 @@ const (
 )
 
 // Wrap adds several routes from package `net/http/pprof` to *echo.Echo object.
-func Wrap(logger logger.Logger, e *web.Engine) {
+func Wrap(logger logger.Logger, e *web.Engine) error {
 	port := os.Getenv(pprofPortEnv)
 	if len(port) == 0 {
 		if e == nil {
 			logger.Error(errNilWebEngine)
-			return
+			return nil
 		}
 		WrapGroup("", e.Group("/debug"))
-		return
+		return nil
 	}
 
-	pprofWeb := web.New(web.Options{})
+	pprofWeb, err := web.New(web.Options{})
+	if err != nil {
+		return err
+	}
+
 	WrapGroup("", pprofWeb.Group("/debug"))
 
 	go func() {
 		logger.Infof(tplInfoPprof, port)
-		if err := web.StartServer(pprofWeb, port); err != nil {
+		if err := web.Start(pprofWeb, port); err != nil {
 			logger.Error(err)
 		}
 	}()
+
+	return nil
 }
 
 // Wrapper make sure we are backward compatible.

@@ -1,24 +1,27 @@
-package request
+package web
 
 import (
 	"github.com/cryptopay-dev/yaga/helpers"
 	"github.com/cryptopay-dev/yaga/logger"
-	"github.com/cryptopay-dev/yaga/web"
 )
 
 const (
+	// RayTraceHeader key for headers
 	RayTraceHeader = "X-Ray-Trace-ID"
 )
 
+// T is a tag
 type T = map[string]string
 
-func rayTrace(ctx web.Context) (key, val string) {
+// fetch ray-trace value from Request Header
+func rayTrace(ctx Context) (key, val string) {
 	key = RayTraceHeader
 	val = ctx.Request().Header.Get(key)
 	return
 }
 
-func TraceTag(ctx web.Context) T {
+// TraceTag from Context
+func TraceTag(ctx Context) T {
 	key, val := rayTrace(ctx)
 	if val == "" {
 		return nil
@@ -27,9 +30,10 @@ func TraceTag(ctx web.Context) T {
 	return T{key: val}
 }
 
-func RayTraceID(logger logger.Logger) web.MiddlewareFunc {
-	return func(next web.HandlerFunc) web.HandlerFunc {
-		return func(ctx web.Context) error {
+// RayTraceID middleware
+func RayTraceID(logger logger.Logger) MiddlewareFunc {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(ctx Context) error {
 			var (
 				req = ctx.Request()
 				res = ctx.Response()
