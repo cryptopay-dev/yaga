@@ -45,6 +45,8 @@ func copyGoFile(apprelpath, src, dst string) (err error) {
 		return
 	}
 
+	defer in.Close()
+
 	gout, err := ioutil.TempFile("", "go-")
 	if err != nil {
 		return
