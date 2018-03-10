@@ -20,7 +20,8 @@ func All() cli.Commands {
 	clr.Enable()
 
 	return []cli.Command{
-		newProject(), // Creates new project..
+		newProject(),      // Creates new project..
+		MigrateCreate(""), // Creates new migration
 	}
 }
 

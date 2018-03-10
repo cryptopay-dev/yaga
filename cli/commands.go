@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cryptopay-dev/yaga/cmd/yaga/commands"
 	"github.com/cryptopay-dev/yaga/migrate"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -87,11 +88,6 @@ func dbCommands(opts *Options) {
 
 func dbCommandSlice(opts *Options) []Command {
 	var (
-		setNameFlag = cli.StringFlag{
-			Name:  "name",
-			Value: "",
-			Usage: "migration name",
-		}
 		setStepsFlag = cli.IntFlag{
 			Name:  "steps",
 			Value: 1,
@@ -329,21 +325,7 @@ func dbCommandSlice(opts *Options) []Command {
 			},
 		},
 
-		{
-			Name:  "migrate:create",
-			Usage: "Create new migration",
-			Flags: []cli.Flag{
-				setNameFlag,
-			},
-			Before: setDatabaseConnector(opts),
-			After: func(context *cli.Context) error {
-				shutdownApplication(opts)
-				return nil
-			},
-			Action: func(c *cli.Context) error {
-				var name = c.String("name")
-				return migrate.CreateMigration(opts.migrationPath, name)
-			},
-		},
+		// Create migrations:
+		commands.MigrateCreate(opts.migrationPath),
 	}
 }
