@@ -2,6 +2,7 @@ package web
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -19,13 +20,14 @@ const (
 	userJSON       = `{"id":1,"name":"Jon Snow"}`
 	userXML        = `<user><id>1</id><name>Jon Snow</name></user>`
 	userForm       = `id=1&name=Jon Snow`
+	userParam      = `/1/Jon%20Snow`
 	invalidContent = "invalid content"
 )
 
 type (
 	user struct {
-		ID   int    `json:"id" xml:"id" form:"id" query:"id"`
-		Name string `json:"name" xml:"name" form:"name" query:"name"`
+		ID   int    `json:"id" xml:"id" form:"id" query:"id" param:"id"`
+		Name string `json:"name" xml:"name" form:"name" query:"name" param:"name"`
 	}
 
 	bindTestStruct struct {
@@ -127,6 +129,12 @@ var values = map[string][]string{
 	"ST":      {"bar"},
 }
 
+func testNew() (e *Engine) {
+	e = echo.New()
+	e.Binder = &DefaultBinder{}
+	return
+}
+
 func TestBindJSON(t *testing.T) {
 	testBindOkay(t, strings.NewReader(userJSON), echo.MIMEApplicationJSON)
 	testBindError(t, strings.NewReader(invalidContent), echo.MIMEApplicationJSON)
@@ -142,7 +150,7 @@ func TestBindXML(t *testing.T) {
 func TestBindForm(t *testing.T) {
 	testBindOkay(t, strings.NewReader(userForm), echo.MIMEApplicationForm)
 	testBindError(t, nil, echo.MIMEApplicationForm)
-	e := echo.New()
+	e := testNew()
 	req := httptest.NewRequest(echo.POST, "/", strings.NewReader(userForm))
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
@@ -152,7 +160,7 @@ func TestBindForm(t *testing.T) {
 }
 
 func TestBindQueryParams(t *testing.T) {
-	e := echo.New()
+	e := testNew()
 	req := httptest.NewRequest(echo.GET, "/?id=1&name=Jon+Snow", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
@@ -164,8 +172,26 @@ func TestBindQueryParams(t *testing.T) {
 	}
 }
 
+func TestBindParams(t *testing.T) {
+	e := testNew()
+	req := httptest.NewRequest(echo.GET, userParam, nil)
+	rec := httptest.NewRecorder()
+	testHandler := func(ctx Context) error {
+		u := new(user)
+		err := ctx.Bind(u)
+		if assert.NoError(t, err) {
+			assert.Equal(t, 1, u.ID)
+			assert.Equal(t, "Jon Snow", u.Name)
+		}
+
+		return nil
+	}
+	e.GET("/:id/:name", testHandler)
+	e.ServeHTTP(rec, req)
+}
+
 func TestBindUnmarshalParam(t *testing.T) {
-	e := echo.New()
+	e := testNew()
 	req := httptest.NewRequest(echo.GET, "/?ts=2016-12-06T19:09:05Z&sa=one,two,three&ta=2016-12-06T19:09:05Z&ta=2016-12-06T19:09:05Z&ST=baz", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
@@ -187,7 +213,7 @@ func TestBindUnmarshalParam(t *testing.T) {
 }
 
 func TestBindUnmarshalParamPtr(t *testing.T) {
-	e := echo.New()
+	e := testNew()
 	req := httptest.NewRequest(echo.GET, "/?ts=2016-12-06T19:09:05Z", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
@@ -309,7 +335,7 @@ func assertBindTestStruct(t *testing.T, ts *bindTestStruct) {
 }
 
 func testBindOkay(t *testing.T, r io.Reader, ctype string) {
-	e := echo.New()
+	e := testNew()
 	req := httptest.NewRequest(echo.POST, "/", r)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
@@ -323,7 +349,7 @@ func testBindOkay(t *testing.T, r io.Reader, ctype string) {
 }
 
 func testBindError(t *testing.T, r io.Reader, ctype string) {
-	e := echo.New()
+	e := testNew()
 	req := httptest.NewRequest(echo.POST, "/", r)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
@@ -332,8 +358,12 @@ func testBindError(t *testing.T, r io.Reader, ctype string) {
 	err := c.Bind(u)
 
 	switch {
-	case strings.HasPrefix(ctype, echo.MIMEApplicationJSON), strings.HasPrefix(ctype, echo.MIMEApplicationXML), strings.HasPrefix(ctype, echo.MIMETextXML),
-		strings.HasPrefix(ctype, echo.MIMEApplicationForm), strings.HasPrefix(ctype, echo.MIMEMultipartForm):
+	case strings.HasPrefix(ctype, echo.MIMEApplicationJSON):
+		assert.IsType(t, new(json.SyntaxError), err)
+	case strings.HasPrefix(ctype, echo.MIMEApplicationXML), strings.HasPrefix(ctype, echo.MIMETextXML):
+		assert.Error(t, err)
+		assert.EqualError(t, err, "EOF")
+	case strings.HasPrefix(ctype, echo.MIMEApplicationForm), strings.HasPrefix(ctype, echo.MIMEMultipartForm):
 		if assert.IsType(t, new(echo.HTTPError), err) {
 			assert.Equal(t, http.StatusBadRequest, err.(*echo.HTTPError).Code)
 		}
