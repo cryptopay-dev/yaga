@@ -6,20 +6,25 @@ import (
 	"strings"
 
 	"github.com/cryptopay-dev/yaga/migrate"
+	"github.com/labstack/gommon/log"
 	"github.com/urfave/cli"
 )
 
 const defaultMigrationsPath = "migrations"
 
+func defaultMigratePath() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		dir = "./"
+	}
+
+	return path.Join(dir, defaultMigrationsPath)
+}
+
 // MigrateCreate new migration files
 func MigrateCreate(defaultPath string) cli.Command {
 	if len(defaultPath) == 0 {
-		dir, err := os.Getwd()
-		if err != nil {
-			dir = "./"
-		}
-
-		defaultPath = path.Join(dir, defaultMigrationsPath)
+		defaultPath = defaultMigratePath()
 	}
 
 	flags := []cli.Flag{
@@ -34,31 +39,31 @@ func MigrateCreate(defaultPath string) cli.Command {
 		mpath := ctx.String("path")
 
 		if _, err := os.Stat(mpath); err != nil {
-			errorsf("migration path not found: %v", err)
+			log.Fatalf("migration path not found: %v", err)
 		}
 
 		name := strings.Join(ctx.Args(), "_")
 		name = strings.ToLower(name)
 
 		if len(name) == 0 {
-			errors("migration name not set")
+			log.Fatal("migration name not set")
 		}
 
 		if err := migrate.CreateMigration(mpath, name); err != nil {
-			errorsf("migration not created: %v", err)
+			log.Fatalf("migration not created: %v", err)
 		}
 
-		infof("migration created: %s", name)
+		log.Infof("migration created: %s", name)
 
 		return nil
 	}
 
 	return cli.Command{
 		Name:        "migrate:create",
-		ShortName:   "n",
+		ShortName:   "m:c",
 		Usage:       "new <migration-name>",
 		Description: "Create new migration",
-		Category:    "migrate",
+		Category:    "Migrate commands",
 		Flags:       flags,
 		Action:      action,
 	}

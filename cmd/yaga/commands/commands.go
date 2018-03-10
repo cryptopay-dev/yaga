@@ -1,10 +1,7 @@
 package commands
 
 import (
-	"fmt"
-	"io"
-	"os"
-
+	"github.com/cryptopay-dev/yaga/config"
 	"github.com/labstack/gommon/color"
 	"github.com/urfave/cli"
 	"go.uber.org/atomic"
@@ -15,46 +12,24 @@ var (
 	cnt = atomic.NewInt64(0)
 )
 
+var (
+	defaultDB   *config.Database
+	defaultPath = ""
+)
+
 // All returns all commands
 func All() cli.Commands {
 	clr.Enable()
 
+	log := NewLogger()
+
 	return []cli.Command{
-		newProject(),      // Creates new project..
-		MigrateCreate(""), // Creates new migration
+		newProject(log),                // Creates new project..
+		MigrateCreate(defaultPath),     // Creates new migration
+		MigrateUp(defaultDB, log),      // Migrations Up to latest
+		MigrateDown(defaultDB, log),    // Migrations Down to latest
+		MigrateVersion(defaultDB, log), // Get migrations version
+		MigrateList(defaultDB, log),    // List applied migrations
+		MigratePlan(defaultDB, log),    // Plan to apply migrations
 	}
-}
-
-type formatter = func(msg interface{}, styles ...string) string
-
-func output(out io.Writer, format formatter, msg string) {
-	clr.SetOutput(out)
-	cnt.Add(1)
-	clr.Printf("[%03d] %s\n", cnt.Load(), format(msg))
-}
-
-func print(msg ...interface{}) {
-	output(os.Stdout, clr.Blue, fmt.Sprint(msg...))
-}
-
-func printf(format string, msg ...interface{}) {
-	output(os.Stdout, clr.Blue, fmt.Sprintf(format, msg...))
-}
-
-func info(msg ...interface{}) {
-	output(os.Stdout, clr.Green, fmt.Sprint(msg...))
-}
-
-func infof(format string, msg ...interface{}) {
-	output(os.Stdout, clr.Green, fmt.Sprintf(format, msg...))
-}
-
-func errors(msg ...interface{}) {
-	output(os.Stderr, clr.Red, fmt.Sprint(msg...))
-	os.Exit(1)
-}
-
-func errorsf(format string, msg ...interface{}) {
-	output(os.Stderr, clr.Red, fmt.Sprintf(format, msg...))
-	os.Exit(1)
 }

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/urfave/cli"
 )
 
@@ -98,12 +99,12 @@ func copyFileContents(src, dst string) (err error) {
 	return
 }
 
-func newProject() cli.Command {
+func newProject(log logger.Logger) cli.Command {
 	action := func(ctx *cli.Context) error {
 		var args = ctx.Args()
 
 		if len(args) != 1 {
-			errors("project path not set")
+			log.Fatal("project path not set")
 		}
 
 		appath := args[0]
@@ -117,31 +118,31 @@ func newProject() cli.Command {
 		expath := path.Join(gopath, "src", examplePath)
 
 		if _, err := os.Stat(expath); err != nil {
-			errorsf("project template not found: %v", err)
+			log.Fatalf("project template not found: %v", err)
 		}
 
-		info("Try to check project path")
+		log.Info("Try to check project path")
 
 		if !strings.Contains(appath, gopath) {
-			errorsf("project path must be in GOPATH(%s)", gopath)
+			log.Fatalf("project path must be in GOPATH(%s)", gopath)
 		}
 
 		if file, err := os.Stat(appath); err != nil {
 			if err = os.Mkdir(appath, 0700); err != nil {
-				errorsf("Can't create project path: %v", err)
+				log.Fatalf("Can't create project path: %v", err)
 			}
 
-			info("Project path created")
+			log.Info("Project path created")
 		} else if !file.IsDir() {
-			errors("Project path not folder")
+			log.Fatal("Project path not folder")
 		} else {
-			info("Project path found")
+			log.Info("Project path found")
 		}
 
 		if ok, err := isEmptyDir(appath); err != nil {
-			errorsf("Can't check project path: %v", err)
+			log.Fatalf("Can't check project path: %v", err)
 		} else if !ok {
-			errors("Project path must be empty")
+			log.Fatal("Project path must be empty")
 		}
 
 		if err := filepath.Walk(expath, func(p string, i os.FileInfo, err error) error {
@@ -155,10 +156,10 @@ func newProject() cli.Command {
 			if i.IsDir() {
 				if _, err := os.Stat(pp); err != nil {
 					if err = os.Mkdir(pp, 0700); err != nil {
-						errorsf("Can't create path: %v", err)
+						log.Fatalf("Can't create path: %v", err)
 					}
 
-					infof("Create dir  %s", path.Join(apprelpath, relpath))
+					log.Infof("Create dir  %s", path.Join(apprelpath, relpath))
 				}
 
 				return nil
@@ -166,21 +167,21 @@ func newProject() cli.Command {
 
 			if path.Ext(p) != ".go" {
 				if err := copyFileContents(p, pp); err != nil {
-					errorsf("Can't copy file: %v", err)
+					log.Fatalf("Can't copy file: %v", err)
 				}
 			} else if err := copyGoFile(apprelpath, p, pp); err != nil {
-				errorsf("Can't copy file(%s): %v", i.Name(), err)
+				log.Fatalf("Can't copy file(%s): %v", i.Name(), err)
 			}
 
-			infof("Create file %s", path.Join(apprelpath, relpath))
+			log.Infof("Create file %s", path.Join(apprelpath, relpath))
 
 			return nil
 		}); err != nil {
-			errorsf("Can't copy example project: %v", err)
+			log.Fatalf("Can't copy example project: %v", err)
 		}
 
-		print("Project created")
-		printf(postInfo, appath)
+		log.Print("Project created")
+		log.Printf(postInfo, appath)
 
 		return nil
 	}

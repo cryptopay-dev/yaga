@@ -2,15 +2,16 @@ package cli
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"strings"
+	"reflect"
 	"time"
 
 	"github.com/cryptopay-dev/yaga/cmd/yaga/commands"
-	"github.com/cryptopay-dev/yaga/migrate"
+	"github.com/cryptopay-dev/yaga/config"
+	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/logger/zap"
+	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 func shutdownApplication(opts *Options) {
@@ -21,21 +22,7 @@ func shutdownApplication(opts *Options) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := opts.App.Shutdown(ctx); err != nil {
-		opts.Logger.Error(zap.Error(err))
-	}
-}
-
-func setDatabaseConnector(opts *Options) func(ctx *cli.Context) error {
-	return func(ctx *cli.Context) (err error) {
-		if err = setDatabase(opts, ctx.String("db")); err != nil {
-			return err
-		}
-
-		if opts.DB == nil {
-			return errors.New("database is undefined")
-		}
-
-		return nil
+		opts.Logger.Error(err)
 	}
 }
 
@@ -53,16 +40,58 @@ func appCommands(opts *Options) {
 			return nil
 		},
 		Action: func(c *cli.Context) error {
-			// Create context
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
+			var err error
 
-			go func() {
-				// Stopping server
-				if err := opts.App.Shutdown(ctx); err != nil {
-					opts.Logger.Fatal("Error stopping server", zap.Error(err))
+			if opts.Logger == nil {
+				if opts.Debug == false { // Debug = false
+					opts.Logger = zap.New(zap.Production)
+				} else if opts.Quiet { // Debug = true && Quiet = true
+					opts.Logger = nop.New()
+				} else { // Debug = true && Quiet = false
+					opts.Logger = zap.New(zap.Development)
 				}
-			}()
+			}
+
+			// If we have config-source/interface - loading config:
+			if opts.ConfigSource != nil &&
+				opts.ConfigInterface != nil {
+				if reflect.TypeOf(opts.ConfigInterface).Kind() != reflect.Ptr {
+					return ErrConfigNotPointer
+				}
+
+				if err = config.Load(
+					opts.ConfigSource,
+					opts.ConfigInterface,
+				); err != nil {
+					return err
+				}
+			}
+
+			if opts.App != nil && reflect.TypeOf(opts.App).Kind() != reflect.Ptr {
+				return ErrAppNotPointer
+			}
+
+			if err = setDatabase(opts, ""); err != nil {
+				return err
+			}
+
+			if opts.ConfigInterface != nil {
+				if redisConf, ok := hasRedis(opts.ConfigInterface); ok {
+					if opts.Redis, err = redisConf.Connect(); err != nil {
+						return err
+					}
+				}
+			}
+
+			// Validate options:
+			if err := validator.New().Struct(opts); err != nil {
+				if ok, errv := validate.CheckErrors(validate.Options{
+					Struct: opts,
+					Errors: err,
+				}); ok {
+					panic(errv)
+				}
+			}
 
 			// Running main server
 			if err := opts.App.Run(RunOptions{
@@ -73,7 +102,7 @@ func appCommands(opts *Options) {
 				BuildTime:    opts.BuildTime,
 				BuildVersion: opts.BuildVersion,
 			}); err != nil {
-				opts.Logger.Fatal("Application failure", zap.Error(err))
+				opts.Logger.Fatal("Application failure", err)
 			}
 
 			opts.Logger.Info("Application stopped")
@@ -87,243 +116,36 @@ func dbCommands(opts *Options) {
 }
 
 func dbCommandSlice(opts *Options) []Command {
-	var (
-		setStepsFlag = cli.IntFlag{
-			Name:  "steps",
-			Value: 1,
-			Usage: "steps count to down",
+	var db *config.Database
+
+	if opts.DB != nil {
+		conf := opts.DB.Options()
+		db = &config.Database{
+			Address:  conf.Addr,
+			Database: conf.Database,
+			User:     conf.User,
+			Password: conf.Password,
 		}
-		setDBFlag = cli.StringFlag{
-			Name:  "db",
-			Usage: "set database",
-		}
-		requiredDBFlag = cli.StringFlag{
-			Name:  "db",
-			Usage: "set database",
-		}
-	)
+	}
 
 	return cli.Commands{
-		{
-			Name:  "db:cleanup",
-			Usage: "Cleanup database",
-			Flags: []cli.Flag{
-				requiredDBFlag,
-			},
-			Before: setDatabaseConnector(opts),
-			After: func(context *cli.Context) error {
-				shutdownApplication(opts)
-				return nil
-			},
-			Action: func(c *cli.Context) error {
-				var (
-					names  []string
-					dbName = c.String("db")
-					db     = opts.DB
-				)
+		// Migrate cleanup
+		commands.MigrateCleanup(db, opts.Logger),
 
-				if len(dbName) == 0 {
-					return errors.New("you need to set database name `--db <name>`")
-				}
+		// Migrate up
+		commands.MigrateUp(db, opts.Logger),
 
-				var (
-					querySelect   = `SELECT table_name as name FROM information_schema.tables WHERE table_schema = 'public' AND table_name != 'migrations' ORDER BY table_name;`
-					queryTruncate = `TRUNCATE %s RESTART IDENTITY;`
-				)
+		// Migrate down
+		commands.MigrateDown(db, opts.Logger),
 
-				if _, err := db.Query(&names, querySelect); err != nil {
-					return err
-				}
+		// Migrate version:
+		commands.MigrateVersion(db, opts.Logger),
 
-				if _, err := db.Exec(fmt.Sprintf(
-					queryTruncate,
-					strings.Join(names, ", "),
-				)); err != nil {
-					return err
-				}
+		// List applied migrations:
+		commands.MigrateList(db, opts.Logger),
 
-				return nil
-			},
-		},
-
-		{
-			Name:  "migrate:up",
-			Usage: "Apply migrations, by default all to newest",
-			Flags: []cli.Flag{
-				setDBFlag,
-			},
-			Before: setDatabaseConnector(opts),
-			After: func(context *cli.Context) error {
-				shutdownApplication(opts)
-				return nil
-			},
-			Action: func(c *cli.Context) error {
-				var (
-					err      error
-					migrator migrate.Migrator
-				)
-
-				if migrator, err = migrate.New(migrate.Options{
-					DB:     opts.DB,
-					Path:   opts.migrationPath,
-					Logger: opts.Logger,
-				}); err != nil {
-					return err
-				}
-
-				if err := migrator.Up(0); err != nil {
-					opts.Logger.Fatal("Migration failure", zap.Error(err))
-				}
-
-				return nil
-			},
-		},
-
-		{
-			Name:  "migrate:down",
-			Usage: "Rollback migration by default one",
-			Flags: []cli.Flag{
-				setDBFlag,
-				setStepsFlag,
-			},
-			Before: setDatabaseConnector(opts),
-			After: func(context *cli.Context) error {
-				shutdownApplication(opts)
-				return nil
-			},
-			Action: func(c *cli.Context) error {
-				var (
-					err      error
-					steps    = 1
-					migrator migrate.Migrator
-				)
-
-				if c.Int("steps") > 0 {
-					steps = c.Int("steps")
-				}
-
-				if migrator, err = migrate.New(migrate.Options{
-					DB:     opts.DB,
-					Path:   opts.migrationPath,
-					Logger: opts.Logger,
-				}); err != nil {
-					return err
-				}
-
-				if err := migrator.Down(steps); err != nil {
-					opts.Logger.Fatal("Migration failure", zap.Error(err))
-				}
-
-				return nil
-			},
-		},
-
-		{
-			Name:   "migrate:version",
-			Usage:  "Current migration version",
-			Before: setDatabaseConnector(opts),
-			After: func(context *cli.Context) error {
-				shutdownApplication(opts)
-				return nil
-			},
-			Action: func(c *cli.Context) error {
-				var (
-					err      error
-					migrator migrate.Migrator
-					version  int64
-				)
-
-				if migrator, err = migrate.New(migrate.Options{
-					DB:     opts.DB,
-					Path:   opts.migrationPath,
-					Logger: opts.Logger,
-				}); err != nil {
-					return err
-				}
-
-				if version, err = migrator.Version(); err != nil {
-					opts.Logger.Fatal("Migration failure", zap.Error(err))
-				}
-
-				opts.Logger.Infof("Current version %d", version)
-
-				return nil
-			},
-		},
-
-		{
-			Name:   "migrate:list",
-			Usage:  "List current migrations state",
-			Before: setDatabaseConnector(opts),
-			After: func(context *cli.Context) error {
-				shutdownApplication(opts)
-				return nil
-			},
-			Action: func(c *cli.Context) error {
-				var (
-					err      error
-					migrator migrate.Migrator
-					items    migrate.Migrations
-				)
-
-				if migrator, err = migrate.New(migrate.Options{
-					DB:     opts.DB,
-					Path:   opts.migrationPath,
-					Logger: opts.Logger,
-				}); err != nil {
-					return err
-				}
-
-				if items, err = migrator.List(); err != nil {
-					opts.Logger.Fatal("Migration failure", zap.Error(err))
-				}
-
-				for _, item := range items {
-					opts.Logger.Infof(
-						"%s -> %s",
-						item.RealName(),
-						item.CreatedAt,
-					)
-				}
-
-				return nil
-			},
-		},
-
-		{
-			Name:   "migrate:plan",
-			Usage:  "Current migrations plan",
-			Before: setDatabaseConnector(opts),
-			After: func(context *cli.Context) error {
-				shutdownApplication(opts)
-				return nil
-			},
-			Action: func(c *cli.Context) error {
-				var (
-					err      error
-					migrator migrate.Migrator
-					items    migrate.Migrations
-				)
-
-				if migrator, err = migrate.New(migrate.Options{
-					DB:     opts.DB,
-					Path:   opts.migrationPath,
-					Logger: opts.Logger,
-				}); err != nil {
-					return err
-				}
-
-				if items, err = migrator.Plan(); err != nil {
-					opts.Logger.Fatal("Migration failure", zap.Error(err))
-				}
-
-				for _, item := range items {
-					opts.Logger.Infof("%s -> not applied", item.RealName())
-				}
-
-				return nil
-			},
-		},
+		// List plan to migrate:
+		commands.MigratePlan(db, opts.Logger),
 
 		// Create migrations:
 		commands.MigrateCreate(opts.migrationPath),

@@ -1,12 +1,45 @@
-package internal
+package commands
 
 import (
-	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/cryptopay-dev/yaga/config"
 	"github.com/go-pg/pg"
+	"github.com/urfave/cli"
 )
+
+const configPath = "./config.yml"
+
+type settings struct {
+	Database config.Database `yaml:"database" validate:"required,dive"`
+}
+
+// FetchDB from dsn or config
+func FetchDB(ctx *cli.Context, db *config.Database) (d *config.Database, err error) {
+	if db != nil {
+		return
+	}
+
+	dsn := ctx.String("dsn")
+	if len(dsn) != 0 {
+		d, err = ParseDSN(dsn)
+		if err == nil {
+			return
+		}
+	}
+
+	var conf settings
+
+	if err = config.Load(configPath, &conf); err == nil {
+		d = &conf.Database
+		return
+	}
+
+	err = fmt.Errorf("DB not set")
+
+	return
+}
 
 // ParseDSN string to Database options
 func ParseDSN(dsn string) (*config.Database, error) {
@@ -44,7 +77,7 @@ func ParseConfig(i interface{}) (*config.Database, error) {
 	}
 
 	if db == nil {
-		return nil, errors.New("config hasn't database param")
+		return nil, fmt.Errorf("config hasn't database param")
 	}
 
 	return db, nil
