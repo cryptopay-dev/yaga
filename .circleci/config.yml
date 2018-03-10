@@ -42,12 +42,8 @@ jobs:
               cp ./middlewares/auth/sample.sql 1512662685_sample.up.sql
               touch 1512662685_sample.down.sql
               echo "Run migration"
-              go run migrate/cmd/main.go \
-                  -a ${TEST_DATABASE_ADDR} \
-                  -u ${TEST_DATABASE_USER} \
-                  -p ${TEST_DATABASE_PASSWORD} \
-                  -d ${TEST_DATABASE_DATABASE} \
-                  -src ./ \
-                  -t up
+              go run cmd/yaga/main.go \
+                  migrate:up \
+                  --dsn "postgres://${TEST_DATABASE_USER}:${TEST_DATABASE_PASSWORD}@${TEST_DATABASE_ADDR}/${TEST_DATABASE_DATABASE}"
       # Add the Postgres binaries to the path.
       - run: go test -v ./...
