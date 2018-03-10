@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	"github.com/cryptopay-dev/yaga/config"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/go-pg/pg"
 )
 
@@ -35,7 +34,6 @@ func ParseConfig(i interface{}) (*config.Database, error) {
 	}
 
 	for i := 0; i < v.NumField(); i++ {
-		spew.Dump(v.Field(i))
 		if !v.Field(i).CanInterface() {
 			continue
 		}
