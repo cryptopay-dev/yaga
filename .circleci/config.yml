@@ -44,6 +44,7 @@ jobs:
               echo "Run migration"
               go run cmd/yaga/main.go \
                   migrate:up \
+                  --path "./" \
                   --dsn "postgres://${TEST_DATABASE_USER}:${TEST_DATABASE_PASSWORD}@${TEST_DATABASE_ADDR}/${TEST_DATABASE_DATABASE}"
       # Add the Postgres binaries to the path.
       - run: go test -v ./...
