@@ -29,6 +29,9 @@ func MigrateCreate(defaultPath string) cli.Command {
 
 	action := func(ctx *cli.Context) error {
 		mpath := ctx.String("path")
+		if len(mpath) == 0 {
+			mpath = defaultPath
+		}
 
 		if _, err := os.Stat(mpath); err != nil {
 			log.Fatalf("migration path not found: %v", err)
