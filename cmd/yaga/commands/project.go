@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -99,6 +100,36 @@ func copyFileContents(src, dst string) (err error) {
 	return
 }
 
+func chekcGopath(appath, gopath string) bool {
+	var (
+		err   error
+		paths = strings.Split(gopath, ":")
+	)
+
+	for _, p := range paths {
+		p, err = filepath.Abs(p)
+		if err != nil {
+			continue
+		}
+
+		if strings.HasPrefix(appath, p) {
+			return true
+		}
+	}
+	return false
+}
+
+func projectFormatter(log logger.Logger, appath string) {
+	var tools = []string{"goimports", "gofmt"}
+	for _, tool := range tools {
+		var message = "OK"
+		if err := exec.Command(tool, "-w", appath).Run(); err != nil {
+			message = err.Error()
+		}
+		log.Warnf("%s: %s", tool, message)
+	}
+}
+
 func newProject(log logger.Logger) cli.Command {
 	action := func(ctx *cli.Context) error {
 		var args = ctx.Args()
@@ -108,6 +139,11 @@ func newProject(log logger.Logger) cli.Command {
 		}
 
 		appath := args[0]
+		appath, err := filepath.Abs(appath)
+		if err != nil {
+			log.Fatalf("project path is wrong: %v", err)
+		}
+
 		gopath := os.Getenv("GOPATH")
 
 		apprelpath := strings.Replace(appath, path.Join(gopath, "src"), "", -1)
@@ -123,7 +159,7 @@ func newProject(log logger.Logger) cli.Command {
 
 		log.Info("Try to check project path")
 
-		if !strings.Contains(appath, gopath) {
+		if !chekcGopath(appath, gopath) {
 			log.Fatalf("project path must be in GOPATH(%s)", gopath)
 		}
 
@@ -155,7 +191,7 @@ func newProject(log logger.Logger) cli.Command {
 			pp := path.Join(appath, relpath)
 			if i.IsDir() {
 				if _, err := os.Stat(pp); err != nil {
-					if err = os.Mkdir(pp, 0700); err != nil {
+					if err = os.Mkdir(pp, i.Mode()); err != nil {
 						log.Fatalf("Can't create path: %v", err)
 					}
 
@@ -179,6 +215,8 @@ func newProject(log logger.Logger) cli.Command {
 		}); err != nil {
 			log.Fatalf("Can't copy example project: %v", err)
 		}
+
+		projectFormatter(log, appath)
 
 		log.Print("Project created")
 		log.Printf(postInfo, appath)

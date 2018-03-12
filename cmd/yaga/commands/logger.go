@@ -46,11 +46,11 @@ func (l *Logger) Level() log.Lvl { return log.Level() }
 func (l *Logger) SetLevel(v log.Lvl) { log.SetLevel(v) }
 
 // Print for logger
-func (l *Logger) Print(i ...interface{}) { output(l.output, clr.Blue, fmt.Sprint(i...)) }
+func (l *Logger) Print(i ...interface{}) { output(l.output, clr.Italic, fmt.Sprint(i...)) }
 
 // Printf for logger
 func (l *Logger) Printf(format string, args ...interface{}) {
-	output(l.output, clr.Blue, fmt.Sprintf(format, args...))
+	output(l.output, clr.Italic, fmt.Sprintf(format, args...))
 }
 
 // Printj for logger
