@@ -33,10 +33,11 @@ func NewUser(db orm.DB, username, password string) (*User, error) {
 	var (
 		err   error
 		count int
+		dt    = time.Now()
 		user  = &User{
 			Username:  username,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt: dt,
+			UpdatedAt: dt,
 		}
 	)
 
