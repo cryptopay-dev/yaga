@@ -100,10 +100,11 @@ func copyFileContents(src, dst string) (err error) {
 	return
 }
 
-func checkGopath(appath, gopath string) bool {
+func checkGopath(appath, gopath string) (bool, string) {
 	var (
-		err   error
-		paths = strings.Split(gopath, ":")
+		err     error
+		relpath string
+		paths   = strings.Split(gopath, ":")
 	)
 
 	for _, p := range paths {
@@ -113,10 +114,14 @@ func checkGopath(appath, gopath string) bool {
 		}
 
 		if strings.HasPrefix(appath, p) {
-			return true
+			relpath = strings.Replace(appath, p, "", -1)
+			relpath = strings.Replace(relpath, "/", "", 1)    // for unix
+			relpath = strings.Replace(relpath, "\\", "", 1)   // for windows
+			relpath = strings.Replace(relpath, "\\", "/", -1) // fix to normal-path
+			return true, relpath
 		}
 	}
-	return false
+	return false, relpath
 }
 
 func projectFormatter(log logger.Logger, appath string) {
@@ -130,9 +135,25 @@ func projectFormatter(log logger.Logger, appath string) {
 	}
 }
 
+func exampleProjectPath(gopath string) (string, error) {
+	var paths = strings.Split(gopath, ":")
+	for _, p := range paths {
+		p = path.Join(p, "src", examplePath)
+		if _, err := os.Stat(p); err == nil {
+			return p, nil
+		}
+	}
+	return "", fmt.Errorf("project template not found: %s", examplePath)
+}
+
 func newProject(log logger.Logger) cli.Command {
 	action := func(ctx *cli.Context) error {
-		var args = ctx.Args()
+		var (
+			ok         bool
+			args       = ctx.Args()
+			apprelpath string
+			expath     string
+		)
 
 		if len(args) != 1 {
 			log.Fatal("project path not set")
@@ -146,20 +167,13 @@ func newProject(log logger.Logger) cli.Command {
 
 		gopath := os.Getenv("GOPATH")
 
-		apprelpath := strings.Replace(appath, path.Join(gopath, "src"), "", -1)
-		apprelpath = strings.Replace(apprelpath, "/", "", 1)
-		apprelpath = strings.Replace(apprelpath, "\\", "", 1)
-		apprelpath = strings.Replace(apprelpath, "\\", "/", -1) // fix to normal-path
-
-		expath := path.Join(gopath, "src", examplePath)
-
-		if _, err := os.Stat(expath); err != nil {
+		if expath, err = exampleProjectPath(gopath); err != nil {
 			log.Fatalf("project template not found: %v", err)
 		}
 
 		log.Info("Try to check project path")
 
-		if !checkGopath(appath, gopath) {
+		if ok, apprelpath = checkGopath(appath, gopath); !ok {
 			log.Fatalf("project path must be in GOPATH(%s)", gopath)
 		}
 
