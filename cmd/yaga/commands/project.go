@@ -100,7 +100,7 @@ func copyFileContents(src, dst string) (err error) {
 	return
 }
 
-func chekcGopath(appath, gopath string) bool {
+func checkGopath(appath, gopath string) bool {
 	var (
 		err   error
 		paths = strings.Split(gopath, ":")
@@ -159,7 +159,7 @@ func newProject(log logger.Logger) cli.Command {
 
 		log.Info("Try to check project path")
 
-		if !chekcGopath(appath, gopath) {
+		if !checkGopath(appath, gopath) {
 			log.Fatalf("project path must be in GOPATH(%s)", gopath)
 		}
 
