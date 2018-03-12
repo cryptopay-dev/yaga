@@ -23,8 +23,7 @@ func FetchDB(ctx *cli.Context, db *config.Database) (d *config.Database, err err
 
 	dsn := ctx.String("dsn")
 	if len(dsn) != 0 {
-		d, err = ParseDSN(dsn)
-		if err == nil {
+		if d, err = ParseDSN(dsn); err == nil {
 			return
 		}
 	}
