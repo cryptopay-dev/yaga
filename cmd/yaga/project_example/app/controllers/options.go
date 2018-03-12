@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"github.com/cryptopay-dev/yaga/cmd/project_example/app/library/config"
+	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/library/config"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/web"
 )

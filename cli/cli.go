@@ -50,9 +50,11 @@ func Run(opts ...Option) error {
 
 	appCommands(options)
 	dbCommands(options)
+
 	if len(options.commands) > 0 {
 		cliApp.Commands = append(cliApp.Commands, options.commands...)
 	}
+
 	sort.Sort(cli.CommandsByName(cliApp.Commands))
 
 	return cliApp.Run(os.Args)

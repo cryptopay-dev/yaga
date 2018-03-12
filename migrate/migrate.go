@@ -4,6 +4,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cryptopay-dev/yaga/logger"
@@ -64,11 +65,7 @@ type Migrations []*Migration
 
 // New creates new Migrator
 func New(opts Options) (Migrator, error) {
-	var (
-		err   error
-		items Migrations
-		files []os.FileInfo
-	)
+	var err error
 
 	if opts.DB == nil {
 		return nil, ErrNoDB
@@ -78,22 +75,26 @@ func New(opts Options) (Migrator, error) {
 		return nil, ErrNoLogger
 	}
 
-	if files, err = findMigrations(opts.Path); err != nil {
-		return nil, err
-	}
-
-	if items, err = extractMigrations(opts.Logger, opts.Path, files); err != nil {
-		return nil, err
-	}
-
 	if err = createTables(opts.DB); err != nil {
 		return nil, err
 	}
 
-	return &migrate{
-		Options:    opts,
-		Migrations: items,
-	}, nil
+	return &migrate{Options: opts}, nil
+}
+
+func prepareMigrations(migrate *migrate) (err error) {
+	var (
+		files []os.FileInfo
+		opts  = migrate.Options
+	)
+
+	if files, err = findMigrations(opts.Path); err != nil {
+		return
+	}
+
+	migrate.Migrations, err = extractMigrations(opts.Logger, opts.Path, files)
+
+	return
 }
 
 // createTables for migrations
@@ -118,8 +119,14 @@ func (m *migrate) Up(steps int) error {
 	var (
 		err     error
 		version int64
-		count   = len(m.Migrations)
+		count   int
 	)
+
+	if err = prepareMigrations(m); err != nil {
+		return err
+	}
+
+	count = len(m.Migrations)
 
 	if steps < 0 {
 		return ErrPositiveSteps
@@ -166,8 +173,14 @@ func (m *migrate) Down(steps int) error {
 	var (
 		err     error
 		version int64
-		count   = len(m.Migrations)
+		count   int
 	)
+
+	if err = prepareMigrations(m); err != nil {
+		return err
+	}
+
+	count = len(m.Migrations)
 
 	if steps < 0 {
 		return ErrPositiveSteps
@@ -223,13 +236,12 @@ func (m *migrate) List() (Migrations, error) {
 	result := make(Migrations, 0, len(v))
 
 	for _, item := range v {
-		for _, mig := range m.Migrations {
-			if mig.Version == item.Version {
-				mig.CreatedAt = item.CreatedAt
-				result = append(result, mig)
-				break
-			}
-		}
+		name := strings.Replace(item.Name, strconv.FormatInt(item.Version, 10)+"_", "", -1)
+		result = append(result, &Migration{
+			Version:   item.Version,
+			Name:      name,
+			CreatedAt: item.CreatedAt,
+		})
 	}
 
 	return result, nil
@@ -237,8 +249,11 @@ func (m *migrate) List() (Migrations, error) {
 
 func (m *migrate) Plan() (Migrations, error) {
 	var v, err = m.Version()
-
 	if err != nil {
+		return nil, err
+	}
+
+	if err = prepareMigrations(m); err != nil {
 		return nil, err
 	}
 

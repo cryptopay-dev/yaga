@@ -6,6 +6,7 @@ import (
 
 	"github.com/cryptopay-dev/yaga/cli"
 	"github.com/cryptopay-dev/yaga/config"
+	"github.com/davecgh/go-spew/spew"
 )
 
 // App structure
@@ -14,7 +15,11 @@ type App struct {
 }
 
 // Run application
-func (App) Run(opts cli.RunOptions) error { return nil }
+func (App) Run(opts cli.RunOptions) error {
+	spew.Dump(opts.DB)
+	spew.Dump(opts.Redis)
+	return nil
+}
 
 // Shutdown application
 func (App) Shutdown(ctx context.Context) error { return nil }
@@ -26,7 +31,7 @@ type ExampleConfig struct {
 }
 
 // Config path to config.example.yaml
-const Config = "./config.example.yaml"
+const Config = "./examples/cli/config.example.yaml"
 
 var echo string
 

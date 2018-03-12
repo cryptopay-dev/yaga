@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/cryptopay-dev/yaga/cli"
-	"github.com/cryptopay-dev/yaga/cmd/project_example/app"
-	"github.com/cryptopay-dev/yaga/cmd/project_example/misc"
+	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app"
+	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/misc"
 )
 
 func main() {

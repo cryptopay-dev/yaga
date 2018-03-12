@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/cryptopay-dev/yaga/cli"
-	"github.com/cryptopay-dev/yaga/cmd/project_example/app/controllers"
-	"github.com/cryptopay-dev/yaga/cmd/project_example/app/library/config"
+	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/controllers"
+	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/library/config"
 	"github.com/cryptopay-dev/yaga/web"
 )
 

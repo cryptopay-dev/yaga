@@ -26,6 +26,16 @@ func (b *DefaultBinder) Bind(i interface{}, c Context) (err error) {
 		dumpError(err, c.Logger(), dump)
 	}()
 
+	var params = make(map[string][]string, len(c.ParamNames()))
+
+	for _, name := range c.ParamNames() {
+		params[name] = []string{c.Param(name)}
+	}
+
+	if err = b.bindData(i, params, "param"); err != nil {
+		return NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
 	if req.ContentLength == 0 {
 		if req.Method == "GET" || req.Method == "DELETE" {
 			if err = b.bindData(i, c.QueryParams(), "query"); err != nil {
