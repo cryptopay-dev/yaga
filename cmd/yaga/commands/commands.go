@@ -13,6 +13,9 @@ var (
 )
 
 var (
+	// DefaultLogger for commands:
+	DefaultLogger = NewLogger()
+
 	defaultDB   *config.Database
 	defaultPath = ""
 )
@@ -21,7 +24,7 @@ var (
 func All() cli.Commands {
 	clr.Enable()
 
-	log := NewLogger()
+	log := DefaultLogger
 
 	return []cli.Command{
 		newProject(log),                // Creates new project..
