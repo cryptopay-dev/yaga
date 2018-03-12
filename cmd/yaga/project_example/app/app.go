@@ -8,9 +8,8 @@ import (
 	"time"
 
 	"github.com/cryptopay-dev/yaga/cli"
-	cliApp "github.com/cryptopay-dev/yaga/cli"
-	"github.com/cryptopay-dev/yaga/cmd/project_example/app/controllers"
-	"github.com/cryptopay-dev/yaga/cmd/project_example/app/library/config"
+	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/controllers"
+	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/library/config"
 	"github.com/cryptopay-dev/yaga/errors"
 	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/cryptopay-dev/yaga/web"
@@ -25,7 +24,7 @@ type authors struct {
 
 // App instance
 type App struct {
-	cliApp.RunOptions
+	cli.RunOptions
 	Config     config.Config
 	LogicError *errors.Logic
 	Engine     *web.Engine
@@ -63,7 +62,7 @@ func (a *App) Shutdown(ctx context.Context) error {
 }
 
 // Run of application
-func (a *App) Run(opts cliApp.RunOptions) error {
+func (a *App) Run(opts cli.RunOptions) error {
 	var err error
 
 	a.RunOptions = opts
