@@ -9,6 +9,8 @@ import (
 	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/logger/zap"
+	"github.com/cryptopay-dev/yaga/validate"
+	wrap "github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -94,19 +96,28 @@ func before(options *Options) func(ctx *Context) error {
 		}
 
 		if err = setDatabase(options, ""); err != nil {
-			return err
+			return wrap.Wrap(err, "can't connect to database")
 		}
 
 		if options.ConfigInterface != nil {
 			if redisConf, ok := hasRedis(options.ConfigInterface); ok {
 				if options.Redis, err = redisConf.Connect(); err != nil {
-					return err
+					return wrap.Wrap(err, "can't connect to redis")
 				}
 			}
 		}
 
 		// Validate options:
-		return validator.New().Struct(options)
+		if err = validator.New().Struct(&options); err != nil {
+			if ok, errVal := validate.CheckErrors(validate.Options{
+				Struct: &options,
+				Errors: err,
+			}); ok {
+				return wrap.Wrap(errVal, "options not valid!")
+			}
+		}
+
+		return err
 	}
 }
 
