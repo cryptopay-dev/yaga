@@ -24,6 +24,44 @@ Yaga is a project that provides a set of useful utilities for creating a golang 
 - [**Web**](./web) allows you to run the web server using `github.com/labstack/echo` web framework with the necessary parameters
 - [**Workers**](./workers) are tools to run goroutine and do some work on scheduling with a safe stop of their work
 
+## Yaga commandline tool:
+
+### Install:
+
+```
+go get github.com/cryptopay-dev/yaga/cmd/...
+```
+
+### Usage:
+```
+$ go get github.com/cryptopay-dev/yaga/cmd/...
+$ yaga
+NAME:
+   yaga - Yaga command line tool
+
+USAGE:
+   yaga [global options] command [command options] [arguments...]
+
+VERSION:
+   v1.9.11 (2018-03-07 11:55:53 +0300)
+
+COMMANDS:
+     new, n   new <work-dir>
+     help, h  Shows a list of commands or help for one command
+   Migrate commands:
+     migrate:create, m:c    new <migration-name> --path=<to-migrations>
+     migrate:up, m:u        up --steps=<count> --dsn=<DSN> --db=<db-name> --path=<to-migrations>
+     migrate:down, m:d      down --steps=<count> --dsn=<DSN> --db=<db-name> --path=<to-migrations>
+     migrate:version, m:v   version --db=<db-name> --dsn=<DSN>
+     migrate:list, m:l      list --db=<db-name> --dsn=<DSN>
+     migrate:plan, m:p      plan --db=<db-name> --dsn=<DSN> --db=<db-name> --path=<to-migrations>
+     migrate:cleanup, m:cl  cleanup --db=<db-name> --dsn=<DSN>
+
+GLOBAL OPTIONS:
+   --help, -h     show help
+   --version, -v  print the version
+```
+
 ### Examples:
 
 Some examples of packages you can find in [examples](./examples) folder or in `example_test.go` inside a particular package

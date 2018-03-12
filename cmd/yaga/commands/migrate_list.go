@@ -24,7 +24,7 @@ func MigratePlan(db *config.Database, log logger.Logger) cli.Command {
 	return cli.Command{
 		Name:        "migrate:plan",
 		ShortName:   "m:p",
-		Usage:       "plan --db=<db-name> --dsn=<DSN>",
+		Usage:       "plan --db=<db-name> --dsn=<DSN> --db=<db-name> --path=<to-migrations>",
 		Description: "Migration plan migrations",
 		Category:    "Migrate commands",
 		Flags:       migrateFlags(),

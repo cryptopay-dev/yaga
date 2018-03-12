@@ -27,14 +27,6 @@ func MigrateCreate(defaultPath string) cli.Command {
 		defaultPath = defaultMigratePath()
 	}
 
-	flags := []cli.Flag{
-		cli.StringFlag{
-			Name:  "path",
-			Usage: "migration path",
-			Value: defaultPath,
-		},
-	}
-
 	action := func(ctx *cli.Context) error {
 		mpath := ctx.String("path")
 
@@ -61,10 +53,10 @@ func MigrateCreate(defaultPath string) cli.Command {
 	return cli.Command{
 		Name:        "migrate:create",
 		ShortName:   "m:c",
-		Usage:       "new <migration-name>",
+		Usage:       "new <migration-name> --path=<to-migrations>",
 		Description: "Create new migration",
 		Category:    "Migrate commands",
-		Flags:       flags,
+		Flags:       []cli.Flag{mpathFlag},
 		Action:      action,
 	}
 }

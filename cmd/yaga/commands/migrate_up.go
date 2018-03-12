@@ -11,7 +11,7 @@ func MigrateUp(db *config.Database, log logger.Logger) cli.Command {
 	return cli.Command{
 		Name:        "migrate:up",
 		ShortName:   "m:u",
-		Usage:       "up --steps=<count> --dsn=<DSN>",
+		Usage:       "up --steps=<count> --dsn=<DSN> --db=<db-name> --path=<to-migrations>",
 		Description: "Migration up to latest migration (by default)",
 		Category:    "Migrate commands",
 		Flags:       migrateFlags(),
