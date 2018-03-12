@@ -114,7 +114,7 @@ func checkGopath(appath, gopath string) (bool, string) {
 		}
 
 		if strings.HasPrefix(appath, p) {
-			relpath = strings.Replace(appath, p, "", -1)
+			relpath = strings.Replace(appath, path.Join(p, "src"), "", -1)
 			relpath = strings.Replace(relpath, "/", "", 1)    // for unix
 			relpath = strings.Replace(relpath, "\\", "", 1)   // for windows
 			relpath = strings.Replace(relpath, "\\", "/", -1) // fix to normal-path
