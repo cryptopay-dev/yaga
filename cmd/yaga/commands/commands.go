@@ -16,23 +16,22 @@ var (
 	// DefaultLogger for commands:
 	DefaultLogger = NewLogger()
 
-	defaultDB   *config.Database
-	defaultPath = ""
+	defaultDB   *config.Database // nil
+	defaultPath = ""             // empty
 )
 
 // All returns all commands
 func All() cli.Commands {
 	clr.Enable()
 
-	log := DefaultLogger
-
 	return []cli.Command{
-		newProject(log),                // Creates new project..
-		MigrateCreate(defaultPath),     // Creates new migration
-		MigrateUp(defaultDB, log),      // Migrations Up to latest
-		MigrateDown(defaultDB, log),    // Migrations Down to latest
-		MigrateVersion(defaultDB, log), // Get migrations version
-		MigrateList(defaultDB, log),    // List applied migrations
-		MigratePlan(defaultDB, log),    // Plan to apply migrations
+		newProject(DefaultLogger),                // Creates new project..
+		MigrateCreate(defaultPath),               // Creates new migration
+		MigrateUp(defaultDB, DefaultLogger),      // Migrations Up to latest
+		MigrateDown(defaultDB, DefaultLogger),    // Migrations Down to latest
+		MigrateVersion(defaultDB, DefaultLogger), // Get migrations version
+		MigrateList(defaultDB, DefaultLogger),    // List applied migrations
+		MigratePlan(defaultDB, DefaultLogger),    // Plan to apply migrations
+		MigrateCleanup(defaultDB, DefaultLogger), // Cleanup database...
 	}
 }
