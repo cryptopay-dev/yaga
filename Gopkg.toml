@@ -62,3 +62,7 @@
 [[constraint]]
   name = "github.com/bsm/redis-lock"
   version = "v8"
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"
+  version = "v2.1.1"
