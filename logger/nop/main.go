@@ -13,7 +13,7 @@ func New() logger.Logger {
 	return new(Logger)
 }
 
-func (l *Logger) Output() io.Writer                                       { return nil }
+func (l *Logger) Output() io.Writer                                       { return logger.Null }
 func (l *Logger) SetOutput(w io.Writer)                                   {}
 func (l *Logger) Prefix() string                                          { return "" }
 func (l *Logger) SetPrefix(p string)                                      {}
