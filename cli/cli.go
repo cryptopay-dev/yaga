@@ -110,9 +110,9 @@ func before(options *Options) func(ctx *Context) error {
 		}
 
 		// Validate options:
-		if err = validator.New().Struct(&options); err != nil {
+		if err = validator.New().Struct(options); err != nil {
 			if ok, errVal := validate.CheckErrors(validate.Options{
-				Struct: &options,
+				Struct: options,
 				Errors: err,
 			}); ok {
 				return wrap.Wrap(errVal, "options not valid!")
