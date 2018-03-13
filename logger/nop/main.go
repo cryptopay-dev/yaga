@@ -8,13 +8,15 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
+var devNull = new(bytes.Buffer)
+
 type Logger struct{}
 
 func New() logger.Logger {
 	return new(Logger)
 }
 
-func (l *Logger) Output() io.Writer                                       { return new(bytes.Buffer) }
+func (l *Logger) Output() io.Writer                                       { return devNull }
 func (l *Logger) SetOutput(w io.Writer)                                   {}
 func (l *Logger) Prefix() string                                          { return "" }
 func (l *Logger) SetPrefix(p string)                                      {}
