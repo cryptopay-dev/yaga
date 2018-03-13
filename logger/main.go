@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
+// Null is /dev/null emulation
 var Null = new(EmptyWriter)
 
 // EmptyWriter struct
