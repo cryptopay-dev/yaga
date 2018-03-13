@@ -7,8 +7,6 @@ import (
 
 	"github.com/cryptopay-dev/yaga/cmd/yaga/commands"
 	"github.com/cryptopay-dev/yaga/config"
-	"github.com/cryptopay-dev/yaga/logger/nop"
-	"github.com/cryptopay-dev/yaga/logger/zap"
 	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/urfave/cli"
 	"gopkg.in/go-playground/validator.v9"
@@ -41,16 +39,6 @@ func appCommands(opts *Options) {
 		},
 		Action: func(c *cli.Context) error {
 			var err error
-
-			if opts.Logger == nil {
-				if opts.Debug == false { // Debug = false
-					opts.Logger = zap.New(zap.Production)
-				} else if opts.Quiet { // Debug = true && Quiet = true
-					opts.Logger = nop.New()
-				} else { // Debug = true && Quiet = false
-					opts.Logger = zap.New(zap.Development)
-				}
-			}
 
 			// If we have config-source/interface - loading config:
 			if opts.ConfigSource != nil &&
