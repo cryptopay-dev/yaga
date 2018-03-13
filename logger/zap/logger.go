@@ -97,7 +97,7 @@ func (l *Logger) WithContext(fields map[string]interface{}) logger.Logger {
 }
 
 // Output not implemented
-func (l *Logger) Output() io.Writer { return nil }
+func (l *Logger) Output() io.Writer { return logger.Null }
 
 // SetOutput not implemented
 func (l *Logger) SetOutput(w io.Writer) {}

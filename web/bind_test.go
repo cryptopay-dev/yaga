@@ -149,7 +149,7 @@ func TestBindXML(t *testing.T) {
 
 func TestBindForm(t *testing.T) {
 	testBindOkay(t, strings.NewReader(userForm), echo.MIMEApplicationForm)
-	testBindError(t, nil, echo.MIMEApplicationForm)
+	testBindOkay(t, nil, echo.MIMEApplicationForm)
 	e := testNew()
 	req := httptest.NewRequest(echo.POST, "/", strings.NewReader(userForm))
 	rec := httptest.NewRecorder()
@@ -342,7 +342,7 @@ func testBindOkay(t *testing.T, r io.Reader, ctype string) {
 	req.Header.Set(echo.HeaderContentType, ctype)
 	u := new(user)
 	err := c.Bind(u)
-	if assert.NoError(t, err) {
+	if assert.NoError(t, err) && req.ContentLength != 0 {
 		assert.Equal(t, 1, u.ID)
 		assert.Equal(t, "Jon Snow", u.Name)
 	}

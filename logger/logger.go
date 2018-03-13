@@ -6,6 +6,15 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
+// Null is /dev/null emulation
+var Null = new(EmptyWriter)
+
+// EmptyWriter struct
+type EmptyWriter struct{}
+
+// Write /dev/null emulation
+func (EmptyWriter) Write(data []byte) (int, error) { return len(data), nil }
+
 // Logger interface
 type Logger interface {
 	Output() io.Writer

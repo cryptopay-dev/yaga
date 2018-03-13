@@ -1,6 +1,22 @@
 
+<a name="v1.10.4"></a>
+## [v1.10.4](https://github.com/cryptopay-dev/yaga/compare/v1.10.3...v1.10.4) (2018-03-13)
+
+
+<a name="v1.10.3"></a>
+## [v1.10.3](https://github.com/cryptopay-dev/yaga/compare/v1.10.2...v1.10.3) (2018-03-13)
+
+
+<a name="v1.10.2"></a>
+## [v1.10.2](https://github.com/cryptopay-dev/yaga/compare/v1.10.1...v1.10.2) (2018-03-13)
+
+
+<a name="v1.10.1"></a>
+## [v1.10.1](https://github.com/cryptopay-dev/yaga/compare/v1.10.0...v1.10.1) (2018-03-13)
+
+
 <a name="v1.10.0"></a>
-## [v1.10.0](https://github.com/cryptopay-dev/yaga/compare/v1.9.11...v1.10.0) (2018-03-13)
+## [v1.10.0](https://github.com/cryptopay-dev/yaga/compare/v1.9.11...v1.10.0) (2018-03-12)
 
 
 <a name="v1.9.11"></a>
