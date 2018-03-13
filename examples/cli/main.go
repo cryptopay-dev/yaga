@@ -55,12 +55,10 @@ func main() {
 		cli.App(&instance),
 		cli.Config(Config, &instance.Config),
 		cli.Debug(true, true), // Debug & Quiet
-		cli.Flags(func(*cli.Options) cli.Flag {
-			return cli.StringFlag{
-				Name:        "echo",
-				Usage:       "echo printing",
-				Destination: &echo,
-			}
+		cli.Flags(cli.StringFlag{
+			Name:        "echo",
+			Usage:       "echo printing",
+			Destination: &echo,
 		}),
 		cli.Trigger(nil, beforeHandler(), nil),
 		cli.Commands(func(opts *cli.Options) (c cli.Command) {
