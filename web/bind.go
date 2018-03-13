@@ -42,9 +42,10 @@ func (b *DefaultBinder) Bind(i interface{}, c Context) (err error) {
 				return NewHTTPError(http.StatusBadRequest, err.Error())
 			}
 			return
-		} else if req.Method != "POST" {
-			return NewHTTPError(http.StatusBadRequest, "Request body can't be empty")
+		} else if req.Method == "POST" {
+			return
 		}
+		return NewHTTPError(http.StatusBadRequest, "Request body can't be empty")
 	}
 	ctype := req.Header.Get(echo.HeaderContentType)
 	switch {
