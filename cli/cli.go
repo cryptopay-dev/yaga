@@ -9,10 +9,7 @@ import (
 	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/logger/zap"
-	"github.com/cryptopay-dev/yaga/validate"
-	wrap "github.com/pkg/errors"
 	"github.com/urfave/cli"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 var (
@@ -36,7 +33,15 @@ func Run(opts ...Option) error {
 	cliApp.Version = options.BuildVersion
 	cliApp.Authors = options.Users
 
-	cliApp.Before = before(options)
+	if options.Logger == nil {
+		if options.Debug == false { // Debug = false
+			options.Logger = zap.New(zap.Production)
+		} else if options.Quiet { // Debug = true && Quiet = true
+			options.Logger = nop.New()
+		} else { // Debug = true && Quiet = false
+			options.Logger = zap.New(zap.Development)
+		}
+	}
 
 	if options.action != nil {
 		cliApp.Action = options.action
@@ -58,69 +63,6 @@ func Run(opts ...Option) error {
 	sort.Sort(cli.CommandsByName(cliApp.Commands))
 
 	return cliApp.Run(os.Args)
-}
-
-func before(options *Options) func(ctx *Context) error {
-	return func(ctx *Context) (err error) {
-		if options.before != nil {
-			if err = options.before(ctx); err != nil {
-				return err
-			}
-		}
-
-		if options.Logger == nil {
-			if options.Debug == false { // Debug = false
-				options.Logger = zap.New(zap.Production)
-			} else if options.Quiet { // Debug = true && Quiet = true
-				options.Logger = nop.New()
-			} else { // Debug = true && Quiet = false
-				options.Logger = zap.New(zap.Development)
-			}
-		}
-
-		// If we have config-source/interface - loading config:
-		if options.ConfigSource != nil &&
-			options.ConfigInterface != nil {
-			if reflect.TypeOf(options.ConfigInterface).Kind() != reflect.Ptr {
-				return ErrConfigNotPointer
-			}
-
-			if err = config.Load(
-				options.ConfigSource,
-				options.ConfigInterface,
-			); err != nil {
-				return err
-			}
-		}
-
-		if options.App != nil && reflect.TypeOf(options.App).Kind() != reflect.Ptr {
-			return ErrAppNotPointer
-		}
-
-		if err = setDatabase(options, ""); err != nil {
-			return wrap.Wrap(err, "can't connect to database")
-		}
-
-		if options.ConfigInterface != nil {
-			if redisConf, ok := hasRedis(options.ConfigInterface); ok {
-				if options.Redis, err = redisConf.Connect(); err != nil {
-					return wrap.Wrap(err, "can't connect to redis")
-				}
-			}
-		}
-
-		// Validate options:
-		if err = validator.New().Struct(options); err != nil {
-			if ok, errVal := validate.CheckErrors(validate.Options{
-				Struct: options,
-				Errors: err,
-			}); ok {
-				return wrap.Wrap(errVal, "options not valid!")
-			}
-		}
-
-		return err
-	}
 }
 
 func setDatabase(opts *Options, dbname string) (err error) {

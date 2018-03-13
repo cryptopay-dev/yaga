@@ -124,24 +124,20 @@ func Debug(args ...bool) Option {
 }
 
 // Commands closure to set additional commands for CLI
-func Commands(cmds ...Commandor) Option {
+func Commands(commands ...Commandor) Option {
 	return func(o *Options) {
-		o.commands = make([]Command, 0, len(cmds))
+		o.commands = make([]Command, 0, len(commands))
 
-		for _, cmd := range cmds {
+		for _, cmd := range commands {
 			o.commands = append(o.commands, cmd(o))
 		}
 	}
 }
 
 // Flags closure to set additional commands for CLI
-func Flags(flags ...Flager) Option {
+func Flags(flags ...Flag) Option {
 	return func(o *Options) {
-		o.flags = make([]Flag, 0, len(flags))
-
-		for _, flag := range flags {
-			o.flags = append(o.flags, flag(o))
-		}
+		o.flags = flags
 	}
 }
 
