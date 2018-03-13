@@ -1,6 +1,7 @@
 package zap
 
 import (
+	"bytes"
 	"io"
 	"strconv"
 	"time"
@@ -88,7 +89,7 @@ func (l *Logger) WithContext(fields map[string]interface{}) logger.Logger {
 	}
 }
 
-func (l *Logger) Output() io.Writer                          { return nil }
+func (l *Logger) Output() io.Writer                          { return new(bytes.Buffer) }
 func (l *Logger) SetOutput(w io.Writer)                      {}
 func (l *Logger) Prefix() string                             { return "" }
 func (l *Logger) SetPrefix(p string)                         {}
