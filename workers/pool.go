@@ -8,7 +8,7 @@ import (
 
 type pool struct {
 	stop *atomic.Bool
-	wg   sync.WaitGroup
+	wg   WaitGroup
 
 	mu      sync.Mutex
 	workers map[string]*worker
@@ -18,6 +18,7 @@ func newPool() *pool {
 	return &pool{
 		workers: make(map[string]*worker),
 		stop:    atomic.NewBool(false),
+		wg:      NewWaitGroup(),
 	}
 }
 
