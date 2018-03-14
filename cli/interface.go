@@ -45,6 +45,4 @@ type (
 	Command = cli.Command
 	// Commandor closure for applying options to command
 	Commandor func(*Options) Command
-	// Handler the function to call when this command is invoked
-	Handler func(*Options) func(*Context) error
 )

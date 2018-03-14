@@ -23,9 +23,6 @@ type Options struct {
 	BuildTime       string
 	BuildVersion    string
 
-	action        func(*Context) error
-	before        func(*Context) error
-	after         func(*Context) error
 	commands      []Command
 	flags         []Flag
 	migrationPath string
@@ -138,20 +135,5 @@ func Commands(commands ...Commandor) Option {
 func Flags(flags ...Flag) Option {
 	return func(o *Options) {
 		o.flags = flags
-	}
-}
-
-// Trigger closure to set triggers for CLI
-func Trigger(action, before, after Handler) Option {
-	return func(o *Options) {
-		if action != nil {
-			o.action = action(o)
-		}
-		if before != nil {
-			o.before = before(o)
-		}
-		if after != nil {
-			o.after = after(o)
-		}
 	}
 }

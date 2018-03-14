@@ -43,12 +43,6 @@ func Run(opts ...Option) error {
 		}
 	}
 
-	if options.action != nil {
-		cliApp.Action = options.action
-	}
-	if options.after != nil {
-		cliApp.After = options.after
-	}
 	if len(options.flags) > 0 {
 		cliApp.Flags = append(cliApp.Flags, options.flags...)
 	}
