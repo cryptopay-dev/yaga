@@ -222,16 +222,16 @@ func TestWorkersWait(t *testing.T) {
 
 		mu.Lock()
 		for i := 0; i < 5; i++ {
-			lockedFlag := false
+			lockedFlag := atomic.NewBool(false)
 			if i == 4 {
 				// we will block only one worker
-				lockedFlag = true
+				lockedFlag.Store(true)
 			}
 			n := int32(i)
 			_, err = creater(getUniqueWorkerName(), minTickForTest, func() {
 				info.CAS(n, n+1)
-				if lockedFlag {
-					lockedFlag = false
+				if lockedFlag.Load() {
+					lockedFlag.Store(false)
 					mu.Lock()
 				}
 			})
