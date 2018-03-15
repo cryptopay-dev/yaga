@@ -62,3 +62,7 @@
 [[constraint]]
   name = "github.com/bsm/redis-lock"
   version = "v8"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/mattbaird/gochimp"
