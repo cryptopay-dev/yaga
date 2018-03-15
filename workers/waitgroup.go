@@ -1,9 +1,7 @@
 package workers
 
 import (
-	"runtime"
-
-	"go.uber.org/atomic"
+	"sync"
 )
 
 type WaitGroup interface {
@@ -13,27 +11,39 @@ type WaitGroup interface {
 }
 
 type waitGroup struct {
-	count *atomic.Int64
+	count int64
+	mu    *sync.RWMutex
+	cond  *sync.Cond
 }
 
-func (wg waitGroup) Add(delta int) {
-	if wg.count.Add(int64(delta)) < 0 {
+func (wg *waitGroup) Add(delta int) {
+	wg.mu.Lock()
+	wg.count += int64(delta)
+	if wg.count == 0 {
+		wg.cond.Broadcast()
+	} else if wg.count < 0 {
+		wg.mu.Unlock()
 		panic("waitgroup: negative WaitGroup counter")
 	}
+	wg.mu.Unlock()
 }
 
-func (wg waitGroup) Done() {
+func (wg *waitGroup) Done() {
 	wg.Add(-1)
 }
 
-func (wg waitGroup) Wait() {
-	for wg.count.Load() != 0 {
-		runtime.Gosched()
+func (wg *waitGroup) Wait() {
+	wg.cond.L.Lock()
+	if wg.count > 0 {
+		wg.cond.Wait()
 	}
+	wg.cond.L.Unlock()
 }
 
 func NewWaitGroup() WaitGroup {
+	mu := new(sync.RWMutex)
 	return &waitGroup{
-		count: atomic.NewInt64(0),
+		cond: sync.NewCond(mu.RLocker()),
+		mu:   mu,
 	}
 }
