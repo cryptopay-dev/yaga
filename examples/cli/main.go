@@ -35,19 +35,6 @@ const Config = "./examples/cli/config.example.yaml"
 
 var echo string
 
-func beforeHandler() cli.Handler {
-	return func(opts *cli.Options) func(c *cli.Context) error {
-		return func(c *cli.Context) error {
-			val := c.String("echo")
-			if len(val) > 0 {
-				fmt.Println("print echo:", val)
-			}
-
-			return nil
-		}
-	}
-}
-
 func main() {
 	instance := App{}
 
@@ -60,7 +47,6 @@ func main() {
 			Usage:       "echo printing",
 			Destination: &echo,
 		}),
-		cli.Trigger(nil, beforeHandler(), nil),
 		cli.Commands(func(opts *cli.Options) (c cli.Command) {
 			c.Name = "test"
 			c.Aliases = []string{"t"}

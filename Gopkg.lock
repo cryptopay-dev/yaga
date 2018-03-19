@@ -113,6 +113,12 @@
   version = "0.2.4"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/mattbaird/gochimp"
+  packages = ["."]
+  revision = "a267553896d1cbd0ccfc259ad5442e62bdc3d30d"
+
+[[projects]]
   name = "github.com/mattn/go-colorable"
   packages = ["."]
   revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"

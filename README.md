@@ -15,6 +15,7 @@ Yaga is a project that provides a set of useful utilities for creating a golang 
 - [**Errors**](./errors) is an error wrapper package that allows you to capture errors, convert them to a readable form and catch internal errors or panics, with conversion to a pretty logical error
 - [**Locker**](./locker) is a wrapper over `github.com/bsm/redis-lock` for locks in Redis
 - [**Logger**](./logger) provides the interface for its implementation for [zap](github.com/uber-go/zap) logger and for nop logger (dummy)
+- [**Mail**](./mail) service for send emails
 - [**Middlewares**](./middlewares) provides intermediate layers for authorizing and logging requests in web application
 - [**Migrator**](./migrate) this package allows you to run migrations on your PostgreSQL database
 - [**Pprof**](./pprof) provides a utility for profiling with web interaction
