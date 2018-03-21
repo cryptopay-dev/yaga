@@ -49,16 +49,16 @@ func WrapGroup(prefix string, g *web.Group) {
 		Handler web.HandlerFunc
 	}{
 		{"GET", "/pprof/", IndexHandler()},
-		{"GET", "/pprof/heap", HeapHandler()},
-		{"GET", "/pprof/goroutine", GoroutineHandler()},
-		{"GET", "/pprof/block", BlockHandler()},
-		{"GET", "/pprof/threadcreate", ThreadCreateHandler()},
-		{"GET", "/pprof/cmdline", CmdlineHandler()},
-		{"GET", "/pprof/profile", ProfileHandler()},
-		{"GET", "/pprof/symbol", SymbolHandler()},
-		{"POST", "/pprof/symbol", SymbolHandler()},
-		{"GET", "/pprof/trace", TraceHandler()},
-		{"GET", "/pprof/mutex", MutexHandler()},
+		{"GET", "/pprof/heap/", HeapHandler()},
+		{"GET", "/pprof/goroutine/", GoroutineHandler()},
+		{"GET", "/pprof/block/", BlockHandler()},
+		{"GET", "/pprof/threadcreate/", ThreadCreateHandler()},
+		{"GET", "/pprof/cmdline/", CmdlineHandler()},
+		{"GET", "/pprof/profile/", ProfileHandler()},
+		{"GET", "/pprof/symbol/", SymbolHandler()},
+		{"POST", "/pprof/symbol/", SymbolHandler()},
+		{"GET", "/pprof/trace/", TraceHandler()},
+		{"GET", "/pprof/mutex/", MutexHandler()},
 	}
 
 	for _, r := range routers {
