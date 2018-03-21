@@ -17,17 +17,19 @@ import (
 )
 
 const (
-	userJSON       = `{"id":1,"name":"Jon Snow"}`
-	userXML        = `<user><id>1</id><name>Jon Snow</name></user>`
-	userForm       = `id=1&name=Jon Snow`
-	userParam      = `/1/Jon%20Snow`
+	userJSON       = `{"id":1,"name":"Jon Snow","salary":15000,"position":"CTO"}`
+	userXML        = `<user><id>1</id><name>Jon Snow</name><salary>15000</salary><position>CTO</position></user>`
+	userForm       = `id=1&name=Jon Snow&salary=15000&position=CTO`
+	userParam      = `/1/Jon%20Snow/15000/CTO`
 	invalidContent = "invalid content"
 )
 
 type (
 	user struct {
-		ID   int    `json:"id" xml:"id" form:"id" query:"id" param:"id"`
-		Name string `json:"name" xml:"name" form:"name" query:"name" param:"name"`
+		ID       int    `json:"id" xml:"id" form:"id" query:"id" param:"id"`
+		Name     string `json:"name" xml:"name" form:"name" query:"name" param:"name"`
+		Salary   int    `json:"salary" xml:"salary" form:"salary" query:"salary" param:"salary" default:"10000"`
+		Position string `json:"position" xml:"position" form:"position" query:"position" param:"position" default:"Manager"`
 	}
 
 	bindTestStruct struct {
@@ -135,40 +137,211 @@ func testNew() (e *Engine) {
 	return
 }
 
-func TestBindJSON(t *testing.T) {
-	testBindOkay(t, strings.NewReader(userJSON), echo.MIMEApplicationJSON)
-	testBindError(t, strings.NewReader(invalidContent), echo.MIMEApplicationJSON)
+type valueForTest struct {
+	httpMethod    string
+	target        string
+	body          string
+	httpHeader    string
+	requestParams interface{}
+	result        interface{}
+	isError       bool
 }
 
-func TestBindXML(t *testing.T) {
-	testBindOkay(t, strings.NewReader(userXML), echo.MIMEApplicationXML)
-	testBindError(t, strings.NewReader(invalidContent), echo.MIMEApplicationXML)
-	testBindOkay(t, strings.NewReader(userXML), echo.MIMETextXML)
-	testBindError(t, strings.NewReader(invalidContent), echo.MIMETextXML)
+var valuesForTest = []valueForTest{
+	{ // TestBindQueryParams
+		httpMethod: echo.GET,
+		target:     "/?id=1&name=Jon+Snow&salary=15000&position=CTO",
+		result: &user{
+			ID:       1,
+			Name:     "Jon Snow",
+			Salary:   15000,
+			Position: "CTO",
+		},
+	},
+	{ // TestBindQueryParams with default
+		httpMethod: echo.GET,
+		target:     "/?id=1&name=Jon+Snow",
+		result: &user{
+			ID:       1,
+			Name:     "Jon Snow",
+			Salary:   10000,
+			Position: "Manager",
+		},
+	},
+	{ // TestBindForm
+		httpMethod: echo.POST,
+		target:     "/",
+		body:       userForm,
+		httpHeader: echo.MIMEApplicationForm,
+		result: &user{
+			ID:       1,
+			Name:     "Jon Snow",
+			Salary:   15000,
+			Position: "CTO",
+		},
+	},
+	{ // TestBindForm with default
+		httpMethod: echo.POST,
+		target:     "/",
+		body:       "id=1&name=Jon Snow",
+		httpHeader: echo.MIMEApplicationForm,
+		result: &user{
+			ID:       1,
+			Name:     "Jon Snow",
+			Salary:   10000,
+			Position: "Manager",
+		},
+	},
+	{ // TestBindForm error
+		httpMethod:    echo.POST,
+		target:        "/",
+		body:          userForm,
+		httpHeader:    echo.MIMEApplicationForm,
+		requestParams: &[]struct{ Field string }{},
+		isError:       true,
+	},
+	{ // TestBindJSON
+		httpMethod: echo.POST,
+		target:     "/",
+		body:       userJSON,
+		httpHeader: echo.MIMEApplicationJSON,
+		result: &user{
+			ID:       1,
+			Name:     "Jon Snow",
+			Salary:   15000,
+			Position: "CTO",
+		},
+	},
+	{ // TestBindJSON with default
+		httpMethod: echo.POST,
+		target:     "/",
+		body:       `{"id":1,"name":"Jon Snow"}`,
+		httpHeader: echo.MIMEApplicationJSON,
+		result: &user{
+			ID:       1,
+			Name:     "Jon Snow",
+			Salary:   10000,
+			Position: "Manager",
+		},
+	},
+	{ // TestBindJSON error
+		httpMethod: echo.POST,
+		target:     "/",
+		body:       invalidContent,
+		httpHeader: echo.MIMEApplicationJSON,
+		isError:    true,
+	},
+	{ // TestBindXML
+		httpMethod: echo.POST,
+		target:     "/",
+		body:       userXML,
+		httpHeader: echo.MIMEApplicationXML,
+		result: &user{
+			ID:       1,
+			Name:     "Jon Snow",
+			Salary:   15000,
+			Position: "CTO",
+		},
+	},
+	{ // TestBindXML with default
+		httpMethod: echo.POST,
+		target:     "/",
+		body:       `<user><id>1</id><name>Jon Snow</name></user>`,
+		httpHeader: echo.MIMEApplicationXML,
+		result: &user{
+			ID:       1,
+			Name:     "Jon Snow",
+			Salary:   10000,
+			Position: "Manager",
+		},
+	},
+	{ // TestBindXML error
+		httpMethod: echo.POST,
+		target:     "/",
+		body:       invalidContent,
+		httpHeader: echo.MIMEApplicationXML,
+		isError:    true,
+	},
+	{ // TestBindXML text
+		httpMethod: echo.POST,
+		target:     "/",
+		body:       userXML,
+		httpHeader: echo.MIMETextXML,
+		result: &user{
+			ID:       1,
+			Name:     "Jon Snow",
+			Salary:   15000,
+			Position: "CTO",
+		},
+	},
+	{ // TestBindXML text error
+		httpMethod: echo.POST,
+		target:     "/",
+		body:       invalidContent,
+		httpHeader: echo.MIMETextXML,
+		isError:    true,
+	},
+	{ // TestBindUnsupportedMediaType error
+		httpMethod: echo.POST,
+		target:     "/",
+		body:       invalidContent,
+		httpHeader: echo.MIMEApplicationJSON,
+		isError:    true,
+	},
 }
 
-func TestBindForm(t *testing.T) {
-	testBindOkay(t, strings.NewReader(userForm), echo.MIMEApplicationForm)
-	testBindOkay(t, nil, echo.MIMEApplicationForm)
-	e := testNew()
-	req := httptest.NewRequest(echo.POST, "/", strings.NewReader(userForm))
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
-	err := c.Bind(&[]struct{ Field string }{})
-	assert.Error(t, err)
-}
+func TestBind(t *testing.T) {
+	var (
+		c   echo.Context
+		e   *Engine
+		err error
+		r   io.Reader
+		req *http.Request
+		rec *httptest.ResponseRecorder
+		v   interface{}
+	)
 
-func TestBindQueryParams(t *testing.T) {
-	e := testNew()
-	req := httptest.NewRequest(echo.GET, "/?id=1&name=Jon+Snow", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	u := new(user)
-	err := c.Bind(u)
-	if assert.NoError(t, err) {
-		assert.Equal(t, 1, u.ID)
-		assert.Equal(t, "Jon Snow", u.Name)
+	for _, item := range valuesForTest {
+		if len(item.body) > 0 {
+			r = strings.NewReader(item.body)
+		} else {
+			r = nil
+		}
+		e = testNew()
+		req = httptest.NewRequest(item.httpMethod, item.target, r)
+		rec = httptest.NewRecorder()
+		if len(item.httpHeader) > 0 {
+			req.Header.Set(echo.HeaderContentType, item.httpHeader)
+		}
+		c = e.NewContext(req, rec)
+
+		if item.requestParams != nil {
+			v = item.requestParams
+		} else {
+			v = new(user)
+		}
+		err = c.Bind(v)
+		if !item.isError && assert.NoError(t, err) {
+			assert.Equal(t, item.result, v)
+			continue
+		}
+
+		assert.Error(t, err)
+		switch {
+		case strings.HasPrefix(item.httpHeader, echo.MIMEApplicationJSON):
+			assert.IsType(t, new(json.SyntaxError), err)
+		case strings.HasPrefix(item.httpHeader, echo.MIMEApplicationXML), strings.HasPrefix(item.httpHeader, echo.MIMETextXML):
+			assert.Error(t, err)
+			assert.EqualError(t, err, "EOF")
+		case strings.HasPrefix(item.httpHeader, echo.MIMEApplicationForm), strings.HasPrefix(item.httpHeader, echo.MIMEMultipartForm):
+			if assert.IsType(t, new(echo.HTTPError), err) {
+				assert.Equal(t, http.StatusBadRequest, err.(*echo.HTTPError).Code)
+			}
+		default:
+			if assert.IsType(t, new(echo.HTTPError), err) {
+				assert.Equal(t, ErrUnsupportedMediaType, err)
+			}
+		}
 	}
 }
 
@@ -182,11 +355,13 @@ func TestBindParams(t *testing.T) {
 		if assert.NoError(t, err) {
 			assert.Equal(t, 1, u.ID)
 			assert.Equal(t, "Jon Snow", u.Name)
+			assert.Equal(t, 15000, u.Salary)
+			assert.Equal(t, "CTO", u.Position)
 		}
 
 		return nil
 	}
-	e.GET("/:id/:name", testHandler)
+	e.GET("/:id/:name/:salary/:position", testHandler)
 	e.ServeHTTP(rec, req)
 }
 
@@ -231,12 +406,23 @@ func TestBindMultipartForm(t *testing.T) {
 	mw := multipart.NewWriter(body)
 	mw.WriteField("id", "1")
 	mw.WriteField("name", "Jon Snow")
+	mw.WriteField("salary", "15000")
+	mw.WriteField("position", "CTO")
 	mw.Close()
-	testBindOkay(t, body, mw.FormDataContentType())
-}
 
-func TestBindUnsupportedMediaType(t *testing.T) {
-	testBindError(t, strings.NewReader(invalidContent), echo.MIMEApplicationJSON)
+	e := testNew()
+	req := httptest.NewRequest(echo.POST, "/", body)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	req.Header.Set(echo.HeaderContentType, mw.FormDataContentType())
+	u := new(user)
+	err := c.Bind(u)
+	if assert.NoError(t, err) && req.ContentLength != 0 {
+		assert.Equal(t, 1, u.ID)
+		assert.Equal(t, "Jon Snow", u.Name)
+		assert.Equal(t, 15000, u.Salary)
+		assert.Equal(t, "CTO", u.Position)
+	}
 }
 
 func TestBindbindData(t *testing.T) {
@@ -332,44 +518,4 @@ func assertBindTestStruct(t *testing.T, ts *bindTestStruct) {
 	assert.Equal(t, float64(64.5), ts.F64)
 	assert.Equal(t, "test", ts.S)
 	assert.Equal(t, "", ts.GetCantSet())
-}
-
-func testBindOkay(t *testing.T, r io.Reader, ctype string) {
-	e := testNew()
-	req := httptest.NewRequest(echo.POST, "/", r)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	req.Header.Set(echo.HeaderContentType, ctype)
-	u := new(user)
-	err := c.Bind(u)
-	if assert.NoError(t, err) && req.ContentLength != 0 {
-		assert.Equal(t, 1, u.ID)
-		assert.Equal(t, "Jon Snow", u.Name)
-	}
-}
-
-func testBindError(t *testing.T, r io.Reader, ctype string) {
-	e := testNew()
-	req := httptest.NewRequest(echo.POST, "/", r)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	req.Header.Set(echo.HeaderContentType, ctype)
-	u := new(user)
-	err := c.Bind(u)
-
-	switch {
-	case strings.HasPrefix(ctype, echo.MIMEApplicationJSON):
-		assert.IsType(t, new(json.SyntaxError), err)
-	case strings.HasPrefix(ctype, echo.MIMEApplicationXML), strings.HasPrefix(ctype, echo.MIMETextXML):
-		assert.Error(t, err)
-		assert.EqualError(t, err, "EOF")
-	case strings.HasPrefix(ctype, echo.MIMEApplicationForm), strings.HasPrefix(ctype, echo.MIMEMultipartForm):
-		if assert.IsType(t, new(echo.HTTPError), err) {
-			assert.Equal(t, http.StatusBadRequest, err.(*echo.HTTPError).Code)
-		}
-	default:
-		if assert.IsType(t, new(echo.HTTPError), err) {
-			assert.Equal(t, ErrUnsupportedMediaType, err)
-		}
-	}
 }

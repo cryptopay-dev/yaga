@@ -108,7 +108,9 @@ func (b *DefaultBinder) bindDefaultData(ptr interface{}) error {
 			continue
 		}
 
-		return setWithProperType(typeField.Type.Kind(), defaultValue, structField)
+		if err := setWithProperType(typeField.Type.Kind(), defaultValue, structField); err != nil {
+			return err
+		}
 	}
 
 	return nil
