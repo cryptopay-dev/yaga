@@ -1,14 +1,14 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cryptopay-dev/go-metrics"
+	"github.com/cryptopay-dev/yaga/gracefull"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/validate"
@@ -133,18 +133,16 @@ func New(opts Options) (*Engine, error) {
 }
 
 // StartAsync HTTP with custom address and return stop channel.
-func StartAsync(e *Engine, bind string) <-chan os.Signal {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGABRT)
-
-	go func() {
-		if err := Start(e, bind); err != nil {
+func StartAsync(e *Engine, bind string) context.Context {
+	g, ctx := gracefull.GracefullShutdown(context.Background(), e.Logger)
+	g.Go(func() (err error) {
+		if err = Start(e, bind); err != nil {
 			e.Logger.Error(err)
-			ch <- syscall.SIGABRT
 		}
-	}()
+		return err
+	})
 
-	return ch
+	return ctx
 }
 
 // Start HTTP with custom address.

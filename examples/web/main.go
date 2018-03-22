@@ -1,20 +1,15 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"net/http"
 	"os"
 
-	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/logger/zap"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	log := nop.New()
+	log := zap.New("dev")
 
 	e, err := web.New(web.Options{
 		Logger: log,
@@ -27,7 +22,7 @@ func main() {
 
 	e.GET("/test/:command", func(c web.Context) error {
 		cmd := c.Param("command")
-		fmt.Println("Received command:", cmd)
+		log.Infof("Received command: %v", cmd)
 
 		switch cmd {
 		case "nop":
@@ -40,11 +35,12 @@ func main() {
 		return c.JSON(http.StatusOK, cmd)
 	})
 
-	done := web.StartAsync(e, os.Getenv("BIND"))
+	ctx := web.StartAsync(e, os.Getenv("BIND"))
 
 	// wait for signals
-	sig := <-done
-	log.Info("Received signal:", sig.String())
+	<-ctx.Done()
+	log.Info("Stopping...")
 
 	e.Shutdown(ctx)
+	log.Info("Shutdown")
 }
