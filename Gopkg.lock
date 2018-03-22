@@ -16,8 +16,8 @@
 [[projects]]
   name = "github.com/cryptopay-dev/go-metrics"
   packages = ["."]
-  revision = "1fe33397d12d68f612bb88028ac49cbbbfc5f650"
-  version = "2.0"
+  revision = "b3db16ac55897110edab7f7e736a373f7def773b"
+  version = "3.0"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -256,6 +256,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "db0109448f10a2e529cedf6c7d3e9289c436574fba6e32d6af881436fe837ec5"
+  inputs-digest = "760465928ea681c8be0ff40c950f3d59d53c11981592c5795978a7953fce168e"
   solver-name = "gps-cdcl"
   solver-version = 1
