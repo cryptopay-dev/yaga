@@ -63,17 +63,17 @@ func Every(duration time.Duration) Schedule {
 
 // Start all workers.
 func Start() {
-	poolWorker.stop.Store(false)
+	poolWorker.start()
 	cronWorker.Start()
 }
 
 // Stop all workers.
 func Stop() {
-	poolWorker.stop.Store(true)
+	poolWorker.stop()
 	cronWorker.Stop()
 }
 
 // Wait blocks until all workers will be stopped.
 func Wait() {
-	poolWorker.wg.Wait()
+	poolWorker.wait()
 }

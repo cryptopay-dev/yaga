@@ -16,8 +16,8 @@
 [[projects]]
   name = "github.com/cryptopay-dev/go-metrics"
   packages = ["."]
-  revision = "1fe33397d12d68f612bb88028ac49cbbbfc5f650"
-  version = "2.0"
+  revision = "b3db16ac55897110edab7f7e736a373f7def773b"
+  version = "3.0"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"

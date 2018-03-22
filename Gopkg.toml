@@ -5,7 +5,7 @@
 
 [[constraint]]
   name = "github.com/cryptopay-dev/go-metrics"
-  version = "2.0.0"
+  version = "3.0.0"
 
 [[constraint]]
   branch = "master"

@@ -72,7 +72,7 @@ func appCommands(opts *Options) {
 			}
 
 			// Validate options:
-			if err := validator.New().Struct(opts); err != nil {
+			if err = validator.New().Struct(opts); err != nil {
 				if ok, errv := validate.CheckErrors(validate.Options{
 					Struct: opts,
 					Errors: err,
@@ -82,7 +82,7 @@ func appCommands(opts *Options) {
 			}
 
 			// Running main server
-			if err := opts.App.Run(RunOptions{
+			if err = opts.App.Run(RunOptions{
 				DB:           opts.DB,
 				Redis:        opts.Redis,
 				Logger:       opts.Logger,

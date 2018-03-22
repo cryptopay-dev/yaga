@@ -86,6 +86,7 @@ func TestWorkerConflictName(t *testing.T) {
 func TestWorkerStartAndStop(t *testing.T) {
 	c, creater := newCronForTest()
 	defer c.StopCron()
+	c.Start()
 
 	t.Run("worker should be start", func(t *testing.T) {
 		start := atomic.NewInt32(0)
@@ -131,6 +132,7 @@ func TestWorkerStartAndStop(t *testing.T) {
 func TestWorkersRestart(t *testing.T) {
 	c, creater := newCronForTest()
 	defer c.StopCron()
+	c.Start()
 
 	t.Run("worker should be restart", func(t *testing.T) {
 		var (
@@ -210,6 +212,7 @@ func TestWorkersRestart(t *testing.T) {
 func TestWorkersWait(t *testing.T) {
 	c, creater := newCronForTest()
 	defer c.StopCron()
+	c.Start()
 
 	t.Run("workers should be wait while one worker locked", func(t *testing.T) {
 		var (
@@ -265,6 +268,7 @@ func TestWorkersWait(t *testing.T) {
 func TestWorkersStop(t *testing.T) {
 	c, creater := newCronForTest()
 	defer c.StopCron()
+	c.Start()
 
 	t.Run("all workers should be closed", func(t *testing.T) {
 		var (

@@ -42,15 +42,15 @@ func (m *mockCron) New(duration time.Duration, job func()) {
 }
 
 func (m *mockCron) Start() {
-	m.poolWorker.stop.Store(false)
+	m.poolWorker.start()
 }
 
 func (m *mockCron) Stop() {
-	m.poolWorker.stop.Store(true)
+	m.poolWorker.stop()
 }
 
 func (m *mockCron) StopCron() {
-	m.poolWorker.stop.Store(true)
+	m.poolWorker.stop()
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -67,7 +67,7 @@ func (m *mockCron) StopCron() {
 }
 
 func (m *mockCron) Wait() {
-	m.poolWorker.wg.Wait()
+	m.poolWorker.wait()
 }
 
 func newCronForTest() (*mockCron, func(string, time.Duration, func()) (*worker, error)) {
