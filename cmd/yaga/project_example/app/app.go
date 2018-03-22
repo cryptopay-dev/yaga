@@ -77,14 +77,13 @@ func (a *App) Run(opts cli.RunOptions) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	done := web.StartAsync(a.Engine, a.Config.Bind)
+	ctx := web.StartAsync(a.Engine, a.Config.Bind)
 
 	// Wait for signals:
-	sig := <-done
-	a.Logger.Infof("Received signal: %s", sig.String())
+	<-ctx.Done()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	return a.Shutdown(ctx)
 }
