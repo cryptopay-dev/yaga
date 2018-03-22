@@ -26,6 +26,10 @@ func (b *DefaultBinder) Bind(i interface{}, c Context) (err error) {
 		dumpError(err, c.Logger(), dump)
 	}()
 
+	if err = b.bindDefaultData(i); err != nil {
+		return NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
 	var params = make(map[string][]string, len(c.ParamNames()))
 
 	for _, name := range c.ParamNames() {
@@ -75,6 +79,41 @@ func dumpError(err error, logger echo.Logger, dump []byte) {
 	if err != nil {
 		logger.Debug(string(dump))
 	}
+}
+
+func (b *DefaultBinder) bindDefaultData(ptr interface{}) error {
+	typ := reflect.TypeOf(ptr).Elem()
+	val := reflect.ValueOf(ptr).Elem()
+
+	if typ.Kind() != reflect.Struct {
+		return NewHTTPError(http.StatusBadRequest, "binding element must be a struct")
+	}
+
+	for i := 0; i < typ.NumField(); i++ {
+		typeField := typ.Field(i)
+		structField := val.Field(i)
+		if !structField.CanSet() {
+			continue
+		}
+
+		defaultValue := typeField.Tag.Get("default")
+		if len(defaultValue) == 0 {
+			// If tag is nil, we inspect if the field is a struct.
+			if _, ok := bindUnmarshaler(structField); !ok && structField.Kind() == reflect.Struct {
+				err := b.bindDefaultData(structField.Addr().Interface())
+				if err != nil {
+					return err
+				}
+			}
+			continue
+		}
+
+		if err := setWithProperType(typeField.Type.Kind(), defaultValue, structField); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (b *DefaultBinder) bindData(ptr interface{}, data map[string][]string, tag string) error {
