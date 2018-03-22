@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	log := zap.New("dev")
+	log := zap.New(zap.Development)
 
 	e, err := web.New(web.Options{
 		Logger: log,
