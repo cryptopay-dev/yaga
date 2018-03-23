@@ -1,4 +1,4 @@
-package gracefull
+package graceful
 
 import (
 	"context"
@@ -10,8 +10,8 @@ import (
 	"github.com/golang/sync/errgroup"
 )
 
-// Gracefull interface
-type Gracefull interface {
+// Graceful interface
+type Graceful interface {
 	Go(func(context.Context) error)
 	Wait() error
 	Cancel()
@@ -21,17 +21,17 @@ type logger interface {
 	Infof(string, ...interface{})
 }
 
-type gracefull struct {
+type graceful struct {
 	eg     *errgroup.Group
 	cancel context.CancelFunc
 	ctx    context.Context
 }
 
-func (g *gracefull) Cancel() {
+func (g *graceful) Cancel() {
 	g.cancel()
 }
 
-func (g *gracefull) Go(job func(context.Context) error) {
+func (g *graceful) Go(job func(context.Context) error) {
 	f := func() (err error) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -53,18 +53,23 @@ func (g *gracefull) Go(job func(context.Context) error) {
 	g.eg.Go(f)
 }
 
-func (g *gracefull) Wait() error {
+func (g *graceful) Wait() error {
 	return g.eg.Wait()
 }
 
-// NewNotify returns a new Gracefull and an associated Context derived from ctx.
-//
-// Returns Gracefull associated with notification of OS signals
-func NewNotify(ctx context.Context, log logger) Gracefull {
+// New returns a new Graceful and an associated Context derived from ctx.
+func New(ctx context.Context) Graceful {
+	ctx, cancel := context.WithCancel(ctx)
+	g, ctx := errgroup.WithContext(ctx)
+
+	return &graceful{g, cancel, ctx}
+}
+
+// AttachNotifier connects Graceful to notification of OS signals.
+func AttachNotifier(g Graceful, log logger) {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGABRT)
 
-	g := New(ctx)
 	g.Go(func(c context.Context) error {
 		select {
 		case sig := <-ch:
@@ -76,14 +81,4 @@ func NewNotify(ctx context.Context, log logger) Gracefull {
 		}
 		return nil
 	})
-
-	return g
-}
-
-// New returns a new Gracefull and an associated Context derived from ctx.
-func New(ctx context.Context) Gracefull {
-	ctx, cancel := context.WithCancel(ctx)
-	g, ctx := errgroup.WithContext(ctx)
-
-	return &gracefull{g, cancel, ctx}
 }
