@@ -132,7 +132,7 @@ func New(opts Options) (*Engine, error) {
 	return e, nil
 }
 
-// StartAsync HTTP with custom address and return stop channel.
+// StartAsync HTTP with custom address and return context.
 func StartAsync(e *Engine, bind string) context.Context {
 	g, ctx := gracefull.NewNotify(context.Background(), e.Logger)
 	g.Go(func() (err error) {

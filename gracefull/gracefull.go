@@ -9,6 +9,7 @@ import (
 	"github.com/golang/sync/errgroup"
 )
 
+// Gracefull interface
 type Gracefull interface {
 	Go(func() error)
 	Wait() error
@@ -28,6 +29,9 @@ func (g *gracefull) Cancel() {
 	g.cancel()
 }
 
+// NewNotify returns a new Gracefull and an associated Context derived from ctx.
+//
+// Returns Gracefull associated with notification of OS signals
 func NewNotify(ctx context.Context, log logger) (Gracefull, context.Context) {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGABRT)
@@ -45,6 +49,7 @@ func NewNotify(ctx context.Context, log logger) (Gracefull, context.Context) {
 	return g, ctx
 }
 
+// New returns a new Gracefull and an associated Context derived from ctx.
 func New(ctx context.Context) (Gracefull, context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	g, ctx := errgroup.WithContext(ctx)
