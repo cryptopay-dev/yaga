@@ -78,6 +78,7 @@ func AttachNotifier(g Graceful, log logger) {
 				log.Infof("received signal: %s", sig.String())
 			}
 		case <-c.Done():
+			return c.Err()
 		}
 		return nil
 	})

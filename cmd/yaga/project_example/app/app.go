@@ -7,6 +7,7 @@ import (
 	"github.com/cryptopay-dev/yaga/cli"
 	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/controllers"
 	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/library/config"
+	"github.com/cryptopay-dev/yaga/graceful"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
@@ -19,8 +20,9 @@ type authors struct {
 // App instance
 type App struct {
 	cli.RunOptions
-	Config config.Config
-	Engine *web.Engine
+	Config   config.Config
+	Engine   *web.Engine
+	Graceful graceful.Graceful
 }
 
 var appAuthors = []authors{
@@ -42,7 +44,9 @@ func Authors() []cli.Author {
 
 // New creates instance
 func New() *App {
-	return &App{}
+	return &App{
+		Graceful: graceful.New(context.Background()),
+	}
 }
 
 // Shutdown of application
@@ -77,13 +81,16 @@ func (a *App) Run(opts cli.RunOptions) error {
 		return err
 	}
 
-	ctx := web.StartAsync(a.Engine, a.Config.Bind)
+	graceful.AttachNotifier(a.Graceful, a.Logger)
+	web.StartAsync(a.Engine, a.Config.Bind, a.Graceful.Cancel)
 
-	// Wait for signals:
-	<-ctx.Done()
+	a.Graceful.Go(func(c context.Context) error {
+		<-c.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+		return a.Shutdown(ctx)
+	})
 
-	return a.Shutdown(ctx)
+	return a.Graceful.Wait()
 }

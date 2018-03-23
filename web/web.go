@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/cryptopay-dev/go-metrics"
-	"github.com/cryptopay-dev/yaga/gracefull"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/validate"
@@ -132,17 +131,17 @@ func New(opts Options) (*Engine, error) {
 	return e, nil
 }
 
-// StartAsync HTTP with custom address and return context.
-func StartAsync(e *Engine, bind string) context.Context {
-	g, ctx := gracefull.NewNotify(context.Background(), e.Logger)
-	g.Go(func() (err error) {
-		if err = Start(e, bind); err != nil {
+// StartAsync HTTP with custom address.
+func StartAsync(e *Engine, bind string, cancel context.CancelFunc) {
+	go func() {
+		if cancel != nil {
+			defer cancel()
+		}
+		err := Start(e, bind)
+		if err != nil {
 			e.Logger.Error(err)
 		}
-		return err
-	})
-
-	return ctx
+	}()
 }
 
 // Start HTTP with custom address.

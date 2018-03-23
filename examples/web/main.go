@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/cryptopay-dev/yaga/graceful"
 	"github.com/cryptopay-dev/yaga/logger/zap"
 	"github.com/cryptopay-dev/yaga/web"
 )
@@ -18,6 +21,7 @@ func main() {
 
 	if err != nil {
 		log.Panic(err)
+		return
 	}
 
 	e.GET("/test/:command", func(c web.Context) error {
@@ -35,12 +39,19 @@ func main() {
 		return c.JSON(http.StatusOK, cmd)
 	})
 
-	ctx := web.StartAsync(e, os.Getenv("BIND"))
+	g := graceful.New(context.Background())
+	graceful.AttachNotifier(g, e.Logger)
+	web.StartAsync(e, os.Getenv("BIND"), g.Cancel)
 
-	// wait for signals
-	<-ctx.Done()
-	log.Info("Stopping...")
+	g.Go(func(c context.Context) error {
+		<-c.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 
-	e.Shutdown(ctx)
-	log.Info("Shutdown")
+		return e.Shutdown(ctx)
+	})
+
+	if err := g.Wait(); err != nil {
+		e.Logger.Error(err)
+	}
 }
