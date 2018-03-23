@@ -6,7 +6,7 @@ import (
 
 	"github.com/cryptopay-dev/yaga/cli"
 	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/controllers"
-	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/library/config"
+	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
@@ -19,7 +19,6 @@ type authors struct {
 // App instance
 type App struct {
 	cli.RunOptions
-	Config config.Config
 	Engine *web.Engine
 }
 
@@ -69,7 +68,6 @@ func (a *App) Run(opts cli.RunOptions) error {
 
 	if _, err = controllers.New(
 		controllers.Logger(a.Logger),
-		controllers.Config(&a.Config),
 		controllers.Engine(a.Engine),
 		controllers.BuildTime(a.BuildTime),
 		controllers.BuildVersion(a.BuildVersion),
@@ -80,7 +78,7 @@ func (a *App) Run(opts cli.RunOptions) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	done := web.StartAsync(a.Engine, a.Config.Bind)
+	done := web.StartAsync(a.Engine, config.GetString("bind"))
 
 	// Wait for signals:
 	sig := <-done

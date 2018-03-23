@@ -20,10 +20,6 @@
   version = "6.8.0"
 
 [[constraint]]
-  name = "github.com/joho/godotenv"
-  version = "1.2.0"
-
-[[constraint]]
   name = "github.com/labstack/echo"
   version = "3.3.0"
 
@@ -63,7 +59,7 @@
   name = "github.com/bsm/redis-lock"
   version = "v8"
 
-[[constraint]]
+[[override]]
   name = "gopkg.in/yaml.v2"
   version = "v2.1.1"
 

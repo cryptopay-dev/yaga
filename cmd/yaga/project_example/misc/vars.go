@@ -1,8 +1,9 @@
 package misc
 
 import (
-	"os"
 	"time"
+
+	"github.com/cryptopay-dev/yaga/config"
 )
 
 const (
@@ -22,5 +23,5 @@ var (
 	// BuildTime of application by default - current time
 	BuildTime = time.Now().Format(time.RFC3339)
 	// Debug from ENV:
-	Debug = os.Getenv("LEVEL") == Dev
+	Debug = config.GetString("level") == Dev
 )

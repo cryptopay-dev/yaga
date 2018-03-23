@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"sync"
 
+	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/tracer"
 	"github.com/cryptopay-dev/yaga/validate"
@@ -53,7 +53,7 @@ func NewLogic(opts LogicOptions) (*Logic, error) {
 	e.Opts = opts
 
 	initRavenOnce.Do(func() {
-		if err := raven.SetDSN(os.Getenv("SENTRY_DSN")); err != nil {
+		if err := raven.SetDSN(config.GetString("sentry_dsn")); err != nil {
 			e.Opts.Logger.Error(err)
 		}
 	})

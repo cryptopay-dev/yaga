@@ -17,7 +17,7 @@ type Config struct {
 func main() {
 	var conf Config
 
-	if err := config.Load("config.fixture.yaml", &conf); err != nil {
+	if err := config.Unmarshal(&conf); err != nil {
 		panic(err)
 	}
 
