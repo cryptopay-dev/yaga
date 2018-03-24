@@ -12,7 +12,7 @@ const configPath = "./config.yml"
 func FetchDB(ctx *cli.Context, key string) (err error) {
 	dsn := ctx.String("dsn")
 
-	if len(dsn) != 0 {
+	if len(dsn) == 0 {
 		return
 	}
 
