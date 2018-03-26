@@ -13,8 +13,6 @@ const (
 	Name = "project"
 	// Usage of application
 	Usage = "Project service"
-	// Config file path
-	Config = "config.yml"
 )
 
 var (
