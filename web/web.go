@@ -3,7 +3,6 @@ package web
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 

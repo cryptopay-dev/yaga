@@ -5,7 +5,7 @@ import (
 
 	"github.com/cryptopay-dev/yaga/cli"
 	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/controllers"
-	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/library/config"
+	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/graceful"
 	"github.com/cryptopay-dev/yaga/web"
 )
@@ -19,7 +19,6 @@ type authors struct {
 // App instance
 type App struct {
 	cli.RunOptions
-	Config   config.Config
 	Engine   *web.Engine
 	Graceful graceful.Graceful
 }
@@ -80,7 +79,7 @@ func (a *App) Run(opts cli.RunOptions) error {
 	}
 
 	graceful.AttachNotifier(a.Graceful, a.Logger)
-	web.StartAsync(a.Engine, a.Config.Bind, a.Graceful)
+	web.StartAsync(a.Engine, config.GetString("bind"), a.Graceful)
 
 	return a.Graceful.Wait()
 }

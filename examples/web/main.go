@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/graceful"
 	"github.com/cryptopay-dev/yaga/logger/zap"
 	"github.com/cryptopay-dev/yaga/web"
@@ -40,7 +41,7 @@ func main() {
 	g := graceful.New(context.Background())
 	graceful.AttachNotifier(g, e.Logger)
 
-	web.StartAsync(e, os.Getenv("BIND"), g)
+	web.StartAsync(e, config.GetString("bind"), g)
 
 	if err := g.Wait(); err != nil {
 		e.Logger.Error(err)

@@ -88,6 +88,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/golang/sync"
+  packages = ["errgroup"]
+  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
+
+[[projects]]
+  branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [
     ".",
@@ -102,12 +108,6 @@
     "json/token"
   ]
   revision = "f40e974e75af4e271d97ce0fc917af5898ae7bda"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/golang/sync"
-  packages = ["errgroup"]
-  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
 
 [[projects]]
   branch = "master"
@@ -356,6 +356,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9c9e2dd572dc5108a3b6535747c391d4734ddcfce72480996c5b5038ec0fd62e"
+  inputs-digest = "f4b7c2f46e6725bd4a2242f6e88b025dcbc5d526d105686d1d5487bd226435ef"
   solver-name = "gps-cdcl"
   solver-version = 1
