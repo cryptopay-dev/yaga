@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cryptopay-dev/go-metrics"
+	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/validate"
@@ -94,7 +95,7 @@ func New(opts Options) (*Engine, error) {
 	// TODO may be move to function?
 	initMetricsOnce.Do(func() {
 		// enable metrics
-		if err := metrics.Setup(os.Getenv("METRICS_URL"), os.Getenv("METRICS_APP"), os.Getenv("METRICS_HOSTNAME")); err == nil {
+		if err := metrics.Setup(config.GetString("metrics_url"), config.GetString("metrics_app"), config.GetString("metrics_hostname")); err == nil {
 			go func() {
 				if errWatch := metrics.Watch(time.Second * 10); errWatch != nil {
 					e.Logger.Errorf("Can't start watching for metrics: %v", errWatch)

@@ -2,26 +2,20 @@ package cli
 
 import (
 	"github.com/cryptopay-dev/yaga/logger"
-	"github.com/go-pg/pg"
-	"github.com/go-redis/redis"
 	"github.com/urfave/cli"
 )
 
 // Options for creating cli.App instance
 type Options struct {
-	App             Instance
-	Logger          logger.Logger `validate:"required"`
-	ConfigSource    interface{}   `validate:"required"`
-	ConfigInterface interface{}   `validate:"required"`
-	DB              *pg.DB
-	Redis           *redis.Client
-	Users           []cli.Author
-	Debug           bool
-	Quiet           bool
-	Usage           string
-	Name            string
-	BuildTime       string
-	BuildVersion    string
+	App          Instance
+	Logger       logger.Logger `validate:"required"`
+	Users        []cli.Author
+	Debug        bool
+	Quiet        bool
+	Usage        string
+	Name         string
+	BuildTime    string
+	BuildVersion string
 
 	commands      []Command
 	flags         []Flag
@@ -89,14 +83,6 @@ func Name(name string) Option {
 func Users(users []cli.Author) Option {
 	return func(o *Options) {
 		o.Users = users
-	}
-}
-
-// Config closure to set config source and interface in Options
-func Config(src, conf interface{}) Option {
-	return func(o *Options) {
-		o.ConfigSource = src
-		o.ConfigInterface = conf
 	}
 }
 

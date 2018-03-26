@@ -2,22 +2,21 @@ package pprof
 
 import (
 	"net/http/pprof"
-	"os"
 	"strings"
 
+	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
 const (
-	pprofPortEnv    = "PPROF_BIND"
 	tplInfoPprof    = "Pprof start on port: %s"
 	errNilWebEngine = "web.Engine is nil, can't add pprof"
 )
 
 // Wrap adds several routes from package `net/http/pprof` to *echo.Echo object.
 func Wrap(logger logger.Logger, e *web.Engine) error {
-	port := os.Getenv(pprofPortEnv)
+	port := config.GetString("pprof_bind")
 	if len(port) == 0 {
 		if e == nil {
 			logger.Error(errNilWebEngine)

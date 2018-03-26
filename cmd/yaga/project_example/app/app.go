@@ -72,7 +72,6 @@ func (a *App) Run(opts cli.RunOptions) error {
 
 	if _, err = controllers.New(
 		controllers.Logger(a.Logger),
-		controllers.Config(&a.Config),
 		controllers.Engine(a.Engine),
 		controllers.BuildTime(a.BuildTime),
 		controllers.BuildVersion(a.BuildVersion),

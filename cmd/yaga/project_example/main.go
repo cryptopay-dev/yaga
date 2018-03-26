@@ -11,7 +11,6 @@ func main() {
 
 	if err := cli.Run(
 		cli.App(instance),
-		cli.Config(misc.Config, &instance.Config),
 		cli.Debug(misc.Debug),
 		cli.Name(misc.Name),
 		cli.Usage(misc.Usage),
