@@ -2,12 +2,12 @@ package graceful
 
 import (
 	"context"
-	"errors"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/golang/sync/errgroup"
+	"github.com/pkg/errors"
 )
 
 // Graceful interface
@@ -44,8 +44,8 @@ func (g *graceful) Go(job func(context.Context) error) {
 					err = errors.New("Unknown panic")
 				}
 			}
+			err = errors.Wrap(err, "graceful failed")
 		}()
-
 		err = job(g.ctx)
 		return
 	}

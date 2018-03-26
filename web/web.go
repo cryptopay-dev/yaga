@@ -131,17 +131,28 @@ func New(opts Options) (*Engine, error) {
 	return e, nil
 }
 
+type graceful interface {
+	Cancel()
+	Go(func(context.Context) error)
+}
+
 // StartAsync HTTP with custom address.
-func StartAsync(e *Engine, bind string, cancel context.CancelFunc) {
+func StartAsync(e *Engine, bind string, g graceful) {
 	go func() {
-		if cancel != nil {
-			defer cancel()
-		}
+		defer g.Cancel()
 		err := Start(e, bind)
 		if err != nil {
 			e.Logger.Error(err)
 		}
 	}()
+
+	g.Go(func(c context.Context) error {
+		<-c.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		return e.Shutdown(ctx)
+	})
 }
 
 // Start HTTP with custom address.
