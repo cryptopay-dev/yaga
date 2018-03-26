@@ -14,7 +14,6 @@ import (
 const keyTpl = "test:key:%d"
 
 func closedCacher() cacher.Cacher {
-
 	c := redis.NewClient(&redis.Options{
 		Addr: config.GetString("test_redis_addr"),
 	})
