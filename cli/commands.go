@@ -35,14 +35,12 @@ func appCommands(opts *Options) {
 			return nil
 		},
 		Action: func(c *cli.Context) error {
-			var err error
-
 			if opts.App != nil && reflect.TypeOf(opts.App).Kind() != reflect.Ptr {
 				return ErrAppNotPointer
 			}
 
 			// Running main server
-			if err = opts.App.Run(RunOptions{
+			if err := opts.App.Run(RunOptions{
 				Logger:       opts.Logger,
 				Debug:        opts.Debug,
 				BuildTime:    opts.BuildTime,

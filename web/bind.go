@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
+	"github.com/pkg/errors"
 )
 
 type (
@@ -24,6 +25,7 @@ func (b *DefaultBinder) Bind(i interface{}, c Context) (err error) {
 
 	defer func() {
 		dumpError(err, c.Logger(), dump)
+		err = errors.Wrap(err, "web Bind failed")
 	}()
 
 	if err = b.bindDefaultData(i); err != nil {

@@ -3,6 +3,7 @@ package postgres
 import (
 	"github.com/cryptopay-dev/yaga/config"
 	"github.com/go-pg/pg"
+	"github.com/pkg/errors"
 )
 
 // Options for connections
@@ -21,7 +22,7 @@ func Connect(key string) (*pg.DB, error) {
 
 	// Check postgres connection:
 	if _, err := con.ExecOne("SELECT 1"); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "postgres Connect failed")
 	}
 
 	return con, nil

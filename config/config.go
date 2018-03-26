@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -74,7 +75,7 @@ func AddConfigPath(in string) { config.AddConfigPath(in) }
 // you should set path to /configs and set config name (SetConfigName()) to
 // "myapp"
 func AddRemoteProvider(provider, endpoint, path string) error {
-	return config.AddRemoteProvider(provider, endpoint, path)
+	return errors.Wrap(config.AddRemoteProvider(provider, endpoint, path), "config AddRemoteProvider failed")
 }
 
 // AddSecureRemoteProvider adds a remote configuration source.
@@ -88,7 +89,7 @@ func AddRemoteProvider(provider, endpoint, path string) error {
 // "myapp"
 // Secure Remote Providers are implemented with github.com/xordataexchange/crypt
 func AddSecureRemoteProvider(provider, endpoint, path, secretkeyring string) error {
-	return config.AddSecureRemoteProvider(provider, endpoint, path, secretkeyring)
+	return errors.Wrap(config.AddSecureRemoteProvider(provider, endpoint, path, secretkeyring), "config AddSecureRemoteProvider failed")
 }
 
 // SetTypeByDefaultValue enables or disables the inference of a key value's
@@ -160,19 +161,27 @@ func GetStringMapStringSlice(key string) map[string][]string {
 func GetSizeInBytes(key string) uint { return config.GetSizeInBytes(key) }
 
 // UnmarshalKey takes a single key and unmarshals it into a Struct.
-func UnmarshalKey(key string, rawVal interface{}) error { return config.UnmarshalKey(key, rawVal) }
+func UnmarshalKey(key string, rawVal interface{}) error {
+	return errors.Wrap(config.UnmarshalKey(key, rawVal), "config UnmarshalKey failed")
+}
 
 // Unmarshal unmarshals the config into a Struct. Make sure that the tags
 // on the fields of the structure are properly set.
-func Unmarshal(rawVal interface{}) error { return config.Unmarshal(rawVal) }
+func Unmarshal(rawVal interface{}) error {
+	return errors.Wrap(config.Unmarshal(rawVal), "config Unmarshal failed")
+}
 
 // UnmarshalExact unmarshals the config into a Struct, erroring if a field is nonexistent
 // in the destination struct.
-func UnmarshalExact(rawVal interface{}) error { return config.UnmarshalExact(rawVal) }
+func UnmarshalExact(rawVal interface{}) error {
+	return errors.Wrap(config.UnmarshalExact(rawVal), "config UnmarshalExact failed")
+}
 
 // BindPFlags binds a full flag set to the configuration, using each flag's long
 // name as the config key.
-func BindPFlags(flags *pflag.FlagSet) error { return config.BindPFlags(flags) }
+func BindPFlags(flags *pflag.FlagSet) error {
+	return errors.Wrap(config.BindPFlags(flags), "config BindPFlags failed")
+}
 
 // BindPFlag binds a specific key to a pflag (as used by cobra).
 // Example (where serverCmd is a Cobra instance):
@@ -180,11 +189,15 @@ func BindPFlags(flags *pflag.FlagSet) error { return config.BindPFlags(flags) }
 //	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
 //	 Viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
 //
-func BindPFlag(key string, flag *pflag.Flag) error { return config.BindPFlag(key, flag) }
+func BindPFlag(key string, flag *pflag.Flag) error {
+	return errors.Wrap(config.BindPFlag(key, flag), "config BindPFlag failed")
+}
 
 // BindFlagValues binds a full FlagValue set to the configuration, using each flag's long
 // name as the config key.
-func BindFlagValues(flags FlagValueSet) (err error) { return config.BindFlagValues(flags) }
+func BindFlagValues(flags FlagValueSet) (err error) {
+	return errors.Wrap(config.BindFlagValues(flags), "config BindFlagValues failed")
+}
 
 // BindFlagValue binds a specific key to a FlagValue.
 // Example (where serverCmd is a Cobra instance):
@@ -192,13 +205,17 @@ func BindFlagValues(flags FlagValueSet) (err error) { return config.BindFlagValu
 //	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
 //	 Viper.BindFlagValue("port", serverCmd.Flags().Lookup("port"))
 //
-func BindFlagValue(key string, flag FlagValue) error { return config.BindFlagValue(key, flag) }
+func BindFlagValue(key string, flag FlagValue) error {
+	return errors.Wrap(config.BindFlagValue(key, flag), "config BindFlagValue failed")
+}
 
 // BindEnv binds a Viper key to a ENV variable.
 // ENV variables are case sensitive.
 // If only a key is provided, it will use the env key matching the key, uppercased.
 // EnvPrefix will be used when set when env name is not provided.
-func BindEnv(input ...string) error { return config.BindEnv(input...) }
+func BindEnv(input ...string) error {
+	return errors.Wrap(config.BindEnv(input...), "config BindEnv failed")
+}
 
 // IsSet checks to see if the key has been set in any of the data locations.
 // IsSet is case-insensitive for a key.
@@ -233,39 +250,61 @@ func Set(key string, value interface{}) { config.Set(key, value) }
 
 // ReadInConfig will discover and load the configuration file from disk
 // and key/value stores, searching in one of the defined paths.
-func ReadInConfig() error { return config.ReadInConfig() }
+func ReadInConfig() error {
+	return errors.Wrap(config.ReadInConfig(), "config ReadInConfig failed")
+}
 
 // MergeInConfig merges a new configuration with an existing config.
-func MergeInConfig() error { return config.MergeInConfig() }
+func MergeInConfig() error {
+	return errors.Wrap(config.MergeInConfig(), "config MergeInConfig failed")
+}
 
 // ReadConfig will read a configuration file, setting existing keys to nil if the
 // key does not exist in the file.
-func ReadConfig(in io.Reader) error { return config.ReadConfig(in) }
+func ReadConfig(in io.Reader) error {
+	return errors.Wrap(config.ReadConfig(in), "config ReadConfig failed")
+}
 
 // MergeConfig merges a new configuration with an existing config.
-func MergeConfig(in io.Reader) error { return config.MergeConfig(in) }
+func MergeConfig(in io.Reader) error {
+	return errors.Wrap(config.MergeConfig(in), "config MergeConfig failed")
+}
 
 // WriteConfig writes the current configuration to a file.
-func WriteConfig() error { return config.WriteConfig() }
+func WriteConfig() error {
+	return errors.Wrap(config.WriteConfig(), "config WriteConfig failed")
+}
 
 // SafeWriteConfig writes current configuration to file only if the file does not exist.
-func SafeWriteConfig() error { return config.SafeWriteConfig() }
+func SafeWriteConfig() error {
+	return errors.Wrap(config.SafeWriteConfig(), "config SafeWriteConfig failed")
+}
 
 // WriteConfigAs writes current configuration to a given filename.
-func WriteConfigAs(filename string) error { return config.WriteConfigAs(filename) }
+func WriteConfigAs(filename string) error {
+	return errors.Wrap(config.WriteConfigAs(filename), "config WriteConfigAs failed")
+}
 
 // SafeWriteConfigAs writes current configuration to a given filename if it does not exist.
-func SafeWriteConfigAs(filename string) error { return config.SafeWriteConfigAs(filename) }
+func SafeWriteConfigAs(filename string) error {
+	return errors.Wrap(config.SafeWriteConfigAs(filename), "config SafeWriteConfigAs failed")
+}
 
 // ReadRemoteConfig attempts to get configuration from a remote source
 // and read it in the remote configuration registry.
-func ReadRemoteConfig() error { return config.ReadRemoteConfig() }
+func ReadRemoteConfig() error {
+	return errors.Wrap(config.ReadRemoteConfig(), "config ReadRemoteConfig failed")
+}
 
 // WatchRemoteConfig changes
-func WatchRemoteConfig() error { return config.WatchRemoteConfig() }
+func WatchRemoteConfig() error {
+	return errors.Wrap(config.WatchRemoteConfig(), "config WatchRemoteConfig failed")
+}
 
 // WatchRemoteConfigOnChannel changes
-func WatchRemoteConfigOnChannel() error { return config.WatchRemoteConfigOnChannel() }
+func WatchRemoteConfigOnChannel() error {
+	return errors.Wrap(config.WatchRemoteConfigOnChannel(), "config WatchRemoteConfigOnChannel failed")
+}
 
 // AllKeys returns all keys holding a value, regardless of where they are set.
 // Nested keys are returned with a v.keyDelim (= ".") separator

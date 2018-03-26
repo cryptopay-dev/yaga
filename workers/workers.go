@@ -1,9 +1,9 @@
 package workers
 
 import (
-	"errors"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/robfig/cron"
 )
 
@@ -50,8 +50,11 @@ func New(opts Options) (err error) {
 // It accepts
 //   - Full crontab specs, e.g. "* * * * * ?"
 //   - Descriptors, e.g. "@midnight", "@every 1h30m"
-func Parse(spec string) (Schedule, error) {
-	return cron.Parse(spec)
+func Parse(spec string) (s Schedule, err error) {
+	s, err = cron.Parse(spec)
+	err = errors.Wrap(err, "workers Parse failed")
+
+	return
 }
 
 // Every returns a crontab Schedule that activates once every duration.

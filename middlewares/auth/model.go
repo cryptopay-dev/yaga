@@ -1,10 +1,11 @@
 package auth
 
 import (
-	"errors"
 	"time"
 
+	"github.com/cryptopay-dev/yaga/model"
 	"github.com/go-pg/pg/orm"
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -32,7 +33,7 @@ type UserRequest struct {
 func NewUser(db orm.DB, username, password string) (*User, error) {
 	var (
 		err   error
-		count int
+		found bool
 		dt    = time.Now()
 		user  = &User{
 			Username:  username,
@@ -41,10 +42,10 @@ func NewUser(db orm.DB, username, password string) (*User, error) {
 		}
 	)
 
-	if count, err = db.Model(&User{}).Where("username = ?", username).Count(); err != nil {
+	if found, err = model.Exist(db, model.Conditions{"username": username}, &User{}); err != nil {
 		return nil, err
-	} else if count > 0 {
-		return nil, errUsernameAlreadyTaken
+	} else if found {
+		return nil, errors.Wrap(errUsernameAlreadyTaken, "auth NewUser failed")
 	}
 
 	if err = user.HashPassword(password); err != nil {
@@ -56,14 +57,14 @@ func NewUser(db orm.DB, username, password string) (*User, error) {
 
 // ByName gets user from DB
 func (u *User) ByName(db orm.DB, username string) error {
-	return db.Model(u).Where("username = ?", username).First()
+	return model.FindOne(db, model.Conditions{"username": username}, u)
 }
 
 // HashPassword from input to user-model
 func (u *User) HashPassword(password string) error {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "auth HasPassword failed")
 	}
 	u.Password = string(bytes)
 	return nil
@@ -72,5 +73,5 @@ func (u *User) HashPassword(password string) error {
 // CheckPasswordHash compare input and user password
 func (u *User) CheckPasswordHash(password string) (bool, error) {
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
-	return err == nil, err
+	return err == nil, errors.Wrap(err, "auth CheckPasswordHash failed")
 }
