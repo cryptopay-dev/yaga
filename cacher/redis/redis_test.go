@@ -2,11 +2,11 @@ package redis
 
 import (
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/cryptopay-dev/yaga/cacher"
+	"github.com/cryptopay-dev/yaga/config"
 	"github.com/go-redis/redis"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,7 +15,7 @@ const keyTpl = "test:key:%d"
 
 func closedCacher() cacher.Cacher {
 	c := redis.NewClient(&redis.Options{
-		Addr: os.Getenv("TEST_REDIS_ADDR"),
+		Addr: config.GetString("test_redis_addr"),
 	})
 	defer c.Close()
 	return FromConnection(c)
@@ -23,7 +23,7 @@ func closedCacher() cacher.Cacher {
 
 func defaultCacher() cacher.Cacher {
 	return New(
-		Address(os.Getenv("TEST_REDIS_ADDR")),
+		Address(config.GetString("test_redis_addr")),
 		DB(0),
 		Password(""),
 	)

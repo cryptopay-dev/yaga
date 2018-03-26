@@ -3,7 +3,6 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/library/config"
 	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/misc"
 	"github.com/cryptopay-dev/yaga/doc"
 	"github.com/cryptopay-dev/yaga/logger"
@@ -15,7 +14,6 @@ const swaggerFile = "assets/docs/swagger.yaml"
 
 // Controller - rest-api controller
 type Controller struct {
-	Conf         *config.Config
 	Engine       *web.Engine
 	Logger       logger.Logger
 	BuildTime    string
@@ -30,7 +28,6 @@ func New(opts ...Option) (*Controller, error) {
 	var (
 		options = newOptions(opts...)
 		ctrl    = Controller{
-			Conf:         options.Conf,
 			Engine:       options.Engine,
 			Logger:       options.Logger,
 			BuildTime:    options.BuildTime,

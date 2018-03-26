@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 
+	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/web"
 )
@@ -40,7 +40,7 @@ func main() {
 		return c.JSON(http.StatusOK, cmd)
 	})
 
-	done := web.StartAsync(e, os.Getenv("BIND"))
+	done := web.StartAsync(e, config.GetString("bind"))
 
 	// wait for signals
 	sig := <-done

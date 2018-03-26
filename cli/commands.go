@@ -6,10 +6,7 @@ import (
 	"time"
 
 	"github.com/cryptopay-dev/yaga/cmd/yaga/commands"
-	"github.com/cryptopay-dev/yaga/config"
-	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/urfave/cli"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 func shutdownApplication(opts *Options) {
@@ -40,51 +37,12 @@ func appCommands(opts *Options) {
 		Action: func(c *cli.Context) error {
 			var err error
 
-			// If we have config-source/interface - loading config:
-			if opts.ConfigSource != nil &&
-				opts.ConfigInterface != nil {
-				if reflect.TypeOf(opts.ConfigInterface).Kind() != reflect.Ptr {
-					return ErrConfigNotPointer
-				}
-
-				if err = config.Load(
-					opts.ConfigSource,
-					opts.ConfigInterface,
-				); err != nil {
-					return err
-				}
-			}
-
 			if opts.App != nil && reflect.TypeOf(opts.App).Kind() != reflect.Ptr {
 				return ErrAppNotPointer
 			}
 
-			if err = setDatabase(opts, ""); err != nil {
-				return err
-			}
-
-			if opts.ConfigInterface != nil {
-				if redisConf, ok := hasRedis(opts.ConfigInterface); ok {
-					if opts.Redis, err = redisConf.Connect(); err != nil {
-						return err
-					}
-				}
-			}
-
-			// Validate options:
-			if err = validator.New().Struct(opts); err != nil {
-				if ok, errv := validate.CheckErrors(validate.Options{
-					Struct: opts,
-					Errors: err,
-				}); ok {
-					panic(errv)
-				}
-			}
-
 			// Running main server
 			if err = opts.App.Run(RunOptions{
-				DB:           opts.DB,
-				Redis:        opts.Redis,
 				Logger:       opts.Logger,
 				Debug:        opts.Debug,
 				BuildTime:    opts.BuildTime,
@@ -104,36 +62,24 @@ func dbCommands(opts *Options) {
 }
 
 func dbCommandSlice(opts *Options) []Command {
-	var db *config.Database
-
-	if opts.DB != nil {
-		conf := opts.DB.Options()
-		db = &config.Database{
-			Address:  conf.Addr,
-			Database: conf.Database,
-			User:     conf.User,
-			Password: conf.Password,
-		}
-	}
-
 	return cli.Commands{
 		// Migrate cleanup
-		commands.MigrateCleanup(db, opts.Logger),
+		commands.MigrateCleanup(opts.Logger),
 
 		// Migrate up
-		commands.MigrateUp(db, opts.Logger),
+		commands.MigrateUp(opts.Logger),
 
 		// Migrate down
-		commands.MigrateDown(db, opts.Logger),
+		commands.MigrateDown(opts.Logger),
 
 		// Migrate version:
-		commands.MigrateVersion(db, opts.Logger),
+		commands.MigrateVersion(opts.Logger),
 
 		// List applied migrations:
-		commands.MigrateList(db, opts.Logger),
+		commands.MigrateList(opts.Logger),
 
 		// List plan to migrate:
-		commands.MigratePlan(db, opts.Logger),
+		commands.MigratePlan(opts.Logger),
 
 		// Create migrations:
 		commands.MigrateCreate(opts.migrationPath),

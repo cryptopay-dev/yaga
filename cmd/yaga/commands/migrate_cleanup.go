@@ -5,23 +5,25 @@ import (
 	"strings"
 
 	"github.com/cryptopay-dev/yaga/config"
+	"github.com/cryptopay-dev/yaga/helpers/postgres"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/go-pg/pg"
+	"github.com/labstack/gommon/log"
 	"github.com/urfave/cli"
 )
 
 // MigrateCleanup migrations
-func MigrateCleanup(db *config.Database, log logger.Logger) cli.Command {
+func MigrateCleanup(dlog logger.Logger) cli.Command {
 	action := func(ctx *cli.Context) (err error) {
-		if db, err = FetchDB(ctx, db); err != nil {
+		if err = FetchDB(ctx, "database"); err != nil {
 			log.Fatalf("can't find config file or dsn: %v", err)
 		}
 
 		if database := ctx.String("db"); len(database) != 0 {
-			db.Database = database
+			config.Set("database.database", database)
 		}
 
-		database, err := db.Connect()
+		database, err := postgres.Connect("database")
 		if err != nil {
 			log.Fatalf("postgres connection error: %v", err)
 		}

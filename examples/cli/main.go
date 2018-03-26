@@ -10,37 +10,25 @@ import (
 )
 
 // App structure
-type App struct {
-	Config ExampleConfig
-}
+type App struct{}
 
 // Run application
 func (App) Run(opts cli.RunOptions) error {
-	spew.Dump(opts.DB)
-	spew.Dump(opts.Redis)
+	spew.Dump(opts)
 	return nil
 }
 
 // Shutdown application
 func (App) Shutdown(ctx context.Context) error { return nil }
 
-// ExampleConfig for demo
-type ExampleConfig struct {
-	Database config.Database `yaml:"database" validate:"required,dive"`
-	Redis    config.Redis    `yaml:"redis" validate:"required,dive"`
-}
-
-// Config path to config.example.yaml
-const Config = "./examples/cli/config.example.yaml"
-
 var echo string
 
 func main() {
 	instance := App{}
+	config.SetConfigName("config.example")
 
 	if err := cli.Run(
 		cli.App(&instance),
-		cli.Config(Config, &instance.Config),
 		cli.Debug(true, true), // Debug & Quiet
 		cli.Flags(cli.StringFlag{
 			Name:        "echo",
