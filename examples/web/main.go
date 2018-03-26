@@ -2,19 +2,16 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/cryptopay-dev/yaga/config"
-	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/graceful"
+	"github.com/cryptopay-dev/yaga/logger/zap"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	log := nop.New()
+	log := zap.New(zap.Development)
 
 	e, err := web.New(web.Options{
 		Logger: log,
@@ -23,11 +20,12 @@ func main() {
 
 	if err != nil {
 		log.Panic(err)
+		return
 	}
 
 	e.GET("/test/:command", func(c web.Context) error {
 		cmd := c.Param("command")
-		fmt.Println("Received command:", cmd)
+		log.Infof("Received command: %v", cmd)
 
 		switch cmd {
 		case "nop":
@@ -40,11 +38,12 @@ func main() {
 		return c.JSON(http.StatusOK, cmd)
 	})
 
-	done := web.StartAsync(e, config.GetString("bind"))
+	g := graceful.New(context.Background())
+	graceful.AttachNotifier(g, e.Logger)
 
-	// wait for signals
-	sig := <-done
-	log.Info("Received signal:", sig.String())
+	web.StartAsync(e, config.GetString("bind"), g)
 
-	e.Shutdown(ctx)
+	if err := g.Wait(); err != nil {
+		e.Logger.Error(err)
+	}
 }

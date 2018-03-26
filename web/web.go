@@ -1,11 +1,9 @@
 package web
 
 import (
+	"context"
 	"fmt"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cryptopay-dev/go-metrics"
@@ -133,19 +131,28 @@ func New(opts Options) (*Engine, error) {
 	return e, nil
 }
 
-// StartAsync HTTP with custom address and return stop channel.
-func StartAsync(e *Engine, bind string) <-chan os.Signal {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGABRT)
+type graceful interface {
+	Cancel()
+	Go(func(context.Context) error)
+}
 
+// StartAsync HTTP with custom address.
+func StartAsync(e *Engine, bind string, g graceful) {
 	go func() {
-		if err := Start(e, bind); err != nil {
+		defer g.Cancel()
+		err := Start(e, bind)
+		if err != nil {
 			e.Logger.Error(err)
-			ch <- syscall.SIGABRT
 		}
 	}()
 
-	return ch
+	g.Go(func(c context.Context) error {
+		<-c.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		return e.Shutdown(ctx)
+	})
 }
 
 // Start HTTP with custom address.
