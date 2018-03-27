@@ -32,6 +32,7 @@ func appCommands(opts *Options) {
 		Usage:   "start main server",
 		After: func(context *cli.Context) error {
 			shutdownApplication(opts)
+			opts.Logger.Info("Application stopped")
 			return nil
 		},
 		Action: func(c *cli.Context) error {
@@ -40,17 +41,12 @@ func appCommands(opts *Options) {
 			}
 
 			// Running main server
-			if err := opts.App.Run(RunOptions{
+			return opts.App.Run(RunOptions{
 				Logger:       opts.Logger,
 				Debug:        opts.Debug,
 				BuildTime:    opts.BuildTime,
 				BuildVersion: opts.BuildVersion,
-			}); err != nil {
-				opts.Logger.Fatal("Application failure", err)
-			}
-
-			opts.Logger.Info("Application stopped")
-			return nil
+			})
 		},
 	})
 }

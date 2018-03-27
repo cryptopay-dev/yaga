@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	errUsernameAlreadyTaken = errors.New("username already taken")
+	ErrUsernameAlreadyTaken = errors.New("username already taken")
 )
 
 // User model
@@ -45,7 +45,7 @@ func NewUser(db orm.DB, username, password string) (*User, error) {
 	if found, err = model.Exist(db, model.Conditions{"username": username}, &User{}); err != nil {
 		return nil, errors.Wrap(err, "auth NewUser failed")
 	} else if found {
-		return nil, errors.Wrap(errUsernameAlreadyTaken, "auth NewUser failed")
+		return nil, ErrUsernameAlreadyTaken
 	}
 
 	if err = user.HashPassword(password); err != nil {

@@ -77,7 +77,7 @@ func TestAuth_Middleware(t *testing.T) {
 
 	t.Run("Check that we can't add new user with same name", func(t *testing.T) {
 		var _, userErr = NewUser(d.DB, username, "password2")
-		assert.EqualError(t, errors.Cause(userErr), errUsernameAlreadyTaken.Error())
+		assert.EqualError(t, errors.Cause(userErr), ErrUsernameAlreadyTaken.Error())
 	})
 
 	t.Run("Valid user credentials", func(t *testing.T) {
