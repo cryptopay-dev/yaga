@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"os"
 	"sort"
 
