@@ -68,7 +68,7 @@ func New(ctx context.Context) Graceful {
 // AttachNotifier connects Graceful to notification of OS signals.
 func AttachNotifier(g Graceful, log logger) {
 	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGABRT)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
 	g.Go(func(c context.Context) error {
 		select {
