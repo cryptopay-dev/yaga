@@ -3,7 +3,6 @@ package redis
 import (
 	"github.com/cryptopay-dev/yaga/config"
 	"github.com/go-redis/redis"
-	"github.com/pkg/errors"
 )
 
 // Options for connections
@@ -23,7 +22,7 @@ func Connect(key string) (*redis.Client, error) {
 
 	// Check redis connection:
 	if _, err := con.Ping().Result(); err != nil {
-		return nil, errors.Wrap(err, "redis Connect failed")
+		return nil, err
 	}
 
 	return con, nil

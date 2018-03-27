@@ -43,7 +43,7 @@ func NewUser(db orm.DB, username, password string) (*User, error) {
 	)
 
 	if found, err = model.Exist(db, model.Conditions{"username": username}, &User{}); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "auth NewUser failed")
 	} else if found {
 		return nil, errors.Wrap(errUsernameAlreadyTaken, "auth NewUser failed")
 	}

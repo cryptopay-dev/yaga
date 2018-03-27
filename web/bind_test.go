@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -328,7 +327,6 @@ func TestBind(t *testing.T) {
 		}
 
 		assert.Error(t, err)
-		err = errors.Cause(err)
 		switch {
 		case strings.HasPrefix(item.httpHeader, echo.MIMEApplicationJSON):
 			assert.IsType(t, new(json.SyntaxError), err)

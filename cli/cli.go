@@ -6,7 +6,6 @@ import (
 
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/logger/zap"
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
@@ -52,5 +51,5 @@ func Run(opts ...Option) error {
 
 	sort.Sort(cli.CommandsByName(cliApp.Commands))
 
-	return errors.Wrap(cliApp.Run(os.Args), "cli Run failed")
+	return cliApp.Run(os.Args)
 }

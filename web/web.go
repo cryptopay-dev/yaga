@@ -13,7 +13,6 @@ import (
 	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"github.com/pkg/errors"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -123,7 +122,7 @@ func New(opts Options) (*Engine, error) {
 	})
 
 	if err != nil {
-		return nil, errors.Wrap(err, "web New failed")
+		return nil, err
 	}
 
 	e.HTTPErrorHandler = logic.Capture
@@ -166,7 +165,7 @@ func Start(e *Engine, bind string) error {
 
 	e.Logger.Infof(startServerOnPortTpl, bind)
 	if err := e.Start(bind); err != nil {
-		return errors.Wrap(fmt.Errorf(errStartServerTpl, err), "web Start failed")
+		return fmt.Errorf(errStartServerTpl, err)
 	}
 
 	return nil

@@ -3,7 +3,6 @@ package model
 import (
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
-	"github.com/pkg/errors"
 )
 
 var ErrNoRows = pg.ErrNoRows
@@ -11,7 +10,7 @@ var ErrNoRows = pg.ErrNoRows
 func Create(db orm.DB, v interface{}) (int, error) {
 	res, err := db.Model(v).Insert()
 	if err != nil {
-		return 0, errors.Wrap(err, "model Create failed")
+		return 0, err
 	}
 
 	return res.RowsAffected(), nil
@@ -20,7 +19,7 @@ func Create(db orm.DB, v interface{}) (int, error) {
 func Delete(db orm.DB, v interface{}) (int, error) {
 	res, err := db.Model(v).Delete()
 	if err != nil {
-		return 0, errors.Wrap(err, "model Delete failed")
+		return 0, err
 	}
 
 	return res.RowsAffected(), nil
@@ -29,7 +28,7 @@ func Delete(db orm.DB, v interface{}) (int, error) {
 func Update(db orm.DB, v interface{}, column ...string) (int, error) {
 	res, err := db.Model(v).Column(column...).Update()
 	if err != nil {
-		return 0, errors.Wrap(err, "model Update failed")
+		return 0, err
 	}
 
 	return res.RowsAffected(), nil
@@ -47,16 +46,7 @@ func queryFilter(db orm.DB, filter Conditions, v interface{}) *orm.Query {
 }
 
 func Find(db orm.DB, filter Conditions, v interface{}) error {
-	f := queryFilter(db, filter, v)
-
-	if err := f.Select(); err != nil {
-		if pg.ErrNoRows == err {
-			return err
-		}
-		return errors.Wrap(err, "model Find failed")
-	}
-
-	return nil
+	return queryFilter(db, filter, v).Select()
 }
 
 func FindOneByID(db orm.DB, id int64, v interface{}) error {
@@ -64,36 +54,18 @@ func FindOneByID(db orm.DB, id int64, v interface{}) error {
 }
 
 func FindOne(db orm.DB, filter Conditions, v interface{}) error {
-	f := queryFilter(db, filter, v)
-
-	if err := f.First(); err != nil {
-		if pg.ErrNoRows == err {
-			return err
-		}
-		return errors.Wrap(err, "model FindOne failed")
-	}
-
-	return nil
+	return queryFilter(db, filter, v).First()
 }
 
 func Exist(db orm.DB, filter Conditions, v interface{}) (bool, error) {
 	n, err := queryFilter(db, filter, v).Count()
 	if err != nil {
-		return false, errors.Wrap(err, "model Exist failed")
+		return false, err
 	}
 
 	return n > 0, nil
 }
 
 func FindOneForUpdate(db orm.DB, filter Conditions, v interface{}) error {
-	f := queryFilter(db, filter, v)
-
-	if err := f.For("UPDATE").First(); err != nil {
-		if pg.ErrNoRows == err {
-			return err
-		}
-		return errors.Wrap(err, "model FindOneForUpdate failed")
-	}
-
-	return nil
+	return queryFilter(db, filter, v).For("UPDATE").First()
 }
