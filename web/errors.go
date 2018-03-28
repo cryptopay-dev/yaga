@@ -61,6 +61,10 @@ func NewLogic(opts LogicOptions) (*Logic, error) {
 	return e, nil
 }
 
+type CustomError interface {
+	FormatResponse(ctx echo.Context)
+}
+
 // Capture web-errors and formatting answer
 func (c *Logic) Capture(err error, ctx echo.Context) {
 	code := http.StatusBadRequest
@@ -69,6 +73,9 @@ func (c *Logic) Capture(err error, ctx echo.Context) {
 	message := err.Error()
 
 	switch custom := err.(type) {
+	case CustomError:
+		custom.FormatResponse(ctx)
+		return
 	case *json.UnmarshalTypeError:
 		message = fmt.Sprintf("JSON parse error: expected=%v, got=%v, offset=%v", custom.Type, custom.Value, custom.Offset)
 	case *json.SyntaxError:
