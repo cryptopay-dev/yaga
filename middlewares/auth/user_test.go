@@ -10,6 +10,7 @@ import (
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/go-pg/pg"
 	"github.com/labstack/echo"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -76,7 +77,7 @@ func TestAuth_Middleware(t *testing.T) {
 
 	t.Run("Check that we can't add new user with same name", func(t *testing.T) {
 		var _, userErr = NewUser(d.DB, username, "password2")
-		assert.EqualError(t, userErr, errUsernameAlreadyTaken.Error())
+		assert.EqualError(t, errors.Cause(userErr), ErrUsernameAlreadyTaken.Error())
 	})
 
 	t.Run("Valid user credentials", func(t *testing.T) {
@@ -92,14 +93,14 @@ func TestAuth_Middleware(t *testing.T) {
 	t.Run("Bad user credentials - password", func(t *testing.T) {
 		authData := "basic " + base64.StdEncoding.EncodeToString([]byte(username+":password2"))
 		req.Header.Set(echo.HeaderAuthorization, authData)
-		assert.EqualError(t, h(c), bcrypt.ErrMismatchedHashAndPassword.Error())
+		assert.EqualError(t, errors.Cause(h(c)), bcrypt.ErrMismatchedHashAndPassword.Error())
 	})
 
 	t.Run("Bad user credentials - login", func(t *testing.T) {
 
 		authData := "basic " + base64.StdEncoding.EncodeToString([]byte("user2:"+password))
 		req.Header.Set(echo.HeaderAuthorization, authData)
-		assert.EqualError(t, h(c), pg.ErrNoRows.Error())
+		assert.EqualError(t, errors.Cause(h(c)), pg.ErrNoRows.Error())
 	})
 
 }
