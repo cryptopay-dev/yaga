@@ -16,8 +16,11 @@ func Options(key string) *redis.Options {
 	}
 }
 
+// Client for hide redis.Client
+type Client = redis.Client
+
 // Connect to Redis and check connection:
-func Connect(key string) (*redis.Client, error) {
+func Connect(key string) (*Client, error) {
 	con := redis.NewClient(Options(key))
 
 	// Check redis connection:
