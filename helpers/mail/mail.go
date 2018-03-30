@@ -5,8 +5,11 @@ import (
 	"github.com/cryptopay-dev/yaga/mail"
 )
 
+// Mailer for hide mail.Mailer
+type Mailer = mail.Mailer
+
 // Connect to Mail
-func Connect(key string, log mail.Logger) (mail.Mailer, error) {
+func Connect(key string, log mail.Logger) (Mailer, error) {
 	return mail.New(mail.Options{
 		APIKey:            config.GetString(key + ".api_key"),
 		Logger:            log,

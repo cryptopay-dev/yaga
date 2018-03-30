@@ -15,8 +15,11 @@ func Options(key string) *pg.Options {
 	}
 }
 
+// DB for hide pg.DB
+type DB = pg.DB
+
 // Connect to PostgreSQL and check connection:
-func Connect(key string) (*pg.DB, error) {
+func Connect(key string) (*DB, error) {
 	con := pg.Connect(Options(key))
 
 	// Check postgres connection:
