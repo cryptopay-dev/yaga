@@ -35,8 +35,12 @@ func New(opts ...Option) Locker {
 
 // Run runs a callback handler with a Redis lock.
 func (l *Lock) Run(key string, timeout time.Duration, handler func()) {
-	l.locker.LockTimeout = timeout
-	if err := lock.Run(l.redis, key, l.locker, handler); err != nil {
+	opts := &lock.Options{
+		RetryCount:  l.locker.RetryCount,
+		RetryDelay:  l.locker.RetryDelay,
+		LockTimeout: timeout,
+	}
+	if err := lock.Run(l.redis, key, opts, handler); err != nil {
 		l.logger.Errorf("Locker error: %v", err.Error())
 	}
 }
