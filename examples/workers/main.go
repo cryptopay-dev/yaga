@@ -34,9 +34,14 @@ func main() {
 	// example of scheduler like time.Ticker
 	err := workers.New(workers.Options{
 		Name:     "worker #1",
-		Schedule: workers.Every(time.Second * 5),
-		Handler: func() {
-			fmt.Printf("[%s] worker #1 every 5 secs\n", time.Now().Format("15:04:05"))
+		Schedule: workers.Every(time.Second * 2),
+		Handler: func(c context.Context) {
+			select {
+			case <-c.Done():
+				fmt.Printf("[%s] worker #1; we stopping\n", time.Now().Format("15:04:05"))
+			default:
+				fmt.Printf("[%s] worker #1 every 5 secs\n", time.Now().Format("15:04:05"))
+			}
 		},
 	})
 	if err != nil {
@@ -55,7 +60,7 @@ func main() {
 	err = workers.New(workers.Options{
 		Name:     "worker #2",
 		Schedule: sched,
-		Handler: func() {
+		Handler: func(context.Context) {
 			fmt.Printf("[%s] worker #2 every 13 secs: STEP=%d\n", time.Now().Format("15:04:05"), step.Inc())
 		},
 	})
@@ -73,7 +78,7 @@ func main() {
 	err = workers.New(workers.Options{
 		Name:     "worker #3",
 		Schedule: sched,
-		Handler: func() {
+		Handler: func(context.Context) {
 			fmt.Printf("[%s] worker #3 every minute at 12 secs\n", time.Now().Format("15:04:05"))
 		},
 	})
@@ -87,7 +92,7 @@ func main() {
 	err = workers.New(workers.Options{
 		Name:     "worker #4",
 		Schedule: delay,
-		Handler: func() {
+		Handler: func(context.Context) {
 			if step.Load() > 4 && !delay.stop {
 				fmt.Printf("[%s] worker #4: send command 'exit'\n", time.Now().Format("15:04:05"))
 				delay.stop = true
@@ -106,8 +111,13 @@ func main() {
 	// stopping workers
 	workers.Stop()
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
 	// wait until all workers will be stopped
-	workers.Wait()
+	if err = workers.Wait(ctx); err != nil {
+		fmt.Printf("[%s] error of completion\n", time.Now().Format("15:04:05"))
+	}
 
 	fmt.Printf("[%s] All workers are stopped\n", time.Now().Format("15:04:05"))
 }
