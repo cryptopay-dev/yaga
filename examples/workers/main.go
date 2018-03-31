@@ -34,7 +34,7 @@ func main() {
 	// example of scheduler like time.Ticker
 	err := workers.New(workers.Options{
 		Name:     "worker #1",
-		Schedule: workers.Every(time.Second * 2),
+		Schedule: workers.Every(time.Second * 5),
 		Handler: func(c context.Context) {
 			select {
 			case <-c.Done():
