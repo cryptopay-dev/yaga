@@ -1,6 +1,7 @@
 package workers
 
 import (
+	"context"
 	"sync"
 	"time"
 )
@@ -66,17 +67,17 @@ func (m *mockCron) StopCron() {
 	m.stopped = true
 }
 
-func (m *mockCron) Wait() {
-	m.poolWorker.wait()
+func (m *mockCron) Wait(ctx context.Context) error {
+	return m.poolWorker.wait(ctx)
 }
 
-func newCronForTest() (*mockCron, func(string, time.Duration, func()) (*worker, error)) {
+func newCronForTest() (*mockCron, func(string, time.Duration, func(context.Context)) (*worker, error)) {
 	c := &mockCron{
 		poolWorker: newPool(),
 		stop:       make(chan struct{}),
 	}
 
-	return c, func(name string, tick time.Duration, handler func()) (*worker, error) {
+	return c, func(name string, tick time.Duration, handler func(context.Context)) (*worker, error) {
 		opts := Options{
 			Name:     name,
 			Schedule: dummySchedule{},

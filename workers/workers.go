@@ -1,6 +1,7 @@
 package workers
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -12,7 +13,7 @@ type (
 	Options struct {
 		Name     string
 		Schedule Schedule
-		Handler  func()
+		Handler  func(context.Context)
 	}
 
 	// Schedule describes a job's duty cycle.
@@ -74,6 +75,6 @@ func Stop() {
 }
 
 // Wait blocks until all workers will be stopped.
-func Wait() {
-	poolWorker.wait()
+func Wait(ctx context.Context) error {
+	return poolWorker.wait(ctx)
 }
