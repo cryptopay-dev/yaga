@@ -13,6 +13,7 @@ import (
 
 var defaultLog logger.Logger
 
+// New setup logger
 func New() logger.Logger {
 	level := config.GetString("level")
 
@@ -23,6 +24,8 @@ func New() logger.Logger {
 	} else {
 		defaultLog = zap.New(level)
 	}
+
+	defaultLog.Infof("Start with level: `%s`", level)
 
 	return defaultLog
 }
