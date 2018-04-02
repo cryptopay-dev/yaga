@@ -57,9 +57,14 @@ func (p *pool) createWorker(opts Options) (*worker, error) {
 			return
 		}
 
-		select {
-		case p.jobCh <- w.options.Handler:
-		default:
+		for {
+			select {
+			case p.jobCh <- w.options.Handler:
+			default:
+				if !p.running.Load() {
+					return
+				}
+			}
 		}
 	}
 
