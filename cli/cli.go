@@ -12,8 +12,8 @@ import (
 var (
 	// ErrAppNotPointer when app-instance not pointer to struct
 	ErrAppNotPointer = errors.New("app must be a pointer to a struct")
-	// ErrLoggerNotSetup when not called log.Init()
-	ErrLoggerNotSetup = errors.New("logger not setup")
+	// ErrLoggerNotInitialized when not called log.Init()
+	ErrLoggerNotInitialized = errors.New("logger not initialized")
 )
 
 // Run creates instance of cli.App with Options.
@@ -32,7 +32,7 @@ func Run(opts ...Option) error {
 
 	// initialize..
 	if log.Logger() == nil {
-		return ErrLoggerNotSetup
+		return ErrLoggerNotInitialized
 	}
 
 	if len(options.flags) > 0 {
