@@ -53,8 +53,8 @@
     "orm",
     "types"
   ]
-  revision = "24dfe0572921e42ffe1035f7afbd40f9d97cb8c8"
-  version = "v6.10.0"
+  revision = "a7da286fae957b07243bb3aaaf4897c3ca912c50"
+  version = "v6.11.1"
 
 [[projects]]
   name = "github.com/go-playground/locales"
@@ -108,12 +108,6 @@
     "json/token"
   ]
   revision = "f40e974e75af4e271d97ce0fc917af5898ae7bda"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/golang/sync"
-  packages = ["errgroup"]
-  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
 
 [[projects]]
   branch = "master"
@@ -235,8 +229,8 @@
     ".",
     "mem"
   ]
-  revision = "bb8f1927f2a9d3ab41c9340aa034f6b803f4359c"
-  version = "v1.0.2"
+  revision = "63644898a8da0bc22138abf860edaf5277b6102e"
+  version = "v1.1.0"
 
 [[projects]]
   name = "github.com/spf13/cast"
@@ -320,13 +314,7 @@
     "bcrypt",
     "blowfish"
   ]
-  revision = "88942b9c40a4c9d203b82b3731787b672d6e809b"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/net"
-  packages = ["context"]
-  revision = "6078986fec03a1dcc236c34816c71b0e05018fda"
+  revision = "12892e8c234f4fe6f6803f052061de9057903bb2"
 
 [[projects]]
   branch = "master"
@@ -338,7 +326,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "91ee8cde435411ca3f1cd365e8f20131aed4d0a1"
+  revision = "378d26f46672a356c46195c28f61bdb4c0a781dd"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -362,8 +350,8 @@
 [[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "7f97868eec74b32b0982dd158a51a446d1da7eb5"
-  version = "v2.1.1"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
