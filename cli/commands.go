@@ -8,6 +8,7 @@ import (
 	"github.com/cryptopay-dev/yaga/cmd/yaga/commands"
 	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/validate"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -51,7 +52,7 @@ func appCommands(opts *Options) {
 					opts.ConfigSource,
 					opts.ConfigInterface,
 				); err != nil {
-					return err
+					return errors.Wrapf(err, "can't load config")
 				}
 			}
 
@@ -60,13 +61,13 @@ func appCommands(opts *Options) {
 			}
 
 			if err = setDatabase(opts, ""); err != nil {
-				return err
+				return errors.Wrapf(err, "can't set database")
 			}
 
 			if opts.ConfigInterface != nil {
 				if redisConf, ok := hasRedis(opts.ConfigInterface); ok {
 					if opts.Redis, err = redisConf.Connect(); err != nil {
-						return err
+						return errors.Wrap(err, "can't connect to redis")
 					}
 				}
 			}
@@ -77,7 +78,7 @@ func appCommands(opts *Options) {
 					Struct: opts,
 					Errors: err,
 				}); ok {
-					panic(errv)
+					return errors.Wrapf(errv, "validate error")
 				}
 			}
 
