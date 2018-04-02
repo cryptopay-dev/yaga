@@ -5,14 +5,15 @@ import (
 	"os"
 	"sort"
 
-	"github.com/cryptopay-dev/yaga/logger/nop"
-	"github.com/cryptopay-dev/yaga/logger/zap"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/urfave/cli"
 )
 
 var (
 	// ErrAppNotPointer when app-instance not pointer to struct
 	ErrAppNotPointer = errors.New("app must be a pointer to a struct")
+	// ErrLoggerNotInitialized when not called log.Init()
+	ErrLoggerNotInitialized = errors.New("logger not initialized")
 )
 
 // Run creates instance of cli.App with Options.
@@ -29,14 +30,9 @@ func Run(opts ...Option) error {
 	cliApp.Version = options.BuildVersion
 	cliApp.Authors = options.Users
 
-	if options.Logger == nil {
-		if options.Debug == false { // Debug = false
-			options.Logger = zap.New(zap.Production)
-		} else if options.Quiet { // Debug = true && Quiet = true
-			options.Logger = nop.New()
-		} else { // Debug = true && Quiet = false
-			options.Logger = zap.New(zap.Development)
-		}
+	// initialize..
+	if log.Logger() == nil {
+		return ErrLoggerNotInitialized
 	}
 
 	if len(options.flags) > 0 {

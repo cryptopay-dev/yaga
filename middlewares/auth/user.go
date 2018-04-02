@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
@@ -30,7 +31,7 @@ func (a *Auth) Middleware() web.MiddlewareFunc {
 // check username and password from request
 func (a *Auth) check(username, password string, ctx web.Context) (result bool, err error) {
 	var user User
-	a.Logger.Infof(infAuthLoginRequest, username)
+	log.Infof(infAuthLoginRequest, username)
 	if err = user.ByName(a.DB, username); err != nil {
 		return
 	}

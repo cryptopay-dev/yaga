@@ -1,14 +1,12 @@
 package controllers
 
 import (
-	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
 // Options of controller
 type Options struct {
 	Engine       *web.Engine
-	Logger       logger.Logger
 	BuildTime    string
 	BuildVersion string
 }
@@ -29,13 +27,6 @@ func newOptions(opts ...Option) (opt Options) {
 func Engine(e *web.Engine) Option {
 	return func(o *Options) {
 		o.Engine = e
-	}
-}
-
-// Logger closure to set field in Options
-func Logger(log logger.Logger) Option {
-	return func(o *Options) {
-		o.Logger = log
 	}
 }
 

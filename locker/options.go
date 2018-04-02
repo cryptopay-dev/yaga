@@ -1,14 +1,12 @@
 package locker
 
 import (
-	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/go-redis/redis"
 )
 
 // Options for creating Locker instance
 type Options struct {
-	Redis  *redis.Client
-	Logger logger.Logger
+	Redis *redis.Client
 }
 
 // Option closure
@@ -27,12 +25,5 @@ func newOptions(opts ...Option) Options {
 func Redis(r *redis.Client) Option {
 	return func(o *Options) {
 		o.Redis = r
-	}
-}
-
-// Logger closure to set field in Options
-func Logger(l logger.Logger) Option {
-	return func(o *Options) {
-		o.Logger = l
 	}
 }

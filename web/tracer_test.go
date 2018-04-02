@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/cryptopay-dev/yaga/helpers"
-	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,7 +24,7 @@ func TestRayTraceID(t *testing.T) {
 	var (
 		rec    = httptest.NewRecorder()
 		c      = e.NewContext(req, rec)
-		handle = RayTraceID(nop.New())(func(c Context) error {
+		handle = RayTraceID(func(c Context) error {
 			return c.NoContent(http.StatusOK)
 		})
 	)
@@ -36,7 +35,7 @@ func TestRayTraceID(t *testing.T) {
 	assert.NoError(t, err)
 
 	req.Header.Set(RayTraceHeader, fakeRayTraceID)
-	handle = RayTraceID(nop.New())(func(c echo.Context) error {
+	handle = RayTraceID(func(c echo.Context) error {
 		var (
 			tag   = TraceTag(c)
 			field = TraceTag(c)

@@ -11,7 +11,7 @@ func main() {
 	}
 
 	// Setup logger..
-	log.New()
+	log.Init()
 
 	log.Info("all fine!")
 	log.Print("all fine!")

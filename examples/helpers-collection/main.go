@@ -6,17 +6,15 @@ import (
 
 	"github.com/cryptopay-dev/yaga/helpers/collection"
 	"github.com/cryptopay-dev/yaga/helpers/postgres"
-	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/web"
 	"github.com/go-pg/pg"
 )
 
 func main() {
-	log := nop.New()
+	log.Init()
 
-	e, err := web.New(web.Options{
-		Logger: log,
-	})
+	e, err := web.New(web.Options{})
 
 	if err != nil {
 		log.Panic(err)

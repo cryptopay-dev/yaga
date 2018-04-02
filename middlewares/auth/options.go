@@ -1,14 +1,12 @@
 package auth
 
 import (
-	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/go-pg/pg"
 )
 
 // Options for auth
 type Options struct {
-	DB     *pg.DB
-	Logger logger.Logger
+	DB *pg.DB
 }
 
 // Option closure
@@ -27,12 +25,5 @@ func newOptions(opts ...Option) (opt Options) {
 func DB(db *pg.DB) Option {
 	return func(o *Options) {
 		o.DB = db
-	}
-}
-
-// Logger closure to set value in Options
-func Logger(log logger.Logger) Option {
-	return func(o *Options) {
-		o.Logger = log
 	}
 }

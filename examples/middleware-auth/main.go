@@ -4,16 +4,14 @@ import (
 	"net/http"
 
 	"github.com/cryptopay-dev/yaga/helpers/postgres"
-	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/middlewares/auth"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
 func main() {
-	log := nop.New()
-	e, err := web.New(web.Options{
-		Logger: log,
-	})
+	log.Init()
+	e, err := web.New(web.Options{})
 
 	if err != nil {
 		log.Panic(err)
@@ -25,7 +23,6 @@ func main() {
 	}
 
 	authenticate := auth.New(
-		auth.Logger(log),
 		auth.DB(db),
 	)
 

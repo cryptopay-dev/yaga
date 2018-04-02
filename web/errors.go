@@ -3,25 +3,18 @@ package web
 import (
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"net/http"
 	"sync"
 
 	"github.com/cryptopay-dev/yaga/config"
-	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/tracer"
 	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/getsentry/raven-go"
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
 )
-
-// LogicOptions for creating new Logic
-type LogicOptions struct {
-	Debug  bool
-	Logger logger.Logger
-}
 
 // LogicResponse answer structure
 type LogicResponse struct {
@@ -33,34 +26,26 @@ type LogicResponse struct {
 // Logic is an structure for capture and recover
 // web-errors and panics
 type Logic struct {
-	Opts LogicOptions
+	Debug bool
 }
 
-var (
-	// ErrorEmptyLogger issued when logger received empty logger to New-method
-	ErrorEmptyLogger = errors.New("options hasn't logger")
-
-	initRavenOnce = sync.Once{}
-)
+var initRavenOnce = sync.Once{}
 
 // NewLogic creates instance of Logic structure
-func NewLogic(opts LogicOptions) (*Logic, error) {
-	if opts.Logger == nil {
-		return nil, ErrorEmptyLogger
-	}
-
+func NewLogic(debug bool) *Logic {
 	e := new(Logic)
-	e.Opts = opts
+	e.Debug = debug
 
 	initRavenOnce.Do(func() {
 		if err := raven.SetDSN(config.GetString("sentry_dsn")); err != nil {
-			e.Opts.Logger.Error(err)
+			log.Error(err)
 		}
 	})
 
-	return e, nil
+	return e
 }
 
+// CustomError interface
 type CustomError interface {
 	FormatResponse(ctx echo.Context)
 }
@@ -98,11 +83,11 @@ func (c *Logic) Capture(err error, ctx echo.Context) {
 	// Capture errors:
 	if code >= http.StatusInternalServerError {
 		raven.CaptureErrorAndWait(err, TraceTag(ctx))
-		c.Opts.Logger.Error("Request error", zap.Error(err), TraceTag(ctx))
+		log.Error("Request error", zap.Error(err), TraceTag(ctx))
 	}
 
 	// Capture stack trace:
-	if c.Opts.Debug {
+	if c.Debug {
 		trace = append(trace, tracer.Stack(err)...)
 	}
 
@@ -111,6 +96,6 @@ func (c *Logic) Capture(err error, ctx echo.Context) {
 		Stack:  trace,
 		Result: result,
 	}); errJSON != nil {
-		c.Opts.Logger.Errorf("Error.Capture error: %v", err)
+		log.Errorf("Error.Capture error: %v", err)
 	}
 }

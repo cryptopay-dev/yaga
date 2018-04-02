@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/cryptopay-dev/yaga/locker"
-	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/go-redis/redis"
 )
 
@@ -17,8 +17,9 @@ func main() {
 		DB:       0,
 	})
 
+	log.Init()
+
 	lock := locker.New(
-		locker.Logger(nop.New()),
 		locker.Redis(store),
 	)
 

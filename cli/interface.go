@@ -3,13 +3,11 @@ package cli
 import (
 	"context"
 
-	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/urfave/cli"
 )
 
 // RunOptions for pass db, redis, etc to application:
 type RunOptions struct {
-	Logger       logger.Logger
 	Debug        bool
 	BuildTime    string
 	BuildVersion string

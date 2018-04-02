@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
 )
@@ -18,8 +18,6 @@ type Options struct {
 	DB DB
 	// Path to migrations files
 	Path string
-	// Logger
-	Logger logger.Logger
 }
 
 // Migrator interface
@@ -71,7 +69,7 @@ func New(opts Options) (Migrator, error) {
 		return nil, ErrNoDB
 	}
 
-	if opts.Logger == nil {
+	if log.Logger() == nil {
 		return nil, ErrNoLogger
 	}
 
@@ -92,7 +90,7 @@ func prepareMigrations(migrate *migrate) (err error) {
 		return
 	}
 
-	migrate.Migrations, err = extractMigrations(opts.Logger, opts.Path, files)
+	migrate.Migrations, err = extractMigrations(opts.Path, files)
 
 	return
 }
@@ -157,7 +155,7 @@ func (m *migrate) Up(steps int) error {
 			continue
 		}
 
-		m.Logger.Infof("(%d) migrate up to: %d_%s", i+1, item.Version, item.Name)
+		log.Infof("(%d) migrate up to: %d_%s", i+1, item.Version, item.Name)
 		if err = item.Up(m.DB); err != nil {
 			return err
 		}
@@ -211,7 +209,7 @@ func (m *migrate) Down(steps int) error {
 			continue
 		}
 
-		m.Logger.Infof("(%d) migrate down to: %d_%s", steps, item.Version, item.Name)
+		log.Infof("(%d) migrate down to: %d_%s", steps, item.Version, item.Name)
 		if err = item.Down(m.DB); err != nil {
 			return err
 		}

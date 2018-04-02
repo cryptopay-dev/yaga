@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/bsm/redis-lock"
-	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/go-redis/redis"
 )
 
@@ -17,15 +17,13 @@ type Locker interface {
 type Lock struct {
 	redis  *redis.Client
 	locker *lock.Options
-	logger logger.Logger
 }
 
 // New creates instance of Locker
 func New(opts ...Option) Locker {
 	var options = newOptions(opts...)
 	return &Lock{
-		redis:  options.Redis,
-		logger: options.Logger,
+		redis: options.Redis,
 		locker: &lock.Options{
 			RetryCount: 10,
 			RetryDelay: 100 * time.Millisecond,
@@ -41,6 +39,6 @@ func (l *Lock) Run(key string, timeout time.Duration, handler func()) {
 		LockTimeout: timeout,
 	}
 	if err := lock.Run(l.redis, key, opts, handler); err != nil {
-		l.logger.Errorf("Locker error: %v", err.Error())
+		log.Errorf("Locker error: %v", err.Error())
 	}
 }

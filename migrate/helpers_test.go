@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -88,11 +89,13 @@ func TestExtractMigrations(t *testing.T) {
 		files []os.FileInfo
 	)
 
+	log.Init()
+
 	if files, err = findMigrations(path); !assert.NoError(t, err) {
 		t.FailNow()
 	}
 
-	items, errMigrate := extractMigrations(defaultLogger, path, files)
+	items, errMigrate := extractMigrations(path, files)
 
 	if !assert.NoError(t, errMigrate) {
 		t.FailNow()
@@ -122,7 +125,7 @@ func TestCreateMigrations(t *testing.T) {
 			t.FailNow()
 		}
 
-		items, err := extractMigrations(defaultLogger, dir, files)
+		items, err := extractMigrations(dir, files)
 		if !assert.NoError(t, err) {
 			t.FailNow()
 		}

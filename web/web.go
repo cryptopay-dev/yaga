@@ -8,7 +8,7 @@ import (
 
 	"github.com/cryptopay-dev/go-metrics"
 	"github.com/cryptopay-dev/yaga/config"
-	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/labstack/echo"
@@ -35,7 +35,6 @@ type recoverer interface {
 
 // Options contains a parameters for new Echo instance.
 type Options struct {
-	Logger    logger.Logger
 	Debug     bool
 	Validator echo.Validator
 }
@@ -85,11 +84,11 @@ type (
 func New(opts Options) (*Engine, error) {
 	e := echo.New()
 
-	if opts.Logger == nil {
-		opts.Logger = defaultLogger
+	if log.Logger() == nil {
+		log.Init()
 	}
 
-	e.Logger = opts.Logger
+	e.Logger = log.Logger()
 
 	// TODO may be move to function?
 	initMetricsOnce.Do(func() {
@@ -116,14 +115,7 @@ func New(opts Options) (*Engine, error) {
 
 	e.Binder = new(DefaultBinder)
 
-	logic, err := NewLogic(LogicOptions{
-		Debug:  opts.Debug,
-		Logger: opts.Logger,
-	})
-
-	if err != nil {
-		return nil, err
-	}
+	logic := NewLogic(opts.Debug)
 
 	e.HTTPErrorHandler = logic.Capture
 	e.Use(logic.Recover())
