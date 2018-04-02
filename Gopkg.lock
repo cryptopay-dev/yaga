@@ -81,6 +81,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/golang/sync"
+  packages = ["errgroup"]
+  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
+
+[[projects]]
+  branch = "master"
   name = "github.com/jinzhu/inflection"
   packages = ["."]
   revision = "1c35d901db3da928c72a72d8458480cc9ade058f"
@@ -237,6 +243,12 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context"]
+  revision = "b68f30494add4df6bd8ef5e82803f308e7f7c59c"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
   revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
@@ -256,6 +268,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "760465928ea681c8be0ff40c950f3d59d53c11981592c5795978a7953fce168e"
+  inputs-digest = "ad6023161a126c4640eaed10c72408ea165b99358b28735c413a896fbfe73c3e"
   solver-name = "gps-cdcl"
   solver-version = 1
