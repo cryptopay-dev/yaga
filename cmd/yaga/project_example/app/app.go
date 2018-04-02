@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"time"
 
 	"github.com/cryptopay-dev/yaga/cli"
 	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/controllers"
@@ -81,5 +82,7 @@ func (a *App) Run(opts cli.RunOptions) error {
 	graceful.AttachNotifier(a.Graceful, a.Logger)
 	web.StartAsync(a.Engine, config.GetString("bind"), a.Graceful)
 
-	return a.Graceful.Wait()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	return a.Graceful.Wait(ctx)
 }
