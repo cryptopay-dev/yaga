@@ -2,7 +2,6 @@ package log
 
 import (
 	"io"
-	"sync"
 
 	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/logger"
@@ -12,23 +11,18 @@ import (
 	zaplog "go.uber.org/zap"
 )
 
-var (
-	once       = sync.Once{}
-	defaultLog logger.Logger
-)
+var defaultLog logger.Logger
 
 func init() {
-	once.Do(func() {
-		level := config.GetString("level")
+	level := config.GetString("level")
 
-		if level == "nop" {
-			defaultLog = nop.New()
-		} else if level == "dev" {
-			defaultLog = zap.New(zap.Development)
-		} else {
-			defaultLog = zap.New(level)
-		}
-	})
+	if level == "nop" {
+		defaultLog = nop.New()
+	} else if level == "dev" {
+		defaultLog = zap.New(zap.Development)
+	} else {
+		defaultLog = zap.New(level)
+	}
 }
 
 // Logger getter
