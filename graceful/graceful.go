@@ -13,7 +13,7 @@ import (
 // Graceful interface
 type Graceful interface {
 	Go(func(context.Context) error)
-	Wait() error
+	Wait(context.Context) error
 	Cancel()
 }
 
@@ -53,8 +53,23 @@ func (g *graceful) Go(job func(context.Context) error) {
 	g.eg.Go(f)
 }
 
-func (g *graceful) Wait() error {
-	return g.eg.Wait()
+func (g *graceful) Wait(ctx context.Context) error {
+	if ctx == nil {
+		return g.eg.Wait()
+	}
+
+	var err error
+	done := make(chan struct{})
+	go func() {
+		err = g.eg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // New returns a new Graceful and an associated Context derived from ctx.
