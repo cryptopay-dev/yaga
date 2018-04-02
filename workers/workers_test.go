@@ -1,6 +1,7 @@
 package workers
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"sync"
@@ -58,7 +59,7 @@ func TestWorkerConflictName(t *testing.T) {
 	defer c.StopCron()
 
 	name := getUniqueWorkerName()
-	w, err := creater(name, minTickForTest, func() {})
+	w, err := creater(name, minTickForTest, func(context.Context) {})
 	if !assert.NoError(t, err) || !assert.NotNil(t, w) {
 		assert.FailNow(t, "Cannot create worker")
 	}
@@ -67,13 +68,13 @@ func TestWorkerConflictName(t *testing.T) {
 	}
 
 	// create new worker with existing name
-	w, err = creater(name, minTickForTest, func() {})
+	w, err = creater(name, minTickForTest, func(context.Context) {})
 	if !assert.Error(t, err) || !assert.Nil(t, w) {
 		assert.FailNow(t, "Created new worker with duplicate name")
 	}
 
 	// create new worker with unique name
-	w, err = creater(name+" foobar", minTickForTest, func() {})
+	w, err = creater(name+" foobar", minTickForTest, func(context.Context) {})
 	if !assert.NoError(t, err) || !assert.NotNil(t, w) {
 		assert.FailNow(t, "Cannot create worker with unique name")
 	}
@@ -81,6 +82,47 @@ func TestWorkerConflictName(t *testing.T) {
 	if !assert.Equal(t, 2, len(w.pool.workers)) {
 		assert.FailNow(t, "Invalidate workers data, must be 2 workers")
 	}
+}
+
+func TestWorkersContext(t *testing.T) {
+	c, creater := newCronForTest()
+	defer c.StopCron()
+	c.Start()
+
+	t.Run("workers should be stop when context done", func(t *testing.T) {
+		info := atomic.NewInt32(0)
+
+		for i := 0; i < 5; i++ {
+			n := int32(i)
+			_, err := creater(getUniqueWorkerName(), minTickForTest, func(ctx context.Context) {
+				if info.CAS(n, n+1) {
+					<-ctx.Done()
+					info.Add(2)
+				}
+			})
+			if !assert.NoError(t, err, "Cannot create worker") {
+				t.FailNow()
+			}
+		}
+
+		if !checkEqual(info, 5) {
+			assert.FailNow(t, "Cannot start workers")
+		}
+
+		ctx, _ := context.WithTimeout(context.Background(), minTickForTest*100)
+		err := c.Wait(ctx)
+		if !assert.Error(t, err, "Fail waiting of workers") {
+			t.FailNow()
+		}
+
+		c.Stop()
+
+		if !checkEqual(info, 15) {
+			assert.FailNow(t, "Context done failed")
+		}
+
+		c.Wait(nil)
+	})
 }
 
 func TestWorkerStartAndStop(t *testing.T) {
@@ -91,7 +133,7 @@ func TestWorkerStartAndStop(t *testing.T) {
 	t.Run("worker should be start", func(t *testing.T) {
 		start := atomic.NewInt32(0)
 
-		_, err := creater(getUniqueWorkerName(), minTickForTest, func() {
+		_, err := creater(getUniqueWorkerName(), minTickForTest, func(context.Context) {
 			start.Inc()
 		})
 		if !assert.NoError(t, err, "Cannot create worker") {
@@ -106,7 +148,7 @@ func TestWorkerStartAndStop(t *testing.T) {
 	t.Run("worker should be stop", func(t *testing.T) {
 		info := atomic.NewInt32(0)
 
-		_, err := creater(getUniqueWorkerName(), minTickForTest, func() {
+		_, err := creater(getUniqueWorkerName(), minTickForTest, func(context.Context) {
 			info.Inc()
 		})
 		if !assert.NoError(t, err, "Cannot create worker") {
@@ -119,7 +161,7 @@ func TestWorkerStartAndStop(t *testing.T) {
 
 		c.Stop()
 
-		c.Wait()
+		c.Wait(nil)
 		info.Store(312)
 		time.Sleep(minTickForTest * 100)
 
@@ -140,7 +182,7 @@ func TestWorkersRestart(t *testing.T) {
 			num  int32 = 321
 		)
 
-		_, err := creater(getUniqueWorkerName(), minTickForTest, func() {
+		_, err := creater(getUniqueWorkerName(), minTickForTest, func(context.Context) {
 			info.Store(num)
 		})
 		if !assert.NoError(t, err, "Cannot create worker") {
@@ -152,7 +194,7 @@ func TestWorkersRestart(t *testing.T) {
 		}
 		c.Stop()
 
-		c.Wait()
+		c.Wait(nil)
 		info.Store(1122)
 		time.Sleep(minTickForTest * 100)
 
@@ -171,7 +213,7 @@ func TestWorkersRestart(t *testing.T) {
 	t.Run("workers should be restart", func(t *testing.T) {
 		info := atomic.NewInt32(0)
 
-		_, err := creater(getUniqueWorkerName(), minTickForTest, func() {
+		_, err := creater(getUniqueWorkerName(), minTickForTest, func(context.Context) {
 			info.CAS(0, 11)
 			info.CAS(456, 789)
 		})
@@ -179,7 +221,7 @@ func TestWorkersRestart(t *testing.T) {
 			t.FailNow()
 		}
 
-		_, err = creater(getUniqueWorkerName(), minTickForTest, func() {
+		_, err = creater(getUniqueWorkerName(), minTickForTest, func(context.Context) {
 			info.CAS(11, 22)
 			info.CAS(123, 456)
 		})
@@ -193,7 +235,7 @@ func TestWorkersRestart(t *testing.T) {
 
 		c.Stop()
 
-		c.Wait()
+		c.Wait(nil)
 		info.Store(123)
 		time.Sleep(minTickForTest * 100)
 
@@ -219,8 +261,7 @@ func TestWorkersWait(t *testing.T) {
 			err error
 			mu  sync.Mutex
 
-			watch = make(chan struct{})
-			info  = atomic.NewInt32(0)
+			info = atomic.NewInt32(0)
 		)
 
 		mu.Lock()
@@ -231,7 +272,7 @@ func TestWorkersWait(t *testing.T) {
 				lockedFlag.Store(true)
 			}
 			n := int32(i)
-			_, err = creater(getUniqueWorkerName(), minTickForTest, func() {
+			_, err = creater(getUniqueWorkerName(), minTickForTest, func(context.Context) {
 				info.CAS(n, n+1)
 				if lockedFlag.Load() {
 					lockedFlag.Store(false)
@@ -249,19 +290,13 @@ func TestWorkersWait(t *testing.T) {
 
 		c.Stop()
 
-		go func() {
-			c.Wait()
-			close(watch)
-		}()
-
-		select {
-		case <-time.After(minTickForTest * 100):
-		case <-watch:
+		ctx, _ := context.WithTimeout(context.Background(), minTickForTest*100)
+		if err := c.Wait(ctx); err == nil {
 			assert.FailNow(t, "Fail waiting of workers")
 		}
 
 		mu.Unlock() // unblock one worker
-		<-watch
+		c.Wait(nil)
 	})
 }
 
@@ -280,7 +315,7 @@ func TestWorkersStop(t *testing.T) {
 
 		for i := 0; i < 5; i++ {
 			n := num
-			_, err = creater(getUniqueWorkerName(), minTickForTest, func() {
+			_, err = creater(getUniqueWorkerName(), minTickForTest, func(context.Context) {
 				info.CAS(n, n*2)
 				info.CAS(123, 75)
 			})
@@ -297,7 +332,7 @@ func TestWorkersStop(t *testing.T) {
 
 		c.Stop()
 
-		c.Wait()
+		c.Wait(nil)
 		info.Store(123)
 		time.Sleep(minTickForTest * 100)
 

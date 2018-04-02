@@ -1,7 +1,9 @@
 package workers
 
 import (
+	"context"
 	"sync"
+	stdAtomic "sync/atomic"
 
 	"go.uber.org/atomic"
 )
@@ -20,8 +22,8 @@ type pool struct {
 	workers map[string]*worker
 
 	cmdCh  chan commandAction
-	jobCh  chan func()
-	waitCh chan chan struct{}
+	jobCh  chan func(context.Context)
+	waiter stdAtomic.Value
 }
 
 func newPool() *pool {
@@ -29,9 +31,8 @@ func newPool() *pool {
 		workers: make(map[string]*worker),
 		running: atomic.NewBool(false),
 
-		cmdCh:  make(chan commandAction, 1),
-		jobCh:  make(chan func(), 8),
-		waitCh: make(chan chan struct{}),
+		cmdCh: make(chan commandAction, 1),
+		jobCh: make(chan func(context.Context), 8),
 	}
 	go p.dispatcher()
 
@@ -56,9 +57,14 @@ func (p *pool) createWorker(opts Options) (*worker, error) {
 			return
 		}
 
-		select {
-		case p.jobCh <- w.options.Handler:
-		default:
+		for {
+			select {
+			case p.jobCh <- w.options.Handler:
+			default:
+				if !p.running.Load() {
+					return
+				}
+			}
 		}
 	}
 
@@ -77,12 +83,27 @@ func (p *pool) stop() {
 	}
 }
 
-func (p *pool) wait() {
-	<-<-p.waitCh
+func (p *pool) wait(ctx context.Context) error {
+	waiter, ok := p.waiter.Load().(chan struct{})
+	if !ok {
+		return nil
+	}
+	if ctx == nil {
+		<-waiter
+		return nil
+	}
+	select {
+	case <-waiter:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func (p *pool) dispatcher() {
 	var (
+		ctx     context.Context
+		cancel  context.CancelFunc
 		running bool
 		waiter  chan struct{}
 		wg      = new(sync.WaitGroup)
@@ -95,19 +116,21 @@ func (p *pool) dispatcher() {
 				continue
 			}
 			wg.Add(1)
-			go func() {
+			go func(c context.Context) {
 				defer wg.Done()
-				job()
-			}()
-		case p.waitCh <- waiter:
+				job(c)
+			}(ctx)
 		case cmd := <-p.cmdCh:
 			switch cmd {
 			case stop:
+				cancel()
 				wg.Wait()
 				close(waiter)
 				running = false
 			case start:
 				waiter = make(chan struct{})
+				p.waiter.Store(waiter)
+				ctx, cancel = context.WithCancel(context.Background())
 				running = true
 			default:
 			}
