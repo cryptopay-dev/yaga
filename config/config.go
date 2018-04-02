@@ -41,10 +41,6 @@ func init() {
 	AddConfigPath("./")
 	SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	AutomaticEnv()
-
-	if err := config.ReadInConfig(); err != nil {
-		panic(err)
-	}
 }
 
 // OnConfigChange set handler

@@ -38,7 +38,6 @@ jobs:
           command: |
               echo "Copy migrates"
               cp ./middlewares/auth/sample.sql 1512662685_sample.up.sql
-              touch config.yml
               touch 1512662685_sample.down.sql
               echo "Run migration"
               go run cmd/yaga/main.go \

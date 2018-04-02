@@ -13,7 +13,7 @@ import (
 
 var defaultLog logger.Logger
 
-func init() {
+func New() logger.Logger {
 	level := config.GetString("level")
 
 	if level == "nop" {
@@ -23,6 +23,8 @@ func init() {
 	} else {
 		defaultLog = zap.New(level)
 	}
+
+	return defaultLog
 }
 
 // Logger getter
