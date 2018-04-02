@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/graceful"
@@ -43,7 +44,9 @@ func main() {
 
 	web.StartAsync(e, config.GetString("bind"), g)
 
-	if err := g.Wait(); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	if err := g.Wait(ctx); err != nil {
 		e.Logger.Error(err)
 	}
 }
