@@ -97,12 +97,16 @@ func TestWorkersContext(t *testing.T) {
 			_, err := creater(getUniqueWorkerName(), minTickForTest, func(ctx context.Context) {
 				if info.CAS(n, n+1) {
 					<-ctx.Done()
-					info.Dec()
+					info.Add(2)
 				}
 			})
 			if !assert.NoError(t, err, "Cannot create worker") {
 				t.FailNow()
 			}
+		}
+
+		if !checkEqual(info, 5) {
+			assert.FailNow(t, "Cannot start workers")
 		}
 
 		ctx, _ := context.WithTimeout(context.Background(), minTickForTest*100)
@@ -113,7 +117,7 @@ func TestWorkersContext(t *testing.T) {
 
 		c.Stop()
 
-		if !checkEqual(info, 0) {
+		if !checkEqual(info, 15) {
 			assert.FailNow(t, "Context done failed")
 		}
 
