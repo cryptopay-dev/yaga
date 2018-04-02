@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/labstack/echo"
 )
 
@@ -23,7 +24,7 @@ func (b *DefaultBinder) Bind(i interface{}, c Context) (err error) {
 	dump, _ := httputil.DumpRequest(req, true)
 
 	defer func() {
-		dumpError(err, c.Logger(), dump)
+		dumpError(err, dump)
 	}()
 
 	if err = b.bindDefaultData(i); err != nil {
@@ -75,9 +76,9 @@ func (b *DefaultBinder) Bind(i interface{}, c Context) (err error) {
 	return
 }
 
-func dumpError(err error, logger echo.Logger, dump []byte) {
+func dumpError(err error, dump []byte) {
 	if err != nil {
-		logger.Debug(string(dump))
+		log.Debug(string(dump))
 	}
 }
 

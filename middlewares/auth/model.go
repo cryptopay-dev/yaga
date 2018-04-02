@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	// ErrUsernameAlreadyTaken when username exists in DB
 	ErrUsernameAlreadyTaken = errors.New("username already taken")
 )
 

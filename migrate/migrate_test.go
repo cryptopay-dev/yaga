@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/cryptopay-dev/yaga/helpers/testdb"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/go-pg/pg"
@@ -75,9 +76,8 @@ func TestMigrate_List(t *testing.T) {
 	t.Run("Good", func(t *testing.T) {
 		db.RunInTransaction(func(tx *pg.Tx) error {
 			m, errNew := New(Options{
-				DB:     &mockDB{DB: db, Tx: tx},
-				Path:   "./fixtures/good",
-				Logger: defaultLogger,
+				DB:   &mockDB{DB: db, Tx: tx},
+				Path: "./fixtures/good",
 			})
 
 			if !assert.NoError(t, errNew) {
@@ -102,9 +102,8 @@ func TestMigrate_List(t *testing.T) {
 	t.Run("Bad", func(t *testing.T) {
 		db.RunInTransaction(func(tx *pg.Tx) error {
 			m, errNew := New(Options{
-				DB:     &mockDB{DB: db, Tx: tx},
-				Path:   "./fixtures/good",
-				Logger: defaultLogger,
+				DB:   &mockDB{DB: db, Tx: tx},
+				Path: "./fixtures/good",
 			})
 
 			if !assert.NoError(t, errNew) {
@@ -133,9 +132,8 @@ func TestMigrate_Plan(t *testing.T) {
 	t.Run("Good case #1", func(t *testing.T) {
 		db.RunInTransaction(func(tx *pg.Tx) error {
 			m, errNew := New(Options{
-				DB:     &mockDB{DB: db, Tx: tx},
-				Path:   "./fixtures/good",
-				Logger: defaultLogger,
+				DB:   &mockDB{DB: db, Tx: tx},
+				Path: "./fixtures/good",
 			})
 
 			if !assert.NoError(t, errNew) {
@@ -160,9 +158,8 @@ func TestMigrate_Plan(t *testing.T) {
 	t.Run("Good case #2", func(t *testing.T) {
 		db.RunInTransaction(func(tx *pg.Tx) error {
 			m, errNew := New(Options{
-				DB:     &mockDB{DB: db, Tx: tx},
-				Path:   "./fixtures/good",
-				Logger: defaultLogger,
+				DB:   &mockDB{DB: db, Tx: tx},
+				Path: "./fixtures/good",
 			})
 
 			if !assert.NoError(t, errNew) {
@@ -187,9 +184,8 @@ func TestMigrate_Plan(t *testing.T) {
 	t.Run("Bad", func(t *testing.T) {
 		db.RunInTransaction(func(tx *pg.Tx) error {
 			m, errNew := New(Options{
-				DB:     &mockDB{DB: db, Tx: tx},
-				Path:   "./fixtures/good",
-				Logger: defaultLogger,
+				DB:   &mockDB{DB: db, Tx: tx},
+				Path: "./fixtures/good",
 			})
 
 			if !assert.NoError(t, errNew) {
@@ -222,8 +218,7 @@ func TestUpDown(t *testing.T) {
 					DB: db,
 					Tx: tx,
 				},
-				Path:   "./fixtures/good",
-				Logger: defaultLogger,
+				Path: "./fixtures/good",
 			})
 
 			if !assert.NoError(t, errNew) {
@@ -251,8 +246,7 @@ func TestUpDown(t *testing.T) {
 					DB: db,
 					Tx: tx,
 				},
-				Path:   "./fixtures/bad",
-				Logger: defaultLogger,
+				Path: "./fixtures/bad",
 			})
 
 			if !assert.NoError(t, errNew) {
@@ -300,9 +294,8 @@ func TestUpDown(t *testing.T) {
 			)
 
 			m, errNew := New(Options{
-				DB:     mNormal,
-				Path:   "./fixtures/bad",
-				Logger: defaultLogger,
+				DB:   mNormal,
+				Path: "./fixtures/bad",
 			})
 
 			if !assert.NoError(t, errNew) {
@@ -357,13 +350,14 @@ func TestNew(t *testing.T) {
 		db  = testdb.GetTestDB().DB
 	)
 
+	log.New()
+
 	t.Run("Good case", func(t *testing.T) {
 		if err = db.RunInTransaction(func(tx *pg.Tx) error {
 			tx.Exec(`TRUNCATE ?`, getTableName())
 			m, errNew := New(Options{
-				DB:     &mockDB{DB: db, Tx: tx},
-				Path:   "./fixtures/good",
-				Logger: defaultLogger,
+				DB:   &mockDB{DB: db, Tx: tx},
+				Path: "./fixtures/good",
 			})
 
 			if !assert.NoError(t, errNew) {
@@ -406,50 +400,9 @@ func TestNew(t *testing.T) {
 		}
 	})
 
-	t.Run("Bad case #1", func(t *testing.T) {
+	t.Run("Bad case", func(t *testing.T) {
 		_, err = New(Options{
 			DB: nil,
-		})
-		assert.Error(t, err)
-	})
-
-	t.Run("Bad case #2", func(t *testing.T) {
-		_, err = New(Options{
-			DB:   db,
-			Path: "",
-		})
-		assert.Error(t, err)
-	})
-
-	t.Run("Bad case #3", func(t *testing.T) {
-		_, err = New(Options{
-			DB:   db,
-			Path: "/no/such/dir",
-		})
-		assert.Error(t, err)
-	})
-
-	t.Run("Bad case #4", func(t *testing.T) {
-		_, err = New(Options{
-			DB:   db,
-			Path: "/dev/null",
-		})
-		assert.Error(t, err)
-	})
-
-	t.Run("Bad case #5", func(t *testing.T) {
-		_, err = New(Options{
-			DB:   db,
-			Path: "./fixtures/bad",
-		})
-		assert.Error(t, err)
-	})
-
-	t.Run("Bad case #6", func(t *testing.T) {
-		_, err = New(Options{
-			DB:     db,
-			Path:   "./fixtures/good",
-			Logger: nil,
 		})
 		assert.Error(t, err)
 	})
@@ -462,9 +415,8 @@ func TestMigrate_Version(t *testing.T) {
 		tx.Exec(`TRUNCATE ?`, getTableName())
 		m := migrate{
 			Options: Options{
-				DB:     &mockDB{DB: db, Tx: tx},
-				Path:   "./fixtures/good",
-				Logger: defaultLogger,
+				DB:   &mockDB{DB: db, Tx: tx},
+				Path: "./fixtures/good",
 			},
 		}
 

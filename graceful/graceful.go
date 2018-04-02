@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/golang/sync/errgroup"
 	"github.com/pkg/errors"
 )
@@ -15,10 +16,6 @@ type Graceful interface {
 	Go(func(context.Context) error)
 	Wait(context.Context) error
 	Cancel()
-}
-
-type logger interface {
-	Infof(string, ...interface{})
 }
 
 type graceful struct {
@@ -81,7 +78,7 @@ func New(ctx context.Context) Graceful {
 }
 
 // AttachNotifier connects Graceful to notification of OS signals.
-func AttachNotifier(g Graceful, log logger) {
+func AttachNotifier(g Graceful) {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
@@ -89,7 +86,7 @@ func AttachNotifier(g Graceful, log logger) {
 		select {
 		case sig := <-ch:
 			defer g.Cancel()
-			if log != nil {
+			if log.Logger() != nil {
 				log.Infof("received signal: %s", sig.String())
 			}
 		case <-c.Done():

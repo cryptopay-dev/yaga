@@ -4,17 +4,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/report"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
 func main() {
-	log := nop.New()
+	log.New()
 
-	e, err := web.New(web.Options{
-		Logger: nop.New(),
-	})
+	e, err := web.New(web.Options{})
 
 	if err != nil {
 		log.Panic(err)

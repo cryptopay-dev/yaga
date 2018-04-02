@@ -1,12 +1,11 @@
 package commands
 
 import (
-	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/urfave/cli"
 )
 
 // MigrateUp migrations
-func MigrateUp(log logger.Logger) cli.Command {
+func MigrateUp() cli.Command {
 	return cli.Command{
 		Name:        "migrate:up",
 		ShortName:   "m:u",
@@ -14,6 +13,6 @@ func MigrateUp(log logger.Logger) cli.Command {
 		Description: "Migration up to latest migration (by default)",
 		Category:    "Migrate commands",
 		Flags:       migrateFlags(),
-		Action:      migrateAction(migrateUp, log),
+		Action:      migrateAction(migrateUp),
 	}
 }

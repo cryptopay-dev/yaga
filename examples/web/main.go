@@ -7,17 +7,14 @@ import (
 
 	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/graceful"
-	"github.com/cryptopay-dev/yaga/logger/zap"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
 func main() {
-	log := zap.New(zap.Development)
+	log.New()
 
-	e, err := web.New(web.Options{
-		Logger: log,
-		Debug:  true,
-	})
+	e, err := web.New(web.Options{Debug: true})
 
 	if err != nil {
 		log.Panic(err)
@@ -40,7 +37,7 @@ func main() {
 	})
 
 	g := graceful.New(context.Background())
-	graceful.AttachNotifier(g, e.Logger)
+	graceful.AttachNotifier(g)
 
 	web.StartAsync(e, config.GetString("bind"), g)
 

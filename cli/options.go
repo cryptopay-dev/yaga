@@ -1,14 +1,12 @@
 package cli
 
 import (
-	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/urfave/cli"
 )
 
 // Options for creating cli.App instance
 type Options struct {
 	App          Instance
-	Logger       logger.Logger `validate:"required"`
 	Users        []cli.Author
 	Debug        bool
 	Quiet        bool
@@ -41,13 +39,6 @@ func newOptions(opts ...Option) (opt *Options) {
 func App(app Instance) Option {
 	return func(o *Options) {
 		o.App = app
-	}
-}
-
-// Logger closure to set field in Options
-func Logger(log logger.Logger) Option {
-	return func(o *Options) {
-		o.Logger = log
 	}
 }
 

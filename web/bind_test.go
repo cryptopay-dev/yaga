@@ -7,11 +7,13 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
 )
@@ -300,6 +302,9 @@ func TestBind(t *testing.T) {
 		rec *httptest.ResponseRecorder
 		v   interface{}
 	)
+
+	os.Setenv("LEVEL", "dev")
+	log.New()
 
 	for _, item := range valuesForTest {
 		if len(item.body) > 0 {

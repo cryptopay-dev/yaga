@@ -2,7 +2,7 @@ package web
 
 import (
 	"github.com/cryptopay-dev/yaga/helpers"
-	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/logger/log"
 )
 
 const (
@@ -31,26 +31,24 @@ func TraceTag(ctx Context) T {
 }
 
 // RayTraceID middleware
-func RayTraceID(logger logger.Logger) MiddlewareFunc {
-	return func(next HandlerFunc) HandlerFunc {
-		return func(ctx Context) error {
-			var (
-				req = ctx.Request()
-				res = ctx.Response()
-				id  = req.Header.Get(RayTraceHeader)
-			)
+func RayTraceID(next HandlerFunc) HandlerFunc {
+	return func(ctx Context) error {
+		var (
+			req = ctx.Request()
+			res = ctx.Response()
+			id  = req.Header.Get(RayTraceHeader)
+		)
 
-			if err := helpers.ValidateUUID(id); err != nil {
-				id = helpers.NewUUID()
-				req.Header.Set(RayTraceHeader, id)
-			}
-
-			res.Header().Set(RayTraceHeader, id)
-
-			key, val := rayTrace(ctx)
-			ctx.Echo().Logger = logger.WithContext(map[string]interface{}{key: val})
-
-			return next(ctx)
+		if err := helpers.ValidateUUID(id); err != nil {
+			id = helpers.NewUUID()
+			req.Header.Set(RayTraceHeader, id)
 		}
+
+		res.Header().Set(RayTraceHeader, id)
+
+		key, val := rayTrace(ctx)
+		ctx.Echo().Logger = log.WithContext(map[string]interface{}{key: val})
+
+		return next(ctx)
 	}
 }

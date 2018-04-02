@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/cryptopay-dev/yaga/helpers/testdb"
-	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/go-pg/pg"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
@@ -23,8 +23,9 @@ func TestAuth_Middleware(t *testing.T) {
 
 	d := testdb.GetTestDB()
 
+	log.New()
+
 	authenticate := New(
-		Logger(nop.New()),
 		DB(d.DB),
 	)
 
@@ -97,7 +98,6 @@ func TestAuth_Middleware(t *testing.T) {
 	})
 
 	t.Run("Bad user credentials - login", func(t *testing.T) {
-
 		authData := "basic " + base64.StdEncoding.EncodeToString([]byte("user2:"+password))
 		req.Header.Set(echo.HeaderAuthorization, authData)
 		assert.EqualError(t, errors.Cause(h(c)), pg.ErrNoRows.Error())

@@ -7,6 +7,7 @@ import (
 
 	"github.com/cryptopay-dev/yaga/cmd/yaga/commands"
 	"github.com/cryptopay-dev/yaga/cmd/yaga/internal"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/urfave/cli"
 )
 
@@ -37,6 +38,7 @@ func init() {
 }
 
 func main() {
+	log.New()
 	a := cli.NewApp()
 	a.Name = Name
 	a.Usage = Usage

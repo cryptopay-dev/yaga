@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/cryptopay-dev/yaga/config"
-	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
@@ -15,11 +15,11 @@ const (
 )
 
 // Wrap adds several routes from package `net/http/pprof` to *echo.Echo object.
-func Wrap(logger logger.Logger, e *web.Engine) error {
+func Wrap(e *web.Engine) error {
 	port := config.GetString("pprof_bind")
 	if len(port) == 0 {
 		if e == nil {
-			logger.Error(errNilWebEngine)
+			log.Error(errNilWebEngine)
 			return nil
 		}
 		WrapGroup("", e.Group("/debug"))
@@ -34,9 +34,9 @@ func Wrap(logger logger.Logger, e *web.Engine) error {
 	WrapGroup("", pprofWeb.Group("/debug"))
 
 	go func() {
-		logger.Infof(tplInfoPprof, port)
+		log.Infof(tplInfoPprof, port)
 		if err := web.Start(pprofWeb, port); err != nil {
-			logger.Error(err)
+			log.Error(err)
 		}
 	}()
 

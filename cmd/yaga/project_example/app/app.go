@@ -63,15 +63,11 @@ func (a *App) Run(opts cli.RunOptions) error {
 
 	a.RunOptions = opts
 
-	if a.Engine, err = web.New(web.Options{
-		Logger: a.Logger,
-		Debug:  a.Debug,
-	}); err != nil {
+	if a.Engine, err = web.New(web.Options{Debug: a.Debug}); err != nil {
 		return err
 	}
 
 	if _, err = controllers.New(
-		controllers.Logger(a.Logger),
 		controllers.Engine(a.Engine),
 		controllers.BuildTime(a.BuildTime),
 		controllers.BuildVersion(a.BuildVersion),
@@ -79,7 +75,7 @@ func (a *App) Run(opts cli.RunOptions) error {
 		return err
 	}
 
-	graceful.AttachNotifier(a.Graceful, a.Logger)
+	graceful.AttachNotifier(a.Graceful)
 	web.StartAsync(a.Engine, config.GetString("bind"), a.Graceful)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)

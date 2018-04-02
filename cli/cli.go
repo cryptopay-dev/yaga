@@ -5,8 +5,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/cryptopay-dev/yaga/logger/nop"
-	"github.com/cryptopay-dev/yaga/logger/zap"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/urfave/cli"
 )
 
@@ -29,14 +28,9 @@ func Run(opts ...Option) error {
 	cliApp.Version = options.BuildVersion
 	cliApp.Authors = options.Users
 
-	if options.Logger == nil {
-		if options.Debug == false { // Debug = false
-			options.Logger = zap.New(zap.Production)
-		} else if options.Quiet { // Debug = true && Quiet = true
-			options.Logger = nop.New()
-		} else { // Debug = true && Quiet = false
-			options.Logger = zap.New(zap.Development)
-		}
+	// initialize..
+	if log.Logger() == nil {
+		log.New()
 	}
 
 	if len(options.flags) > 0 {
