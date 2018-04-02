@@ -350,7 +350,7 @@ func TestNew(t *testing.T) {
 		db  = testdb.GetTestDB().DB
 	)
 
-	log.New()
+	log.Init()
 
 	t.Run("Good case", func(t *testing.T) {
 		if err = db.RunInTransaction(func(tx *pg.Tx) error {

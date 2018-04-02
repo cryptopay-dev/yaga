@@ -13,8 +13,8 @@ import (
 
 var defaultLog logger.Logger
 
-// New setup logger
-func New() logger.Logger {
+// Init setup logger
+func Init() logger.Logger {
 	level := config.GetString("level")
 
 	if level == "nop" {

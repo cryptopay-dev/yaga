@@ -38,7 +38,7 @@ func init() {
 }
 
 func main() {
-	log.New()
+	log.Init()
 	a := cli.NewApp()
 	a.Name = Name
 	a.Usage = Usage

@@ -17,7 +17,7 @@ func main() {
 		DB:       0,
 	})
 
-	log.New()
+	log.Init()
 
 	lock := locker.New(
 		locker.Redis(store),

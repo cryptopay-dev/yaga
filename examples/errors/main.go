@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	log.New()
+	log.Init()
 
 	e, err := web.New(web.Options{})
 	if err != nil {

@@ -85,7 +85,7 @@ func New(opts Options) (*Engine, error) {
 	e := echo.New()
 
 	if log.Logger() == nil {
-		log.New()
+		log.Init()
 	}
 
 	e.Logger = log.Logger()

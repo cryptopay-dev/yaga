@@ -304,7 +304,7 @@ func TestBind(t *testing.T) {
 	)
 
 	os.Setenv("LEVEL", "dev")
-	log.New()
+	log.Init()
 
 	for _, item := range valuesForTest {
 		if len(item.body) > 0 {

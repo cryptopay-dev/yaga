@@ -89,7 +89,7 @@ func TestExtractMigrations(t *testing.T) {
 		files []os.FileInfo
 	)
 
-	log.New()
+	log.Init()
 
 	if files, err = findMigrations(path); !assert.NoError(t, err) {
 		t.FailNow()

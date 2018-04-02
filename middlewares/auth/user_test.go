@@ -23,7 +23,7 @@ func TestAuth_Middleware(t *testing.T) {
 
 	d := testdb.GetTestDB()
 
-	log.New()
+	log.Init()
 
 	authenticate := New(
 		DB(d.DB),
