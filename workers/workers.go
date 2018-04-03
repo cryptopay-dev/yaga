@@ -86,3 +86,14 @@ func (w *workers) Stop() {
 func (w *workers) Wait(ctx context.Context) error {
 	return w.g.Wait(ctx)
 }
+
+func AttachGraceful(w Workers, g graceful.Graceful, d time.Duration) {
+	g.Go(func(c context.Context) error {
+		<-c.Done()
+		w.Stop()
+
+		ctx, cancel := context.WithTimeout(context.Background(), d)
+		defer cancel()
+		return w.Wait(ctx)
+	})
+}

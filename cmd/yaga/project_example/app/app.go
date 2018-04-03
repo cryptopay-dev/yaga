@@ -2,17 +2,16 @@ package app
 
 import (
 	"context"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/cryptopay-dev/yaga/cli"
 	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/controllers"
 	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/library/config"
 	"github.com/cryptopay-dev/yaga/errors"
+	"github.com/cryptopay-dev/yaga/graceful"
 	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/cryptopay-dev/yaga/web"
+	"github.com/cryptopay-dev/yaga/workers"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -28,6 +27,8 @@ type App struct {
 	Config     config.Config
 	LogicError *errors.Logic
 	Engine     *web.Engine
+	Graceful   graceful.Graceful
+	Workers    workers.Workers
 }
 
 var appAuthors = []authors{
@@ -49,16 +50,15 @@ func Authors() []cli.Author {
 
 // New creates instance
 func New() *App {
-	return &App{}
+	return &App{
+		Graceful: graceful.New(context.Background()),
+		Workers:  workers.New(),
+	}
 }
 
 // Shutdown of application
 func (a *App) Shutdown(ctx context.Context) error {
-	if a.Engine == nil {
-		return nil
-	}
-
-	return a.Engine.Shutdown(ctx)
+	return a.Graceful.Wait(ctx)
 }
 
 // Run of application
@@ -91,22 +91,15 @@ func (a *App) Run(opts cli.RunOptions) error {
 		controllers.BuildVersion(a.BuildVersion),
 	)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	graceful.AttachNotifier(a.Graceful, a.Logger)
+	web.StartAsync(a.Engine, a.Config.Bind, a.Graceful)
+	workers.AttachGraceful(a.Workers, a.Graceful, time.Second*30)
+
+	// TODO your ideas?
+	<-a.Graceful.Context().Done()
+
+	// TODO return a.Shutdown()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGABRT)
-
-	go func() {
-		if err = web.StartServer(a.Engine, a.Config.Bind); err != nil {
-			a.Logger.Error(err)
-			ch <- syscall.SIGABRT
-		}
-	}()
-
-	// Wait for signals:
-	sig := <-ch
-	a.Logger.Infof("Received signal: %s", sig.String())
-
 	return a.Shutdown(ctx)
 }

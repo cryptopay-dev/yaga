@@ -14,6 +14,7 @@ import (
 type Graceful interface {
 	Go(func(context.Context) error)
 	Wait(context.Context) error
+	Context() context.Context
 	Cancel()
 }
 
@@ -29,6 +30,10 @@ type graceful struct {
 
 func (g *graceful) Cancel() {
 	g.cancel()
+}
+
+func (g *graceful) Context() context.Context {
+	return g.ctx
 }
 
 func (g *graceful) Go(job func(context.Context) error) {
