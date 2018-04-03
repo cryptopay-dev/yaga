@@ -2,9 +2,6 @@ package graceful
 
 import (
 	"context"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/golang/sync/errgroup"
 	"github.com/pkg/errors"
@@ -14,12 +11,7 @@ import (
 type Graceful interface {
 	Go(func(context.Context) error)
 	Wait(context.Context) error
-	Context() context.Context
 	Cancel()
-}
-
-type logger interface {
-	Infof(string, ...interface{})
 }
 
 type graceful struct {
@@ -30,10 +22,6 @@ type graceful struct {
 
 func (g *graceful) Cancel() {
 	g.cancel()
-}
-
-func (g *graceful) Context() context.Context {
-	return g.ctx
 }
 
 func (g *graceful) Go(job func(context.Context) error) {
@@ -83,23 +71,4 @@ func New(ctx context.Context) Graceful {
 	g, ctx := errgroup.WithContext(ctx)
 
 	return &graceful{g, cancel, ctx}
-}
-
-// AttachNotifier connects Graceful to notification of OS signals.
-func AttachNotifier(g Graceful, log logger) {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-
-	g.Go(func(c context.Context) error {
-		select {
-		case sig := <-ch:
-			defer g.Cancel()
-			if log != nil {
-				log.Infof("received signal: %s", sig.String())
-			}
-		case <-c.Done():
-			return c.Err()
-		}
-		return nil
-	})
 }

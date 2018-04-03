@@ -9,6 +9,7 @@ import (
 	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/library/config"
 	"github.com/cryptopay-dev/yaga/errors"
 	"github.com/cryptopay-dev/yaga/graceful"
+	"github.com/cryptopay-dev/yaga/helpers/shutdown"
 	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/cryptopay-dev/yaga/web"
 	"github.com/cryptopay-dev/yaga/workers"
@@ -51,8 +52,7 @@ func Authors() []cli.Author {
 // New creates instance
 func New() *App {
 	return &App{
-		Graceful: graceful.New(context.Background()),
-		Workers:  workers.New(),
+		Workers: workers.New(),
 	}
 }
 
@@ -66,6 +66,9 @@ func (a *App) Run(opts cli.RunOptions) error {
 	var err error
 
 	a.RunOptions = opts
+
+	ctx := shutdown.ShutdownContext(context.Background(), a.Logger)
+	a.Graceful = graceful.New(ctx)
 
 	if a.LogicError, err = errors.New(errors.Options{
 		Debug:  a.Debug,
@@ -91,12 +94,10 @@ func (a *App) Run(opts cli.RunOptions) error {
 		controllers.BuildVersion(a.BuildVersion),
 	)
 
-	graceful.AttachNotifier(a.Graceful, a.Logger)
 	web.StartAsync(a.Engine, a.Config.Bind, a.Graceful)
 	workers.AttachGraceful(a.Workers, a.Graceful, time.Second*30)
 
-	// TODO your ideas?
-	<-a.Graceful.Context().Done()
+	<-ctx.Done()
 
 	// TODO return a.Shutdown()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)

@@ -5,23 +5,18 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
+	"time"
 
 	"github.com/cryptopay-dev/yaga/errors"
+	"github.com/cryptopay-dev/yaga/helpers/shutdown"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
-
 	log := nop.New()
+	ctx := shutdown.ShutdownContext(context.Background(), log)
 
 	errLogic, _ := errors.New(errors.Options{
 		Logger: log,
@@ -33,6 +28,9 @@ func main() {
 		Debug:  true,
 	})
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	e.GET("/test/:command", func(c web.Context) error {
 		cmd := c.Param("command")
 		fmt.Println("Received command:", cmd)
@@ -42,7 +40,7 @@ func main() {
 			// do nothing
 		case "off":
 			// send signal to exit
-			ch <- syscall.SIGABRT
+			cancel()
 		default:
 			// unknown operation
 			return http.ErrNotSupported
@@ -56,15 +54,14 @@ func main() {
 			if !strings.Contains(err.Error(), http.ErrServerClosed.Error()) {
 				e.Logger.Error(err)
 			}
-			ch <- syscall.SIGABRT
+			cancel()
 		}
 	}()
 
 	// wait for signals
-	sig := <-ch
-	fmt.Println("Received signal:", sig.String())
+	<-ctx.Done()
 
-	cancel()
-
+	ctx, cancel = context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 	e.Shutdown(ctx)
 }
