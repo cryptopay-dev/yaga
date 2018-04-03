@@ -55,6 +55,3 @@ func (w *Workers) Stop() {
 	w.cron.Stop()
 	w.wg.Wait()
 }
-
-// Entries returns a snapshot of the cron entries.
-func (w *Workers) Entries() []*Entry { return w.cron.Entries() }
