@@ -2,6 +2,7 @@ package workers
 
 import (
 	"context"
+	"errors"
 	"runtime"
 	"sync"
 	"testing"
@@ -87,6 +88,44 @@ func TestWorkerStartAndStop(t *testing.T) {
 	})
 }
 
+func TestWorkersContext(t *testing.T) {
+	w := New()
+	defer w.Stop()
+
+	t.Run("workers should be stop when context done", func(t *testing.T) {
+		info := atomic.NewInt32(0)
+
+		for i := 0; i < 5; i++ {
+			n := int32(i)
+			w.AddJob(minTickForTest, func(ctx context.Context) {
+				if info.CAS(n, n+1) {
+					<-ctx.Done()
+					info.Add(2)
+				}
+			})
+		}
+
+		if !checkEqual(info, 5) {
+			assert.FailNow(t, "Cannot start workers")
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), minTickForTest*100)
+		defer cancel()
+		err := w.Wait(ctx)
+		if !assert.Error(t, err, "Fail waiting of workers") {
+			t.FailNow()
+		}
+
+		w.Stop()
+
+		if !checkEqual(info, 15) {
+			assert.FailNow(t, "Context done failed")
+		}
+
+		w.Wait(nil)
+	})
+}
+
 func TestWorkersWait(t *testing.T) {
 	w := New()
 	defer w.Stop()
@@ -130,16 +169,58 @@ func TestWorkersWait(t *testing.T) {
 
 		mu.Unlock() // unblock one worker
 		w.Wait(nil)
+	})
+}
 
-		/*
-			time.Sleep(time.Second)
-			ctx, cancel = context.WithTimeout(context.Background(), minTickForTest*100)
-			defer cancel()
-			err = w.Wait(ctx)
-			if !assert.NoError(t, err) {
-				assert.FailNow(t, "Cannot stop workers")
-			}
-		*/
+// TODO need?
+func TestWorkersWithError(t *testing.T) {
+	w := New()
+	defer w.Stop()
+
+	t.Run("workers should be stop when one worker returns error", func(t *testing.T) {
+		var mu sync.Mutex
+		errWorker := errors.New("test worker error")
+		info := atomic.NewInt32(0)
+
+		mu.Lock()
+		for i := 0; i < 5; i++ {
+			n := int32(i)
+			w.AddJobWithError(minTickForTest, func(ctx context.Context) error {
+				if info.CAS(n, n+1) {
+					if n == 2 {
+						// we will block only one worker
+						mu.Lock()
+						return errWorker
+					}
+					<-ctx.Done()
+					info.Add(2)
+				}
+				return nil
+			})
+		}
+
+		if !checkEqual(info, 5) {
+			assert.FailNow(t, "Cannot start workers")
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), minTickForTest*100)
+		defer cancel()
+		err := w.Wait(ctx)
+		if !assert.Error(t, err, "Fail waiting of workers") {
+			t.FailNow()
+		}
+
+		mu.Unlock() // unblock one worker
+
+		if !checkEqual(info, 13) {
+			assert.FailNow(t, "Context done failed")
+		}
+
+		err = w.Wait(nil)
+		if !assert.Error(t, err, "Failed to return worker error") {
+			t.FailNow()
+		}
+		assert.Contains(t, err.Error(), errWorker.Error())
 	})
 }
 
