@@ -89,7 +89,7 @@ func (w *Workers) Schedule(opts *ScheduleOptions) error {
 		handler func()
 	)
 
-	if len(opts.Name) > 0 {
+	if len(opts.Name) == 0 {
 		return ErrEmptyName
 	}
 

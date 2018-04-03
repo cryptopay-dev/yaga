@@ -20,10 +20,11 @@ func TestWorkers(t *testing.T) {
 	i := atomic.NewInt64(0)
 
 	if err := w.Schedule(&ScheduleOptions{
+		Name:     "#1: 1 sec worker",
 		Duration: time.Second,
 		Handler: func(ctx context.Context) error {
 			i.Inc()
-			log.Infof("every 100ms: %d", i.Load())
+			log.Infof("every 1s: %d", i.Load())
 			return nil
 		},
 	}); err != nil {
@@ -31,10 +32,11 @@ func TestWorkers(t *testing.T) {
 	}
 
 	if err := w.Schedule(&ScheduleOptions{
+		Name:     "#2: 2 sec worker",
 		Duration: time.Second * 2,
 		Handler: func(ctx context.Context) error {
 			i.Inc()
-			log.Infof("every 200ms: %d", i.Load())
+			log.Infof("every 2s: %d", i.Load())
 			return nil
 		},
 	}); err != nil {
@@ -42,6 +44,7 @@ func TestWorkers(t *testing.T) {
 	}
 
 	if err := w.Schedule(&ScheduleOptions{
+		Name:     "#3: 1 sec worker",
 		Duration: time.Second,
 		Handler: func(ctx context.Context) error {
 			panic("test")
@@ -51,6 +54,7 @@ func TestWorkers(t *testing.T) {
 	}
 
 	if err := w.Schedule(&ScheduleOptions{
+		Name:     "#4: 10 sec worker",
 		Duration: time.Second * 10,
 		Handler: func(ctx context.Context) error {
 			t.Fatal("must not be runned")
