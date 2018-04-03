@@ -39,11 +39,18 @@ func New() *Workers {
 // AddFunc adds a func to the Cron to be run on the given schedule.
 func (w *Workers) AddFunc(spec string, cmd Cmd) error {
 	return w.cron.AddFunc(spec, func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Errorf("workers panic: %v", r)
+			}
+		}()
+
 		w.wg.Add(1)
+		defer w.wg.Done()
+
 		if err := cmd(); err != nil {
 			log.Error(err)
 		}
-		w.wg.Done()
 	})
 }
 
