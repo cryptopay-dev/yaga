@@ -7,10 +7,6 @@ import (
 	"github.com/robfig/cron"
 )
 
-// Schedule describes a job's duty cycle.
-//
-// Return the next activation time, later than the given time.
-// Next is invoked initially, and then each time the job is run.
 type Schedule = cron.Schedule
 
 type Cmd = func() error
@@ -69,15 +65,11 @@ func (w *Workers) Schedule(schedule Schedule, cmd Cmd) {
 	})
 }
 
-func (w *Workers) Start() {
-	w.cron.Start()
-}
+func (w *Workers) Start() { w.cron.Start() }
 
 func (w *Workers) Stop() {
 	w.cron.Stop()
 	w.wg.Wait()
 }
 
-func (w *Workers) Entries() []*Entry {
-	return w.cron.Entries()
-}
+func (w *Workers) Entries() []*Entry { return w.cron.Entries() }
