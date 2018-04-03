@@ -87,8 +87,7 @@ func TestWorkerStartAndStop(t *testing.T) {
 	})
 }
 
-// TODO
-func xTestWorkersWait(t *testing.T) {
+func TestWorkersWait(t *testing.T) {
 	w := New()
 	defer w.Stop()
 
@@ -96,8 +95,7 @@ func xTestWorkersWait(t *testing.T) {
 		var (
 			mu sync.Mutex
 
-			watch = make(chan struct{})
-			info  = atomic.NewInt32(0)
+			info = atomic.NewInt32(0)
 		)
 
 		mu.Lock()
@@ -126,12 +124,22 @@ func xTestWorkersWait(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), minTickForTest*100)
 		defer cancel()
 		err := w.Wait(ctx)
-		if !assert.NoError(t, err) {
+		if !assert.Error(t, err) {
 			assert.FailNow(t, "Fail waiting of workers")
 		}
 
 		mu.Unlock() // unblock one worker
-		<-watch
+		w.Wait(nil)
+
+		/*
+			time.Sleep(time.Second)
+			ctx, cancel = context.WithTimeout(context.Background(), minTickForTest*100)
+			defer cancel()
+			err = w.Wait(ctx)
+			if !assert.NoError(t, err) {
+				assert.FailNow(t, "Cannot stop workers")
+			}
+		*/
 	})
 }
 
