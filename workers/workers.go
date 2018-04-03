@@ -22,14 +22,14 @@ type Entry = cron.Entry
 
 // Workers struct
 type Workers struct {
-	wg   sync.WaitGroup
+	wg   *sync.WaitGroup
 	cron *cron.Cron
 }
 
 // New returns a new workers runner.
 func New() *Workers {
 	w := &Workers{
-		wg:   sync.WaitGroup{},
+		wg:   new(sync.WaitGroup),
 		cron: cron.New(),
 	}
 
