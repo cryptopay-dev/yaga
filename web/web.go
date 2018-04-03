@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sync"
@@ -110,6 +111,30 @@ func New(opts Options) *Engine {
 	}
 
 	return e
+}
+
+type graceful interface {
+	Cancel()
+	Go(func(context.Context) error)
+}
+
+// StartAsync HTTP with custom address.
+func StartAsync(e *Engine, bind string, g graceful) {
+	go func() {
+		defer g.Cancel()
+		err := StartServer(e, bind)
+		if err != nil {
+			e.Logger.Error(err)
+		}
+	}()
+
+	g.Go(func(c context.Context) error {
+		<-c.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		return e.Shutdown(ctx)
+	})
 }
 
 // StartServer HTTP with custom address.
