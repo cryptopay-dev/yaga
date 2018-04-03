@@ -1,79 +1,83 @@
 package workers
 
 import (
-	"errors"
-	"time"
+	"sync"
 
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/robfig/cron"
 )
 
-type (
-	// Options structure for creation new worker.
-	Options struct {
-		Name     string
-		Schedule Schedule
-		Handler  func()
+// Schedule describes a job's duty cycle.
+//
+// Return the next activation time, later than the given time.
+// Next is invoked initially, and then each time the job is run.
+type Schedule = cron.Schedule
+
+type Cmd = func() error
+
+type Entry = cron.Entry
+
+type Workers struct {
+	wg   sync.WaitGroup
+	cron *cron.Cron
+}
+
+func New() *Workers {
+	w := &Workers{
+		wg:   sync.WaitGroup{},
+		cron: cron.New(),
 	}
 
-	// Schedule describes a job's duty cycle.
-	//
-	// Return the next activation time, later than the given time.
-	// Next is invoked initially, and then each time the job is run.
-	Schedule = cron.Schedule
-)
+	return w
+}
 
-var (
-	// ErrAlreadyWorker is returned by New calls
-	// when workers name is already exists.
-	ErrAlreadyWorker = errors.New("worker name must be unique")
-
-	// ErrWrongOptions is returned by New calls
-	// when parameter Options.Schedule is NIL or Options.Handler is NIL.
-	ErrWrongOptions = errors.New("wrong options")
-
-	cronWorker = cron.New()
-	poolWorker = newPool()
-)
-
-// New returns an error if cannot create new worker
-func New(opts Options) (err error) {
-	_, err = newWorker(opts, poolWorker, func(w *worker, handler func()) {
-		cronWorker.Schedule(w.options.Schedule, cron.FuncJob(handler))
+func (w *Workers) AddFunc(spec string, cmd Cmd) error {
+	return w.cron.AddFunc(spec, func() {
+		w.wg.Add(1)
+		if err := cmd(); err != nil {
+			log.Error(err)
+		}
+		w.wg.Done()
 	})
-
-	return
 }
 
-// Parse returns a new crontab schedule representing the given spec.
-// It returns a descriptive error if the spec is not valid.
-//
-// It accepts
-//   - Full crontab specs, e.g. "* * * * * ?"
-//   - Descriptors, e.g. "@midnight", "@every 1h30m"
-func Parse(spec string) (Schedule, error) {
-	return cron.Parse(spec)
+type runner struct{ handler func() }
+
+func (r *runner) Run() { r.handler() }
+
+func (w *Workers) AddJob(spec string, cmd Cmd) error {
+	return w.cron.AddJob(spec, &runner{
+		handler: func() {
+			w.wg.Add(1)
+			if err := cmd(); err != nil {
+				log.Error(err)
+			}
+			w.wg.Done()
+		},
+	})
 }
 
-// Every returns a crontab Schedule that activates once every duration.
-// Delays of less than a second are not supported (will round up to 1 second).
-// Any fields less than a Second are truncated.
-func Every(duration time.Duration) Schedule {
-	return cron.Every(duration)
+func (w *Workers) Schedule(schedule Schedule, cmd Cmd) {
+	w.cron.Schedule(schedule, &runner{
+		handler: func() {
+			w.wg.Add(1)
+			if err := cmd(); err != nil {
+				log.Error(err)
+			}
+			w.wg.Done()
+		},
+	})
 }
 
-// Start all workers.
-func Start() {
-	poolWorker.start()
-	cronWorker.Start()
+func (w *Workers) Start() {
+	w.cron.Start()
 }
 
-// Stop all workers.
-func Stop() {
-	poolWorker.stop()
-	cronWorker.Stop()
+func (w *Workers) Stop() {
+	w.cron.Stop()
+	w.wg.Wait()
 }
 
-// Wait blocks until all workers will be stopped.
-func Wait() {
-	poolWorker.wait()
+func (w *Workers) Entries() []*Entry {
+	return w.cron.Entries()
 }
