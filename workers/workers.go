@@ -3,7 +3,6 @@ package workers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -146,7 +145,7 @@ func (w *Workers) checkOptions(opts *Options) (Schedule, error) {
 
 func (w *Workers) recovery(workName string) {
 	if r := recover(); r != nil {
-		log.Errorf("worker '%s' panic: %v", workName, r)
+		log.Errorf("workers `%s` panic: %v", workName, r)
 	}
 }
 
@@ -158,7 +157,7 @@ func (w *Workers) Schedule(opts Options) error {
 	handler := func() {
 		defer w.recovery(opts.Name)
 		if err := opts.Handler(w.ctx); err != nil {
-			log.Error(wrap.Wrap(err, fmt.Sprintf("worker '%s' error", opts.Name)))
+			log.Error(wrap.Wrapf(err, "worker `%s`", opts.Name))
 		}
 	}
 	job := handler
