@@ -135,7 +135,7 @@ func (w *Workers) Schedule(opts *ScheduleOptions) error {
 	w.cron.Schedule(every, cron.FuncJob(func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Errorf("(%s) workers panic: %v", opts.Name, r)
+				log.Errorf("workers `%s` panic: %v", opts.Name, r)
 			}
 		}()
 
