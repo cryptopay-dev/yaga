@@ -105,7 +105,10 @@ func (w *Workers) Schedule(opts *ScheduleOptions) error {
 	case Schedule:
 		every = schedule
 	case time.Duration:
-		every = cron.Every(schedule)
+		if schedule == 0 {
+			return ErrEmptyDuration
+		}
+		every = DelaySchedule(schedule)
 	case string:
 		every, err = cron.Parse(schedule)
 		if err != nil {
