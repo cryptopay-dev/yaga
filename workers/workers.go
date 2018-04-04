@@ -40,12 +40,6 @@ type (
 		Exclusive bool
 		Locker    LockerOptions
 	}
-
-	// Schedule describes a job's duty cycle.
-	//
-	// Return the next activation time, later than the given time.
-	// Next is invoked initially, and then each time the job is run.
-	Schedule = cron.Schedule
 )
 
 var (
@@ -96,7 +90,6 @@ func (w *Workers) Start() {
 func (w *Workers) Stop() {
 	if w.state.CAS(1, 2) {
 		w.cancel()
-		w.cron.Stop()
 	}
 }
 
@@ -110,7 +103,7 @@ func (w *Workers) Wait(ctx context.Context) error {
 	return nil
 }
 
-func (w *Workers) checkOptions(opts *Options) (Schedule, error) {
+func (w *Workers) checkOptions(opts *Options) (cron.Schedule, error) {
 	if opts == nil {
 		return nil, ErrEmptyOptions
 	}
@@ -125,7 +118,7 @@ func (w *Workers) checkOptions(opts *Options) (Schedule, error) {
 	}
 
 	var err error
-	var schedule Schedule
+	var schedule cron.Schedule
 	switch sc := opts.Schedule.(type) {
 	case string:
 		schedule, err = cron.Parse(sc)
@@ -137,8 +130,10 @@ func (w *Workers) checkOptions(opts *Options) (Schedule, error) {
 			return nil, ErrEmptyDuration
 		}
 		schedule = cron.Every(sc)
-	case Schedule:
+	case DelaySchedule:
 		schedule = sc
+	default:
+		return nil, ErrEmptyDuration
 	}
 
 	return schedule, nil
@@ -196,9 +191,24 @@ func (w *Workers) dispatcher() {
 				job()
 			}()
 		case <-w.ctx.Done():
+			w.cron.Stop()
 			wg.Wait()
 			close(w.done)
 			return
 		}
 	}
+}
+
+// DelaySchedule represents a simple recurring duty cycle, e.g. "Every 5 minutes".
+// It does not support jobs more frequent than once a millisecond.
+type DelaySchedule time.Duration
+
+// Next returns the next time this should be run.
+// This rounds so that the next activation time will be on the millisecond.
+func (s DelaySchedule) Next(t time.Time) time.Time {
+	d := time.Duration(s) - time.Duration(t.Nanosecond())/time.Millisecond
+	if d < time.Millisecond {
+		d = time.Millisecond
+	}
+	return t.Add(d)
 }

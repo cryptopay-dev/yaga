@@ -9,21 +9,6 @@ import (
 	"go.uber.org/atomic"
 )
 
-type myDelayLock struct {
-	stop bool
-}
-
-func (m *myDelayLock) Next(t time.Time) time.Time {
-	if m.stop {
-		fmt.Printf("[%s] instance will be stopped\n", time.Now().Format("15:04:05"))
-		// we stop the worker using zero time
-		return time.Time{}
-	}
-
-	// we will plan on every second
-	return t.Add(time.Second)
-}
-
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -78,15 +63,15 @@ func main() {
 	}
 
 	// worker will run as custom scheduler
-	// example of scheduler (using workers.Schedule interface)
-	delay := new(myDelayLock)
+	// example of scheduler (using workers.DelaySchedule type)
+	do := false
 	err = w.Schedule(workers.Options{
 		Name:     "worker #4",
-		Schedule: delay,
+		Schedule: workers.DelaySchedule(time.Second),
 		Handler: func(context.Context) error {
-			if step.Load() > 4 && !delay.stop {
+			if step.Load() > 4 && !do {
+				do = true
 				fmt.Printf("[%s] worker #4: send command 'exit'\n", time.Now().Format("15:04:05"))
-				delay.stop = true
 				// delay canceling of context for 10 seconds
 				time.AfterFunc(time.Second*10, cancel)
 			}

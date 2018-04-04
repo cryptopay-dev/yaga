@@ -12,14 +12,8 @@ import (
 )
 
 func testSimple(t *testing.T) {
-	//t.Parallel()
-
 	c, cancel := context.WithCancel(context.Background())
-
 	w := New(c)
-
-	//start1 := time.Now()
-	//start2 := time.Now()
 
 	i := atomic.NewInt64(0)
 
@@ -50,6 +44,28 @@ func testSimple(t *testing.T) {
 		Schedule: DelaySchedule(time.Second),
 		Handler: func(ctx context.Context) error {
 			panic("test")
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := w.Schedule(Options{
+		Name:     "test-1",
+		Schedule: 0,
+		Handler: func(ctx context.Context) error {
+			panic("test")
+		},
+	}); !assert.Error(t, err) {
+		t.Fatal("must be error")
+	}
+
+	if err := w.Schedule(Options{
+		Name:     "test-2",
+		Schedule: DelaySchedule(0),
+		Handler: func(ctx context.Context) error {
+			i.Inc()
+			defer i.Dec()
+			return nil
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -122,14 +138,4 @@ func TestWorkers(t *testing.T) {
 
 		assert.Equal(t, int64(0), i.Load())
 	})
-}
-
-// DelaySchedule represents a simple recurring duty cycle, e.g. "Every 5 minutes".
-// It does not support jobs more frequent than once a second.
-type DelaySchedule time.Duration
-
-// Next returns the next time this should be run.
-// This rounds so that the next activation time will be on the second.
-func (s DelaySchedule) Next(t time.Time) time.Time {
-	return t.Add(time.Duration(s) - time.Duration(t.Nanosecond())/time.Millisecond)
 }
