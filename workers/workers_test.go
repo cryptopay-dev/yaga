@@ -77,7 +77,7 @@ func TestWorkers(t *testing.T) {
 
 		w.Stop()
 
-		assert.InDelta(t, int64(6), i.Load(), 2)
+		assert.InDelta(t, int64(6), i.Load(), 1)
 	})
 
 	t.Run("high way to hell", func(t *testing.T) {
