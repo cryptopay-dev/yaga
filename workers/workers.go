@@ -35,14 +35,7 @@ var (
 	ErrEmptyHandler = errors.New("handler must be not null")
 )
 
-type Workers interface {
-	Schedule(Options) error
-	Start()
-	Stop()
-	Wait(context.Context) error
-}
-
-type workers struct {
+type Workers struct {
 	cron   *cron.Cron
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -51,8 +44,8 @@ type workers struct {
 	state  *atomic.Int32
 }
 
-func New(ctx context.Context) Workers {
-	w := &workers{
+func New(ctx context.Context) *Workers {
+	w := &Workers{
 		cron:  cron.New(),
 		done:  make(chan struct{}),
 		jobCh: make(chan func()),
@@ -64,19 +57,19 @@ func New(ctx context.Context) Workers {
 	return w
 }
 
-func (w *workers) Start() {
+func (w *Workers) Start() {
 	if w.state.CAS(0, 1) {
 		w.jobCh <- w.cron.Run
 	}
 }
 
-func (w *workers) Stop() {
+func (w *Workers) Stop() {
 	if w.state.CAS(1, 2) {
 		w.cancel()
 	}
 }
 
-func (w *workers) Wait(ctx context.Context) error {
+func (w *Workers) Wait(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -86,7 +79,7 @@ func (w *workers) Wait(ctx context.Context) error {
 	return nil
 }
 
-func (w *workers) checkOptions(opts *Options) (Schedule, error) {
+func (w *Workers) checkOptions(opts *Options) (Schedule, error) {
 	if opts == nil {
 		return nil, ErrEmptyOptions
 	}
@@ -114,13 +107,13 @@ func (w *workers) checkOptions(opts *Options) (Schedule, error) {
 	return schedule, nil
 }
 
-func (w *workers) recovery(workName string) {
+func (w *Workers) recovery(workName string) {
 	if r := recover(); r != nil {
 		log.Errorf("worker '%s' panic: %v", workName, r)
 	}
 }
 
-func (w *workers) Schedule(opts Options) error {
+func (w *Workers) Schedule(opts Options) error {
 	schedule, err := w.checkOptions(&opts)
 	if err != nil {
 		return err
@@ -141,7 +134,7 @@ func (w *workers) Schedule(opts Options) error {
 	return nil
 }
 
-func (w *workers) dispatcher() {
+func (w *Workers) dispatcher() {
 	wg := new(sync.WaitGroup)
 	for {
 		select {
