@@ -183,12 +183,9 @@ func (w *Workers) add() {
 
 // Stop the cron scheduler and wait for jobs.
 func (w *Workers) Stop() {
-	log.Info("stop")
 	w.cancel()
 	w.cron.Stop()
-	log.Info("wait")
 	w.wait()
-	log.Info("exit")
 }
 
 // DelaySchedule represents a simple recurring duty cycle, e.g. "Every 5 minutes".
