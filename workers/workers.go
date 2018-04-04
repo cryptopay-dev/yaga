@@ -20,6 +20,7 @@ type Entry = cron.Entry
 
 // Workers struct
 type Workers struct {
+	mu     *sync.Mutex
 	wg     *sync.WaitGroup
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -30,6 +31,7 @@ type Workers struct {
 func New(ctx context.Context) *Workers {
 	w := &Workers{
 		wg:   new(sync.WaitGroup),
+		mu:   new(sync.Mutex),
 		cron: cron.New(),
 	}
 
@@ -59,8 +61,7 @@ type LockerOptions struct {
 // ScheduleOptions for running job
 type ScheduleOptions struct {
 	Name      string
-	Spec      string
-	Duration  time.Duration
+	Schedule  interface{}
 	Handler   Cmd
 	Exclusive bool
 	Locker    LockerOptions
@@ -81,6 +82,9 @@ var ErrEmptyDuration = errors.New("spec or duration must be not nil")
 // ErrEmptyHandler when handler is empty
 var ErrEmptyHandler = errors.New("handler must be not null")
 
+// The Schedule describes a job's duty cycle.
+type Schedule = cron.Schedule
+
 // Schedule adds a Job to the Cron to be run on the given schedule.
 func (w *Workers) Schedule(opts *ScheduleOptions) error {
 	var (
@@ -97,17 +101,17 @@ func (w *Workers) Schedule(opts *ScheduleOptions) error {
 		return ErrEmptyOptions
 	}
 
-	if opts.Duration > 0 {
-		every = cron.Every(opts.Duration)
-	}
-
-	if len(opts.Spec) > 0 {
-		if every, err = cron.Parse(opts.Spec); err != nil {
-			return err
+	switch schedule := opts.Schedule.(type) {
+	case Schedule:
+		every = schedule
+	case time.Duration:
+		every = cron.Every(schedule)
+	case string:
+		every, err = cron.Parse(schedule)
+		if err != nil {
+			return wrap.Wrap(err, "cron spec parse")
 		}
-	}
-
-	if every == nil {
+	default:
 		return ErrEmptyDuration
 	}
 
@@ -132,8 +136,8 @@ func (w *Workers) Schedule(opts *ScheduleOptions) error {
 			}
 		}()
 
-		w.wg.Add(1)
-		defer w.wg.Done()
+		w.add()
+		defer w.done()
 
 		if opts.Exclusive {
 			if err := lock.Run(opts.Locker.Client, opts.Name, &lock.Options{
@@ -155,9 +159,38 @@ func (w *Workers) Schedule(opts *ScheduleOptions) error {
 // Start the cron scheduler in its own go-routine.
 func (w *Workers) Start() { w.cron.Start() }
 
+// wait for workers stops
+func (w *Workers) wait() {
+	w.mu.Lock()
+	w.wg.Wait()
+	w.mu.Unlock()
+}
+
+// done for one of worker
+func (w *Workers) done() {
+	w.wg.Done()
+}
+
+// add workers to wait
+func (w *Workers) add() {
+	w.mu.Lock()
+	w.wg.Add(1)
+	w.mu.Unlock()
+}
+
 // Stop the cron scheduler and wait for jobs.
 func (w *Workers) Stop() {
-	w.cron.Stop()
 	w.cancel()
-	w.wg.Wait()
+	w.cron.Stop()
+	w.wait()
+}
+
+// DelaySchedule represents a simple recurring duty cycle, e.g. "Every 5 minutes".
+// It does not support jobs more frequent than once a second.
+type DelaySchedule time.Duration
+
+// Next returns the next time this should be run.
+// This rounds so that the next activation time will be on the second.
+func (s DelaySchedule) Next(t time.Time) time.Time {
+	return t.Add(time.Duration(s) - time.Duration(t.Nanosecond())/time.Millisecond)
 }

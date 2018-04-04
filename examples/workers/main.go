@@ -36,7 +36,7 @@ func main() {
 	// example of scheduler like time.Ticker
 	if err := w.Schedule(&workers.ScheduleOptions{
 		Name:     "every 5s",
-		Duration: time.Second * 5,
+		Schedule: time.Second * 5,
 		Handler: func(ctx context.Context) error {
 			fmt.Printf("[%s] worker #1 every 5 secs\n", time.Now().Format("15:04:05"))
 			return nil
@@ -53,7 +53,7 @@ func main() {
 
 	if err := w.Schedule(&workers.ScheduleOptions{
 		Name:     "every 13s",
-		Duration: time.Second * 13,
+		Schedule: time.Second * 13,
 		Handler: func(ctx context.Context) error {
 			fmt.Printf("[%s] worker #2 every 13 secs: STEP=%d\n", time.Now().Format("15:04:05"), step.Inc())
 			return nil
@@ -67,7 +67,7 @@ func main() {
 	// but with first element for seconds
 	if err := w.Schedule(&workers.ScheduleOptions{
 		Name:     "12 */1 * * * *",
-		Duration: time.Second * 13,
+		Schedule: time.Second * 13,
 		Handler: func(ctx context.Context) error {
 			fmt.Printf("[%s] worker #3 every minute at 12 secs\n", time.Now().Format("15:04:05"))
 			return nil
@@ -81,7 +81,7 @@ func main() {
 	delay := new(myDelayLock)
 	if err := w.Schedule(&workers.ScheduleOptions{
 		Name:     "every 5s",
-		Duration: time.Second * 13,
+		Schedule: time.Second * 13,
 		Handler: func(ctx context.Context) error {
 			if step.Load() > 4 && !delay.stop {
 				fmt.Printf("[%s] worker #4: send command 'exit'\n", time.Now().Format("15:04:05"))
