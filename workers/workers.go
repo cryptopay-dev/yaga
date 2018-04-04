@@ -1,18 +1,25 @@
 package workers
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"sync"
 	"time"
 
+	"github.com/cryptopay-dev/yaga/logger/log"
+	wrap "github.com/pkg/errors"
 	"github.com/robfig/cron"
+	"go.uber.org/atomic"
 )
 
 type (
 	// Options structure for creation new worker.
 	Options struct {
 		Name     string
-		Schedule Schedule
-		Handler  func()
+		Schedule interface{}
+		Handler  func(context.Context) error
+		Exlusive bool
 	}
 
 	// Schedule describes a job's duty cycle.
@@ -23,57 +30,130 @@ type (
 )
 
 var (
-	// ErrAlreadyWorker is returned by New calls
-	// when workers name is already exists.
-	ErrAlreadyWorker = errors.New("worker name must be unique")
-
-	// ErrWrongOptions is returned by New calls
-	// when parameter Options.Schedule is NIL or Options.Handler is NIL.
-	ErrWrongOptions = errors.New("wrong options")
-
-	cronWorker = cron.New()
-	poolWorker = newPool()
+	ErrEmptyOptions = errors.New("options must be present")
+	ErrEmptyName    = errors.New("worker must have name")
+	ErrEmptyHandler = errors.New("handler must be not null")
 )
 
-// New returns an error if cannot create new worker
-func New(opts Options) (err error) {
-	_, err = newWorker(opts, poolWorker, func(w *worker, handler func()) {
-		cronWorker.Schedule(w.options.Schedule, cron.FuncJob(handler))
-	})
-
-	return
+type Workers interface {
+	Schedule(Options) error
+	Start()
+	Stop()
+	Wait(context.Context) error
 }
 
-// Parse returns a new crontab schedule representing the given spec.
-// It returns a descriptive error if the spec is not valid.
-//
-// It accepts
-//   - Full crontab specs, e.g. "* * * * * ?"
-//   - Descriptors, e.g. "@midnight", "@every 1h30m"
-func Parse(spec string) (Schedule, error) {
-	return cron.Parse(spec)
+type workers struct {
+	cron   *cron.Cron
+	ctx    context.Context
+	cancel context.CancelFunc
+	done   chan struct{}
+	jobCh  chan func()
+	state  *atomic.Int32
 }
 
-// Every returns a crontab Schedule that activates once every duration.
-// Delays of less than a second are not supported (will round up to 1 second).
-// Any fields less than a Second are truncated.
-func Every(duration time.Duration) Schedule {
-	return cron.Every(duration)
+func New(ctx context.Context) Workers {
+	w := &workers{
+		cron:  cron.New(),
+		done:  make(chan struct{}),
+		jobCh: make(chan func()),
+		state: atomic.NewInt32(0),
+	}
+	w.ctx, w.cancel = context.WithCancel(ctx)
+	go w.dispatcher()
+
+	return w
 }
 
-// Start all workers.
-func Start() {
-	poolWorker.start()
-	cronWorker.Start()
+func (w *workers) Start() {
+	if w.state.CAS(0, 1) {
+		w.jobCh <- w.cron.Run
+	}
 }
 
-// Stop all workers.
-func Stop() {
-	poolWorker.stop()
-	cronWorker.Stop()
+func (w *workers) Stop() {
+	if w.state.CAS(1, 2) {
+		w.cancel()
+	}
 }
 
-// Wait blocks until all workers will be stopped.
-func Wait() {
-	poolWorker.wait()
+func (w *workers) Wait(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-w.done:
+	}
+
+	return nil
+}
+
+func (w *workers) checkOptions(opts *Options) (Schedule, error) {
+	if opts == nil {
+		return nil, ErrEmptyOptions
+	}
+	if len(opts.Name) == 0 {
+		return nil, ErrEmptyName
+	}
+	if opts.Handler == nil {
+		return nil, ErrEmptyHandler
+	}
+
+	var err error
+	var schedule Schedule
+	switch sc := opts.Schedule.(type) {
+	case string:
+		schedule, err = cron.Parse(sc)
+		if err != nil {
+			return nil, err
+		}
+	case time.Duration:
+		schedule = cron.Every(sc)
+	case Schedule:
+		schedule = sc
+	}
+
+	return schedule, nil
+}
+
+func (w *workers) recovery(workName string) {
+	if r := recover(); r != nil {
+		log.Errorf("worker '%s' panic: %v", workName, r)
+	}
+}
+
+func (w *workers) Schedule(opts Options) error {
+	schedule, err := w.checkOptions(&opts)
+	if err != nil {
+		return err
+	}
+
+	w.cron.Schedule(schedule, cron.FuncJob(func() {
+		select {
+		case w.jobCh <- func() {
+			defer w.recovery(opts.Name)
+			if err := opts.Handler(w.ctx); err != nil {
+				log.Error(wrap.Wrap(err, fmt.Sprintf("worker '%s' error", opts.Name)))
+			}
+		}:
+		case <-w.ctx.Done():
+		}
+	}))
+
+	return nil
+}
+
+func (w *workers) dispatcher() {
+	wg := new(sync.WaitGroup)
+	for {
+		select {
+		case job := <-w.jobCh:
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				job()
+			}()
+		case <-w.ctx.Done():
+			wg.Wait()
+			close(w.done)
+		}
+	}
 }

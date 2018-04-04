@@ -107,7 +107,7 @@
     "json/scanner",
     "json/token"
   ]
-  revision = "f40e974e75af4e271d97ce0fc917af5898ae7bda"
+  revision = "061bf373e402ebb186988085a71ac748949594a9"
 
 [[projects]]
   branch = "master"
@@ -206,10 +206,10 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/robfig/cron"
   packages = ["."]
-  revision = "b024fc5ea0e34bc3f83d9941c8d60b0622bfaca4"
-  version = "v1"
+  revision = "2315d5715e36303a941d907f038da7f7c44c773b"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -314,7 +314,7 @@
     "bcrypt",
     "blowfish"
   ]
-  revision = "12892e8c234f4fe6f6803f052061de9057903bb2"
+  revision = "b2aa35443fbc700ab74c586ae79b81c171851023"
 
 [[projects]]
   branch = "master"
@@ -326,7 +326,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "378d26f46672a356c46195c28f61bdb4c0a781dd"
+  revision = "f67933eaf9e2f750f58a234209a11ebc1107be38"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -356,6 +356,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f4b7c2f46e6725bd4a2242f6e88b025dcbc5d526d105686d1d5487bd226435ef"
+  inputs-digest = "2aa0c829a9d4240b2bdfbb25a37fc0ca403f8872b4f752b28459ee1e1fd45163"
   solver-name = "gps-cdcl"
   solver-version = 1
