@@ -96,6 +96,7 @@ func (w *Workers) Start() {
 func (w *Workers) Stop() {
 	if w.state.CAS(1, 2) {
 		w.cancel()
+		w.cron.Stop()
 	}
 }
 
@@ -197,6 +198,7 @@ func (w *Workers) dispatcher() {
 		case <-w.ctx.Done():
 			wg.Wait()
 			close(w.done)
+			return
 		}
 	}
 }
