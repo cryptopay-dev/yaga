@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/workers"
 	"go.uber.org/atomic"
 )
 
 func main() {
+	log.Init()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	w := workers.New(ctx)
@@ -22,7 +25,7 @@ func main() {
 		Name:     "worker #1",
 		Schedule: time.Second * 5,
 		Handler: func(context.Context) error {
-			fmt.Printf("[%s] worker #1 every 5 secs\n", time.Now().Format("15:04:05"))
+			panic("test #1")
 			return nil
 		},
 	})
