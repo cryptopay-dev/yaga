@@ -30,9 +30,10 @@ type (
 )
 
 var (
-	ErrEmptyOptions = errors.New("options must be present")
-	ErrEmptyName    = errors.New("worker must have name")
-	ErrEmptyHandler = errors.New("handler must be not null")
+	ErrEmptyOptions  = errors.New("options must be present")
+	ErrEmptyName     = errors.New("worker must have name")
+	ErrEmptyHandler  = errors.New("handler must be not null")
+	ErrEmptyDuration = errors.New("spec or duration must be not nil")
 )
 
 type Workers struct {
@@ -99,6 +100,9 @@ func (w *Workers) checkOptions(opts *Options) (Schedule, error) {
 			return nil, err
 		}
 	case time.Duration:
+		if sc == 0 {
+			return ErrEmptyDuration
+		}
 		schedule = cron.Every(sc)
 	case Schedule:
 		schedule = sc
