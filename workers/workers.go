@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bsm/redis-lock"
 	"github.com/cryptopay-dev/yaga/logger/log"
 	wrap "github.com/pkg/errors"
 	"github.com/robfig/cron"
@@ -14,12 +15,31 @@ import (
 )
 
 type (
+	// LockerOptions for exclusive running
+	LockerOptions struct {
+		// The maximum duration to lock a key for
+		// Default: 5s
+		LockTimeout time.Duration
+
+		// The number of time the acquisition of a lock will be retried.
+		// Default: 0 = do not retry
+		RetryCount int
+
+		// RetryDelay is the amount of time to wait between retries.
+		// Default: 100ms
+		RetryDelay time.Duration
+
+		// Client for redis
+		Client lock.RedisClient
+	}
+
 	// Options structure for creation new worker.
 	Options struct {
-		Name     string
-		Schedule interface{}
-		Handler  func(context.Context) error
-		Exlusive bool
+		Name      string
+		Schedule  interface{}
+		Handler   func(context.Context) error
+		Exclusive bool
+		Locker    LockerOptions
 	}
 
 	// Schedule describes a job's duty cycle.
@@ -30,10 +50,20 @@ type (
 )
 
 var (
-	ErrEmptyOptions  = errors.New("options must be present")
-	ErrEmptyName     = errors.New("worker must have name")
-	ErrEmptyHandler  = errors.New("handler must be not null")
+	// ErrEmptyOptions when options is empty
+	ErrEmptyOptions = errors.New("options must be present")
+
+	// ErrEmptyName when name is empty
+	ErrEmptyName = errors.New("worker must have name")
+
+	// ErrEmptyHandler when handler is empty
+	ErrEmptyHandler = errors.New("handler must be not null")
+
+	// ErrEmptyDuration when spec or duration is empty
 	ErrEmptyDuration = errors.New("spec or duration must be not nil")
+
+	// ErrEmptyRedisClient when redis is empty
+	ErrEmptyRedisClient = errors.New("redis client must be not nil")
 )
 
 type Workers struct {
@@ -90,6 +120,9 @@ func (w *Workers) checkOptions(opts *Options) (Schedule, error) {
 	if opts.Handler == nil {
 		return nil, ErrEmptyHandler
 	}
+	if opts.Exclusive && opts.Locker.Client == nil {
+		return nil, ErrEmptyRedisClient
+	}
 
 	var err error
 	var schedule Schedule
@@ -101,7 +134,7 @@ func (w *Workers) checkOptions(opts *Options) (Schedule, error) {
 		}
 	case time.Duration:
 		if sc == 0 {
-			return ErrEmptyDuration
+			return nil, ErrEmptyDuration
 		}
 		schedule = cron.Every(sc)
 	case Schedule:
@@ -122,15 +155,29 @@ func (w *Workers) Schedule(opts Options) error {
 	if err != nil {
 		return err
 	}
+	handler := func() {
+		defer w.recovery(opts.Name)
+		if err := opts.Handler(w.ctx); err != nil {
+			log.Error(wrap.Wrap(err, fmt.Sprintf("worker '%s' error", opts.Name)))
+		}
+	}
+	job := handler
+
+	if opts.Exclusive {
+		job = func() {
+			if err := lock.Run(opts.Locker.Client, opts.Name, &lock.Options{
+				LockTimeout: opts.Locker.LockTimeout,
+				RetryCount:  opts.Locker.RetryCount,
+				RetryDelay:  opts.Locker.RetryDelay,
+			}, handler); err != nil {
+				log.Error(wrap.Wrap(err, "locker error"))
+			}
+		}
+	}
 
 	w.cron.Schedule(schedule, cron.FuncJob(func() {
 		select {
-		case w.jobCh <- func() {
-			defer w.recovery(opts.Name)
-			if err := opts.Handler(w.ctx); err != nil {
-				log.Error(wrap.Wrap(err, fmt.Sprintf("worker '%s' error", opts.Name)))
-			}
-		}:
+		case w.jobCh <- job:
 		case <-w.ctx.Done():
 		}
 	}))
