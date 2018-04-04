@@ -128,14 +128,14 @@ func (w *Workers) Schedule(opts *ScheduleOptions) error {
 
 	handler = func() {
 		if err := opts.Handler(w.ctx); err != nil {
-			log.Error(err)
+			log.Error(wrap.Wrapf(err, "worker `%s`", opts.Name))
 		}
 	}
 
 	w.cron.Schedule(every, cron.FuncJob(func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Errorf("workers panic: %v", r)
+				log.Errorf("(%s) workers panic: %v", opts.Name, r)
 			}
 		}()
 
@@ -183,9 +183,12 @@ func (w *Workers) add() {
 
 // Stop the cron scheduler and wait for jobs.
 func (w *Workers) Stop() {
+	log.Info("stop")
 	w.cancel()
 	w.cron.Stop()
+	log.Info("wait")
 	w.wait()
+	log.Info("exit")
 }
 
 // DelaySchedule represents a simple recurring duty cycle, e.g. "Every 5 minutes".
