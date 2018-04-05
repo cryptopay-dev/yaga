@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"github.com/labstack/gommon/log"
-	"go.uber.org/zap"
 )
 
 // Null is /dev/null emulation
@@ -15,9 +14,6 @@ type EmptyWriter struct{}
 
 // Write /dev/null emulation
 func (EmptyWriter) Write(data []byte) (int, error) { return len(data), nil }
-
-// Option for logger
-type Option = zap.Option
 
 // Logger interface
 type Logger interface {
