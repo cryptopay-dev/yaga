@@ -28,17 +28,26 @@ type Logger struct {
 // New creates new logger
 func New(platform string) logger.Logger {
 	var l *zap.Logger
-	if platform == Development {
-		l, _ = zap.NewDevelopment(zap.AddCallerSkip(1))
-	} else {
-		l, _ = zap.Config{
-			Level:            zap.NewAtomicLevelAt(zap.InfoLevel),
-			Encoding:         "json",
-			EncoderConfig:    zap.NewProductionEncoderConfig(),
-			OutputPaths:      []string{"stderr"},
-			ErrorOutputPaths: []string{"stderr"},
-		}.Build()
+
+	config := zap.Config{
+		Level:            zap.NewAtomicLevelAt(zap.DebugLevel),
+		Encoding:         "json",
+		EncoderConfig:    zap.NewProductionEncoderConfig(),
+		OutputPaths:      []string{"stderr"},
+		ErrorOutputPaths: []string{"stderr"},
 	}
+
+	switch platform {
+	case Production:
+		config.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+	case Development:
+		config.Encoding = "console"
+		config.EncoderConfig = zap.NewDevelopmentEncoderConfig()
+	default:
+		// not implemented
+	}
+
+	l, _ = config.Build()
 
 	core := l.Core()
 	sugar := l.Sugar()
@@ -62,6 +71,13 @@ func TimeFromStringField(key string, val string) zapcore.Field {
 // StringField creates new zapcore.Field
 func StringField(key, val string) zapcore.Field {
 	return zap.String(key, val)
+}
+
+// SetOptions applies the supplied Options to Logger
+func (l *Logger) SetOptions(opts ...logger.Option) {
+	l.logger = l.logger.WithOptions(opts...)
+	l.core = l.logger.Core()
+	l.sugar = l.logger.Sugar()
 }
 
 // Named adds a new path segment to the logger's name. Segments are joined by

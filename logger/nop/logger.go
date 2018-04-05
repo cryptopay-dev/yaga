@@ -15,6 +15,9 @@ func New() logger.Logger {
 	return new(Logger)
 }
 
+// SetOptions applies the supplied Options to Logger
+func (l *Logger) SetOptions(opts ...logger.Option) {}
+
 // Output not implemented
 func (l *Logger) Output() io.Writer { return logger.Null }
 

@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -88,8 +87,6 @@ func TestExtractMigrations(t *testing.T) {
 		path  = "./fixtures/good"
 		files []os.FileInfo
 	)
-
-	log.Init()
 
 	if files, err = findMigrations(path); !assert.NoError(t, err) {
 		t.FailNow()

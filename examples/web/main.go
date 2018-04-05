@@ -12,8 +12,6 @@ import (
 )
 
 func main() {
-	log.Init()
-
 	e, err := web.New(web.Options{Debug: true})
 
 	if err != nil {

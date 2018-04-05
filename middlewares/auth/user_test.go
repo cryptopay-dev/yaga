@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/cryptopay-dev/yaga/helpers/testdb"
-	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/go-pg/pg"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
@@ -22,8 +21,6 @@ func TestAuth_Middleware(t *testing.T) {
 	e.HideBanner = true
 
 	d := testdb.GetTestDB()
-
-	log.Init()
 
 	authenticate := New(
 		DB(d.DB),

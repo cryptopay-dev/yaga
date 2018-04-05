@@ -2,8 +2,8 @@ package log
 
 import (
 	"io"
+	"os"
 
-	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/logger/zap"
@@ -14,24 +14,27 @@ import (
 var defaultLog logger.Logger
 
 // Init setup logger
-func Init() logger.Logger {
-	level := config.GetString("level")
+func init() {
+	level := os.Getenv("LEVEL")
 
 	if level == "nop" {
 		defaultLog = nop.New()
-	} else if level == "dev" {
-		defaultLog = zap.New(zap.Development)
+	} else if level == "prod" {
+		defaultLog = zap.New(zap.Production)
 	} else {
-		defaultLog = zap.New(level)
+		defaultLog = zap.New(zap.Development)
 	}
 
-	defaultLog.Infof("Start with level: `%s`", level)
-
-	return defaultLog
+	defaultLog.SetOptions(zaplog.AddCallerSkip(2))
 }
 
 // Logger getter
 func Logger() logger.Logger { return defaultLog }
+
+// SetOptions applies the supplied Options to Logger
+func SetOptions(opts ...logger.Option) {
+	defaultLog.SetOptions(opts...)
+}
 
 // Named adds a new path segment to the logger's name. Segments are joined by
 // periods. By default, Loggers are unnamed.
