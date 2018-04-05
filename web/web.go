@@ -84,10 +84,6 @@ type (
 func New(opts Options) (*Engine, error) {
 	e := echo.New()
 
-	if log.Logger() == nil {
-		log.Init()
-	}
-
 	e.Logger = log.Logger()
 
 	// TODO may be move to function?

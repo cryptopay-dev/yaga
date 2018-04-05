@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/cryptopay-dev/yaga/helpers/testdb"
-	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/go-pg/pg"
@@ -349,8 +348,6 @@ func TestNew(t *testing.T) {
 		err error
 		db  = testdb.GetTestDB().DB
 	)
-
-	log.Init()
 
 	t.Run("Good case", func(t *testing.T) {
 		if err = db.RunInTransaction(func(tx *pg.Tx) error {

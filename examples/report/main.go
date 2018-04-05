@@ -10,8 +10,6 @@ import (
 )
 
 func main() {
-	log.Init()
-
 	e, err := web.New(web.Options{})
 
 	if err != nil {

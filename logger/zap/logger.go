@@ -7,6 +7,7 @@ import (
 
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/labstack/gommon/log"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -20,31 +21,42 @@ const (
 
 // Logger struct
 type Logger struct {
-	core   zapcore.Core
 	logger *zap.Logger
 	sugar  *zap.SugaredLogger
 }
 
 // New creates new logger
-func New(platform string) logger.Logger {
+func New(platform string, callerSkip int) logger.Logger {
 	var l *zap.Logger
-	if platform == Development {
-		l, _ = zap.NewDevelopment(zap.AddCallerSkip(1))
-	} else {
-		l, _ = zap.Config{
-			Level:            zap.NewAtomicLevelAt(zap.InfoLevel),
-			Encoding:         "json",
-			EncoderConfig:    zap.NewProductionEncoderConfig(),
-			OutputPaths:      []string{"stderr"},
-			ErrorOutputPaths: []string{"stderr"},
-		}.Build()
+
+	config := zap.Config{
+		Level:            zap.NewAtomicLevelAt(zap.DebugLevel),
+		Encoding:         "json",
+		EncoderConfig:    zap.NewProductionEncoderConfig(),
+		OutputPaths:      []string{"stderr"},
+		ErrorOutputPaths: []string{"stderr"},
 	}
 
-	core := l.Core()
+	switch platform {
+	case Production:
+		config.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+	case Development:
+		config.Encoding = "console"
+		config.EncoderConfig = zap.NewDevelopmentEncoderConfig()
+	default:
+		// not implemented
+	}
+
+	l, err := config.Build()
+	if err != nil {
+		panic(errors.Wrap(err, "can't create logger"))
+	}
+
+	l = l.WithOptions(zap.AddCallerSkip(callerSkip))
+
 	sugar := l.Sugar()
 
 	sugaredLogger := &Logger{
-		core:   core,
 		logger: l,
 		sugar:  sugar,
 	}
@@ -68,10 +80,8 @@ func StringField(key, val string) zapcore.Field {
 // periods. By default, Loggers are unnamed.
 func (l *Logger) Named(name string) logger.Logger {
 	lg := l.logger.Named(name)
-	core := lg.Core()
 	sugar := lg.Sugar()
 	return &Logger{
-		core:   core,
 		logger: lg,
 		sugar:  sugar,
 	}
@@ -87,10 +97,8 @@ func (l *Logger) WithContext(fields map[string]interface{}) logger.Logger {
 		i++
 	}
 	lg := l.logger.With(zapFields...)
-	core := lg.Core()
 	sugar := lg.Sugar()
 	return &Logger{
-		core:   core,
 		logger: lg,
 		sugar:  sugar,
 	}
