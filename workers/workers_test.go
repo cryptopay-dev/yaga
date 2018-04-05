@@ -97,9 +97,9 @@ func TestWorkers(t *testing.T) {
 	log.Init()
 
 	t.Run("simple test workers", func(t *testing.T) {
-		t.Parallel()
+		n := 10
 
-		for i := 0; i < 10; i++ {
+		for i := 0; i < n; i++ {
 			t.Run("for-loop", func(t *testing.T) {
 				testSimple(t)
 			})

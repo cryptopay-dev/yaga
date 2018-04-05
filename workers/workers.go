@@ -3,14 +3,9 @@ package workers
 import (
 	"context"
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/bsm/redis-lock"
-	"github.com/cryptopay-dev/yaga/logger/log"
-	wrap "github.com/pkg/errors"
-	"github.com/robfig/cron"
-	"go.uber.org/atomic"
 )
 
 type (
@@ -60,50 +55,33 @@ var (
 )
 
 type Workers struct {
-	cron   *cron.Cron
+	cron   *Cron
 	ctx    context.Context
 	cancel context.CancelFunc
-	done   chan struct{}
-	jobCh  chan func()
-	state  *atomic.Int32
 }
 
 func New(ctx context.Context) *Workers {
-	w := &Workers{
-		cron:  cron.New(),
-		done:  make(chan struct{}),
-		jobCh: make(chan func()),
-		state: atomic.NewInt32(0),
+	ctx, cancel := context.WithCancel(ctx)
+	return &Workers{
+		ctx:    ctx,
+		cancel: cancel,
+		cron:   NewCron(),
 	}
-	w.ctx, w.cancel = context.WithCancel(ctx)
-	go w.dispatcher()
-
-	return w
 }
 
 func (w *Workers) Start() {
-	if w.state.CAS(0, 1) {
-		w.jobCh <- w.cron.Run
-	}
+	w.cron.Start(w.ctx)
 }
 
 func (w *Workers) Stop() {
-	if w.state.CAS(1, 2) {
-		w.cancel()
-	}
+	w.cancel()
 }
 
 func (w *Workers) Wait(ctx context.Context) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-w.done:
-	}
-
-	return nil
+	return w.cron.Wait(ctx)
 }
 
-func (w *Workers) checkOptions(opts *Options) (cron.Schedule, error) {
+func checkOptions(opts *Options) (Schedule, error) {
 	if opts == nil {
 		return nil, ErrEmptyOptions
 	}
@@ -118,10 +96,10 @@ func (w *Workers) checkOptions(opts *Options) (cron.Schedule, error) {
 	}
 
 	var err error
-	var schedule cron.Schedule
+	var schedule Schedule
 	switch sc := opts.Schedule.(type) {
 	case string:
-		schedule, err = cron.Parse(sc)
+		schedule, err = Parse(sc)
 		if err != nil {
 			return nil, err
 		}
@@ -129,7 +107,9 @@ func (w *Workers) checkOptions(opts *Options) (cron.Schedule, error) {
 		if sc == 0 {
 			return nil, ErrEmptyDuration
 		}
-		schedule = cron.Every(sc)
+		schedule = Every(sc)
+	case ConstantDelaySchedule:
+		schedule = sc
 	case DelaySchedule:
 		schedule = sc
 	default:
@@ -139,64 +119,29 @@ func (w *Workers) checkOptions(opts *Options) (cron.Schedule, error) {
 	return schedule, nil
 }
 
-func (w *Workers) recovery(workName string) {
-	if r := recover(); r != nil {
-		log.Errorf("workers `%s` panic: %v", workName, r)
-	}
-}
-
 func (w *Workers) Schedule(opts Options) error {
-	schedule, err := w.checkOptions(&opts)
+	schedule, err := checkOptions(&opts)
 	if err != nil {
 		return err
 	}
-	handler := func() {
-		defer w.recovery(opts.Name)
-		if err := opts.Handler(w.ctx); err != nil {
-			log.Error(wrap.Wrapf(err, "worker `%s`", opts.Name))
-		}
-	}
-	job := handler
 
-	if opts.Exclusive {
-		job = func() {
-			if err := lock.Run(opts.Locker.Client, opts.Name, &lock.Options{
-				LockTimeout: opts.Locker.LockTimeout,
-				RetryCount:  opts.Locker.RetryCount,
-				RetryDelay:  opts.Locker.RetryDelay,
-			}, handler); err != nil {
-				log.Error(wrap.Wrap(err, "locker error"))
+	/*
+		if opts.Exclusive {
+			job = func(ctx context.Context) {
+				if err := lock.Run(opts.Locker.Client, opts.Name, &lock.Options{
+					LockTimeout: opts.Locker.LockTimeout,
+					RetryCount:  opts.Locker.RetryCount,
+					RetryDelay:  opts.Locker.RetryDelay,
+				}, func() { handler(ctx) }); err != nil {
+					log.Error(wrap.Wrap(err, "locker error"))
+				}
 			}
 		}
-	}
+	*/
 
-	w.cron.Schedule(schedule, cron.FuncJob(func() {
-		select {
-		case w.jobCh <- job:
-		case <-w.ctx.Done():
-		}
-	}))
+	w.cron.Schedule(schedule, opts.Name, opts.Handler)
 
 	return nil
-}
-
-func (w *Workers) dispatcher() {
-	wg := new(sync.WaitGroup)
-	for {
-		select {
-		case job := <-w.jobCh:
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				job()
-			}()
-		case <-w.ctx.Done():
-			w.cron.Stop()
-			wg.Wait()
-			close(w.done)
-			return
-		}
-	}
 }
 
 // DelaySchedule represents a simple recurring duty cycle, e.g. "Every 5 minutes".

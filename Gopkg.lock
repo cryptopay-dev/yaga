@@ -41,7 +41,7 @@
   branch = "master"
   name = "github.com/getsentry/raven-go"
   packages = ["."]
-  revision = "7562301a6763c9ac631b0a2011b4aa0e064e45d4"
+  revision = "d1470f50d3a3a38533355a9fab7393e25a3b4226"
 
 [[projects]]
   name = "github.com/go-pg/pg"
@@ -53,8 +53,8 @@
     "orm",
     "types"
   ]
-  revision = "a7da286fae957b07243bb3aaaf4897c3ca912c50"
-  version = "v6.11.1"
+  revision = "5b73ce88484575f3480edf393237f6bf79d5f166"
+  version = "v6.11.2"
 
 [[projects]]
   name = "github.com/go-playground/locales"
@@ -107,7 +107,7 @@
     "json/scanner",
     "json/token"
   ]
-  revision = "061bf373e402ebb186988085a71ac748949594a9"
+  revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
 
 [[projects]]
   branch = "master"
@@ -204,12 +204,6 @@
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/robfig/cron"
-  packages = ["."]
-  revision = "2315d5715e36303a941d907f038da7f7c44c773b"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -320,13 +314,13 @@
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context"]
-  revision = "b68f30494add4df6bd8ef5e82803f308e7f7c59c"
+  revision = "b3c676e531a6dc479fa1b35ac961c13f5e2b4d2e"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "f67933eaf9e2f750f58a234209a11ebc1107be38"
+  revision = "1d206c9fa8975fb4cf00df1dc8bf3283dc24ba0e"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -356,6 +350,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2aa0c829a9d4240b2bdfbb25a37fc0ca403f8872b4f752b28459ee1e1fd45163"
+  inputs-digest = "0cfeb08da03871b7350c727d7c303c1bbfa511e9d3ead01bfa9c8a4086f9c0c7"
   solver-name = "gps-cdcl"
   solver-version = 1
