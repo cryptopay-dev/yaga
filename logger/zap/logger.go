@@ -48,12 +48,11 @@ func New(platform string, callerSkip int) logger.Logger {
 	}
 
 	l, err := config.Build()
-
-	l = l.WithOptions(zap.AddCallerSkip(callerSkip))
-
 	if err != nil {
 		panic(errors.Wrap(err, "can't create logger"))
 	}
+
+	l = l.WithOptions(zap.AddCallerSkip(callerSkip))
 
 	sugar := l.Sugar()
 
