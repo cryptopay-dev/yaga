@@ -20,21 +20,14 @@ func init() {
 	if level == "nop" {
 		defaultLog = nop.New()
 	} else if level == "prod" {
-		defaultLog = zap.New(zap.Production)
+		defaultLog = zap.New(zap.Production, 2)
 	} else {
-		defaultLog = zap.New(zap.Development)
+		defaultLog = zap.New(zap.Development, 2)
 	}
-
-	defaultLog.SetOptions(zaplog.AddCallerSkip(2))
 }
 
 // Logger getter
 func Logger() logger.Logger { return defaultLog }
-
-// SetOptions applies the supplied Options to Logger
-func SetOptions(opts ...logger.Option) {
-	defaultLog.SetOptions(opts...)
-}
 
 // Named adds a new path segment to the logger's name. Segments are joined by
 // periods. By default, Loggers are unnamed.

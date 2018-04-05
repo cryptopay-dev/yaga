@@ -26,7 +26,7 @@ type Logger struct {
 }
 
 // New creates new logger
-func New(platform string) logger.Logger {
+func New(platform string, callerSkip int) logger.Logger {
 	var l *zap.Logger
 
 	config := zap.Config{
@@ -48,6 +48,9 @@ func New(platform string) logger.Logger {
 	}
 
 	l, err := config.Build()
+
+	l = l.WithOptions(zap.AddCallerSkip(callerSkip))
+
 	if err != nil {
 		panic(errors.Wrap(err, "can't create logger"))
 	}
@@ -72,12 +75,6 @@ func TimeFromStringField(key string, val string) zapcore.Field {
 // StringField creates new zapcore.Field
 func StringField(key, val string) zapcore.Field {
 	return zap.String(key, val)
-}
-
-// SetOptions applies the supplied Options to Logger
-func (l *Logger) SetOptions(opts ...logger.Option) {
-	l.logger = l.logger.WithOptions(opts...)
-	l.sugar = l.logger.Sugar()
 }
 
 // Named adds a new path segment to the logger's name. Segments are joined by

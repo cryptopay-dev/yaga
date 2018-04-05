@@ -21,8 +21,6 @@ type Option = zap.Option
 
 // Logger interface
 type Logger interface {
-	SetOptions(opts ...Option)
-
 	Output() io.Writer
 	SetOutput(w io.Writer)
 
