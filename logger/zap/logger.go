@@ -7,6 +7,7 @@ import (
 
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/labstack/gommon/log"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -20,7 +21,6 @@ const (
 
 // Logger struct
 type Logger struct {
-	core   zapcore.Core
 	logger *zap.Logger
 	sugar  *zap.SugaredLogger
 }
@@ -47,13 +47,14 @@ func New(platform string) logger.Logger {
 		// not implemented
 	}
 
-	l, _ = config.Build()
+	l, err := config.Build()
+	if err != nil {
+		panic(errors.Wrap(err, "can't create logger"))
+	}
 
-	core := l.Core()
 	sugar := l.Sugar()
 
 	sugaredLogger := &Logger{
-		core:   core,
 		logger: l,
 		sugar:  sugar,
 	}
@@ -76,7 +77,6 @@ func StringField(key, val string) zapcore.Field {
 // SetOptions applies the supplied Options to Logger
 func (l *Logger) SetOptions(opts ...logger.Option) {
 	l.logger = l.logger.WithOptions(opts...)
-	l.core = l.logger.Core()
 	l.sugar = l.logger.Sugar()
 }
 
@@ -84,10 +84,8 @@ func (l *Logger) SetOptions(opts ...logger.Option) {
 // periods. By default, Loggers are unnamed.
 func (l *Logger) Named(name string) logger.Logger {
 	lg := l.logger.Named(name)
-	core := lg.Core()
 	sugar := lg.Sugar()
 	return &Logger{
-		core:   core,
 		logger: lg,
 		sugar:  sugar,
 	}
@@ -103,10 +101,8 @@ func (l *Logger) WithContext(fields map[string]interface{}) logger.Logger {
 		i++
 	}
 	lg := l.logger.With(zapFields...)
-	core := lg.Core()
 	sugar := lg.Sugar()
 	return &Logger{
-		core:   core,
 		logger: lg,
 		sugar:  sugar,
 	}
