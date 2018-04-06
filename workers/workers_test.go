@@ -3,7 +3,6 @@ package workers
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -11,13 +10,11 @@ import (
 	"go.uber.org/atomic"
 )
 
-func init() {
-	os.Setenv("LEVEL", "dev")
-}
-
-func testSimple(t *testing.T) {
+func testSimple(t *testing.T, iterN int) {
 	c, cancel := context.WithCancel(context.Background())
 	w := New(nil)
+	log := newMockLogger()
+	w.logger = log
 
 	i := atomic.NewInt64(0)
 
@@ -44,27 +41,41 @@ func testSimple(t *testing.T) {
 	}
 
 	if err := w.Schedule(Options{
-		Name:     "#3: 1 sec worker",
-		Schedule: DelaySchedule(time.Second),
+		Name:     "#3: 400 ms worker",
+		Schedule: DelaySchedule(time.Millisecond * 400),
 		Handler: func(ctx context.Context) error {
-			panic("test")
+			panic(fmt.Sprintf("(%d) testing a logger of panic", iterN))
 		},
 	}); err != nil {
 		t.Fatal(err)
 	}
 
 	if err := w.Schedule(Options{
-		Name:     "test-1",
+		Name:     "#4: 100 ms worker",
+		Schedule: DelaySchedule(time.Millisecond * 100),
+		Handler: func(ctx context.Context) error {
+			i.Inc()
+			time.Sleep(time.Millisecond * 400)
+			return fmt.Errorf("(%d) testing a logger of error", iterN)
+		},
+		TypeJob: OnePerInstance,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := w.Schedule(Options{
+		Name:     "#5: error worker",
 		Schedule: 0,
 		Handler: func(ctx context.Context) error {
-			panic("test")
+			t.Fatal("#5: must not be runned")
+			return nil
 		},
 	}); !assert.Error(t, err) {
 		t.Fatal("must be error")
 	}
 
 	if err := w.Schedule(Options{
-		Name:     "test-2",
+		Name:     "#6: 1 ms worker",
 		Schedule: DelaySchedule(0),
 		Handler: func(ctx context.Context) error {
 			i.Inc()
@@ -76,31 +87,34 @@ func testSimple(t *testing.T) {
 	}
 
 	if err := w.Schedule(Options{
-		Name:     "#4: 10 sec worker",
-		Schedule: DelaySchedule(time.Second * 10),
+		Name:     "#7: 2 sec worker",
+		Schedule: DelaySchedule(time.Second * 2),
 		Handler: func(ctx context.Context) error {
-			t.Fatal("must not be runned")
+			t.Fatal("#7: must not be runned")
 			return nil
 		},
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	time.AfterFunc(time.Millisecond*450, cancel)
 	w.Start(c)
+	time.AfterFunc(time.Millisecond*450, cancel)
 
 	<-c.Done()
 
 	w.Wait(context.Background())
 
-	assert.Equal(t, int64(6), i.Load())
+	assert.Equal(t, int64(7), i.Load())
+
+	assert.True(t, log.Contains(fmt.Sprintf("workers `#3: 400 ms worker` panic: (%d) testing a logger of panic", iterN)))
+	assert.True(t, log.Contains(fmt.Sprintf("workers `#4: 100 ms worker`: (%d) testing a logger of error", iterN)))
 }
 
 func TestWorkers(t *testing.T) {
 	t.Run("simple test workers", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			t.Run("for-loop", func(t *testing.T) {
-				testSimple(t)
+				testSimple(t, i)
 			})
 		}
 	})

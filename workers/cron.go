@@ -70,7 +70,7 @@ func (s byTime) Less(i, j int) bool {
 
 // New returns a new Cron job runner, in the Local time zone.
 func New(locker LockerClient) *Cron {
-	c := &Cron{
+	return &Cron{
 		entries: nil,
 		add:     make(chan *Entry),
 		done:    make(chan struct{}),
@@ -78,12 +78,10 @@ func New(locker LockerClient) *Cron {
 		logger:  log.Logger(),
 		locker:  locker,
 	}
-
-	return c
 }
 
 func (c *Cron) schedule(entry *Entry) {
-	if c.state.Load() != 1 {
+	if c.state.Load() == 0 {
 		c.entries = append(c.entries, entry)
 		return
 	}
@@ -152,6 +150,7 @@ func (c *Cron) run(ctx context.Context) {
 			c.entries = append(c.entries, newEntry)
 
 		case <-ctx.Done():
+			c.state.Store(2)
 			timer.Stop()
 			wg.Wait()
 			close(c.done)

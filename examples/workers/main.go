@@ -5,17 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/workers"
 	"go.uber.org/atomic"
 )
 
 func main() {
-	log.Init()
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	w := workers.New(ctx)
+	w := workers.New(nil)
 
 	fmt.Printf("[%s] Hello, workers!\n", time.Now().Format("15:04:05"))
 
@@ -25,7 +22,7 @@ func main() {
 		Name:     "worker #1",
 		Schedule: time.Second * 5,
 		Handler: func(context.Context) error {
-			panic("test #1")
+			fmt.Printf("[%s] worker #1 every 5 secs\n", time.Now().Format("15:04:05"))
 			return nil
 		},
 	})
@@ -33,7 +30,7 @@ func main() {
 		panic(err)
 	}
 
-	w.Start()
+	w.Start(ctx)
 
 	// worker will run every 13 seconds
 	// example of scheduler like time.Ticker (using string parsing)
@@ -58,6 +55,7 @@ func main() {
 		Schedule: "12 */1 * * * *",
 		Handler: func(context.Context) error {
 			fmt.Printf("[%s] worker #3 every minute at 12 secs\n", time.Now().Format("15:04:05"))
+			panic("test #3")
 			return nil
 		},
 	})
@@ -91,7 +89,7 @@ func main() {
 	fmt.Printf("[%s] workers are stopping\n", time.Now().Format("15:04:05"))
 
 	// stopping workers
-	w.Stop()
+	// do not nothing
 
 	// wait until all workers will be stopped
 	w.Wait(context.Background())

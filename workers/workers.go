@@ -110,7 +110,7 @@ func (c *Cron) checkOptions(opts *Options) (Schedule, error) {
 func (c *Cron) wrapJobDefault(opts *Options) func(ctx context.Context) {
 	return func(ctx context.Context) {
 		if err := opts.Handler(ctx); err != nil {
-			c.logger.Error(wrap.Wrapf(err, "worker `%s`", opts.Name))
+			c.logger.Error(wrap.Wrapf(err, "workers `%s`", opts.Name))
 		}
 	}
 }
@@ -135,7 +135,7 @@ func (c *Cron) wrapJobPerCluster(opts *Options) func(ctx context.Context) {
 			RetryCount:  opts.Locker.RetryCount,
 			RetryDelay:  opts.Locker.RetryDelay,
 		}, func() { job(ctx) }); err != nil {
-			c.logger.Error(wrap.Wrapf(err, "locker error; worker `%s`", opts.Name))
+			c.logger.Error(wrap.Wrapf(err, "workers `%s` locker error", opts.Name))
 		}
 	}
 }
