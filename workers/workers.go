@@ -96,9 +96,7 @@ func (c *Cron) checkOptions(opts *Options) (Schedule, error) {
 			return nil, ErrEmptyDuration
 		}
 		schedule = Every(sc)
-	case ConstantDelaySchedule:
-		schedule = sc
-	case DelaySchedule:
+	case Schedule:
 		schedule = sc
 	default:
 		return nil, ErrEmptyDuration
