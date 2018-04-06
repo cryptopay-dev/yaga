@@ -1,13 +1,11 @@
 package testdb
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/helpers/postgres"
 	"github.com/go-pg/pg"
-	"github.com/joho/godotenv"
 )
 
 var database *Database
@@ -31,21 +29,19 @@ database:
 // - TEST_DATABASE_USER
 // - TEST_DATABASE_DATABASE
 // - TEST_DATABASE_PASSWORD
-func GetTestDB() *Database {
+func GetTestDB() (db *postgres.DB, err error) {
 	config.SetEnvPrefix("test")
-	config.ReadConfig(defaultConfig)
+
+	if err = config.ReadConfig(defaultConfig); err != nil {
+		return
+	}
 
 	if database == nil {
-		err := godotenv.Load()
-		if err != nil && !strings.Contains(err.Error(), "no such file or directory") {
-			fmt.Println(err)
-		}
-		database = new(Database)
-		database.DB, err = postgres.Connect("database")
+		db, err = postgres.Connect("database")
 		if err != nil {
-			panic(err)
+			return
 		}
 	}
 
-	return database
+	return db, nil
 }

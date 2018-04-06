@@ -53,7 +53,9 @@ func TestAuth_Middleware(t *testing.T) {
 	e, err = web.New(web.Options{})
 	assert.NoError(t, err)
 
-	db = testdb.GetTestDB().DB
+	if db, err = testdb.GetTestDB(); err != nil {
+		t.Fatal(err)
+	}
 
 	authenticate = New(db)
 
