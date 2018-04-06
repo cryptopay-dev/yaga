@@ -5,15 +5,7 @@ import (
 
 	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/helpers/postgres"
-	"github.com/go-pg/pg"
 )
-
-var database *Database
-
-// Database for tests
-type Database struct {
-	DB *pg.DB
-}
 
 var defaultConfig = strings.NewReader(`
 database:
@@ -36,11 +28,9 @@ func GetTestDB() (db *postgres.DB, err error) {
 		return
 	}
 
-	if database == nil {
-		db, err = postgres.Connect("database")
-		if err != nil {
-			return
-		}
+	db, err = postgres.Connect("database")
+	if err != nil {
+		return
 	}
 
 	return db, nil
