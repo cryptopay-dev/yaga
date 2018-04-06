@@ -16,7 +16,7 @@ func main() {
 		DB:       0,
 	})
 
-	lock := locker.New()
+	lock := locker.New(store)
 
 	wg := sync.WaitGroup{}
 
@@ -29,7 +29,7 @@ func main() {
 				// For example
 				fmt.Println("Step :", index)
 				wg.Done()
-			}, locker.Redis(store), locker.Timeout(time.Second*10))
+			}, locker.Timeout(time.Second*10))
 		}(i)
 	}
 
