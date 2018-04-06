@@ -2,8 +2,8 @@ package log
 
 import (
 	"io"
+	"os"
 
-	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/logger/zap"
@@ -14,20 +14,16 @@ import (
 var defaultLog logger.Logger
 
 // Init setup logger
-func Init() logger.Logger {
-	level := config.GetString("level")
+func init() {
+	level := os.Getenv("LEVEL")
 
 	if level == "nop" {
 		defaultLog = nop.New()
-	} else if level == "dev" {
-		defaultLog = zap.New(zap.Development)
+	} else if level == "prod" {
+		defaultLog = zap.New(zap.Production, 2)
 	} else {
-		defaultLog = zap.New(level)
+		defaultLog = zap.New(zap.Development, 2)
 	}
-
-	defaultLog.Infof("Start with level: `%s`", level)
-
-	return defaultLog
 }
 
 // Logger getter

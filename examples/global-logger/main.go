@@ -1,17 +1,15 @@
 package main
 
 import (
-	"github.com/cryptopay-dev/yaga/config"
+	"os"
+
 	"github.com/cryptopay-dev/yaga/logger/log"
 )
 
 func main() {
-	if err := config.ReadInConfig(); err != nil {
+	if err := os.Setenv("LEVEL", "dev"); err != nil {
 		panic(err)
 	}
-
-	// Setup logger..
-	log.Init()
 
 	log.Info("all fine!")
 	log.Print("all fine!")

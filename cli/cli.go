@@ -12,7 +12,7 @@ import (
 var (
 	// ErrAppNotPointer when app-instance not pointer to struct
 	ErrAppNotPointer = errors.New("app must be a pointer to a struct")
-	// ErrLoggerNotInitialized when not called log.Init()
+	// ErrLoggerNotInitialized when logger not initialized
 	ErrLoggerNotInitialized = errors.New("logger not initialized")
 )
 
