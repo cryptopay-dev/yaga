@@ -373,7 +373,7 @@ func TestNew(t *testing.T) {
 
 			var i int64
 
-			for i = 1; i <= 10; i++ {
+			for i = 1; i <= 2; i++ {
 				if _, errVer := tx.Exec(
 					sqlNewVersion,
 					getTableName(),

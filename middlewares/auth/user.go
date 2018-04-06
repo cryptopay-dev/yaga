@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/web"
+	"github.com/go-pg/pg"
 )
 
 const (
@@ -11,16 +12,12 @@ const (
 
 // Auth struct
 type Auth struct {
-	Options
+	DB *pg.DB
 }
 
 // New creates new Auth
-func New(opts ...Option) *Auth {
-	var (
-		options = newOptions(opts...)
-		auth    = Auth{options}
-	)
-	return &auth
+func New(db *pg.DB) *Auth {
+	return &Auth{DB: db}
 }
 
 // Middleware for web-application
