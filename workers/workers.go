@@ -6,6 +6,16 @@ import (
 	"time"
 
 	"github.com/bsm/redis-lock"
+	wrap "github.com/pkg/errors"
+	"go.uber.org/atomic"
+)
+
+type TypeJob int
+
+const (
+	DefaultJob TypeJob = iota
+	OnePerInstance
+	OnePerCluster
 )
 
 type (
@@ -22,19 +32,21 @@ type (
 		// RetryDelay is the amount of time to wait between retries.
 		// Default: 100ms
 		RetryDelay time.Duration
-
-		// Client for redis
-		Client lock.RedisClient
 	}
+
+	Job func(context.Context) error
 
 	// Options structure for creation new worker.
 	Options struct {
-		Name      string
-		Schedule  interface{}
-		Handler   func(context.Context) error
-		Exclusive bool
-		Locker    LockerOptions
+		Name     string
+		Schedule interface{}
+		Handler  Job
+		TypeJob  TypeJob
+		Locker   LockerOptions
 	}
+
+	// Client for redis
+	LockerClient = lock.RedisClient
 )
 
 var (
@@ -50,38 +62,14 @@ var (
 	// ErrEmptyDuration when spec or duration is empty
 	ErrEmptyDuration = errors.New("spec or duration must be not nil")
 
-	// ErrEmptyRedisClient when redis is empty
-	ErrEmptyRedisClient = errors.New("redis client must be not nil")
+	// ErrEmptyRedisClient when locker is empty
+	ErrEmptyLockerClient = errors.New("locker client must be not nil")
+
+	// ErrUnknownJobType when invalid job type
+	ErrUnknownJobType = errors.New("unknown job type")
 )
 
-type Workers struct {
-	cron   *Cron
-	ctx    context.Context
-	cancel context.CancelFunc
-}
-
-func New(ctx context.Context) *Workers {
-	ctx, cancel := context.WithCancel(ctx)
-	return &Workers{
-		ctx:    ctx,
-		cancel: cancel,
-		cron:   NewCron(),
-	}
-}
-
-func (w *Workers) Start() {
-	w.cron.Start(w.ctx)
-}
-
-func (w *Workers) Stop() {
-	w.cancel()
-}
-
-func (w *Workers) Wait(ctx context.Context) error {
-	return w.cron.Wait(ctx)
-}
-
-func checkOptions(opts *Options) (Schedule, error) {
+func (c *Cron) checkOptions(opts *Options) (Schedule, error) {
 	if opts == nil {
 		return nil, ErrEmptyOptions
 	}
@@ -91,8 +79,8 @@ func checkOptions(opts *Options) (Schedule, error) {
 	if opts.Handler == nil {
 		return nil, ErrEmptyHandler
 	}
-	if opts.Exclusive && opts.Locker.Client == nil {
-		return nil, ErrEmptyRedisClient
+	if opts.TypeJob == OnePerCluster && c.locker == nil {
+		return nil, ErrEmptyLockerClient
 	}
 
 	var err error
@@ -119,41 +107,63 @@ func checkOptions(opts *Options) (Schedule, error) {
 	return schedule, nil
 }
 
-func (w *Workers) Schedule(opts Options) error {
-	schedule, err := checkOptions(&opts)
+func (c *Cron) wrapJobDefault(opts *Options) func(ctx context.Context) {
+	return func(ctx context.Context) {
+		if err := opts.Handler(ctx); err != nil {
+			c.logger.Error(wrap.Wrapf(err, "worker `%s`", opts.Name))
+		}
+	}
+}
+
+func (c *Cron) wrapJobPerInstance(opts *Options) func(ctx context.Context) {
+	job := c.wrapJobDefault(opts)
+	lock := atomic.NewInt32(0)
+	return func(ctx context.Context) {
+		if !lock.CAS(0, 1) {
+			return
+		}
+		defer lock.Store(0)
+		job(ctx)
+	}
+}
+
+func (c *Cron) wrapJobPerCluster(opts *Options) func(ctx context.Context) {
+	job := c.wrapJobDefault(opts)
+	return func(ctx context.Context) {
+		if err := lock.Run(c.locker, opts.Name, &lock.Options{
+			LockTimeout: opts.Locker.LockTimeout,
+			RetryCount:  opts.Locker.RetryCount,
+			RetryDelay:  opts.Locker.RetryDelay,
+		}, func() { job(ctx) }); err != nil {
+			c.logger.Error(wrap.Wrapf(err, "locker error; worker `%s`", opts.Name))
+		}
+	}
+}
+
+// Schedule adds a Job to the Cron to be run on the given schedule.
+func (c *Cron) Schedule(opts Options) error {
+	schedule, err := c.checkOptions(&opts)
 	if err != nil {
 		return err
 	}
 
-	/*
-		if opts.Exclusive {
-			job = func(ctx context.Context) {
-				if err := lock.Run(opts.Locker.Client, opts.Name, &lock.Options{
-					LockTimeout: opts.Locker.LockTimeout,
-					RetryCount:  opts.Locker.RetryCount,
-					RetryDelay:  opts.Locker.RetryDelay,
-				}, func() { handler(ctx) }); err != nil {
-					log.Error(wrap.Wrap(err, "locker error"))
-				}
-			}
-		}
-	*/
+	var job func(ctx context.Context)
+	switch opts.TypeJob {
+	case DefaultJob:
+		job = c.wrapJobDefault(&opts)
+	case OnePerInstance:
+		job = c.wrapJobPerInstance(&opts)
+	case OnePerCluster:
+		job = c.wrapJobPerCluster(&opts)
+	default:
+		return ErrUnknownJobType
+	}
 
-	w.cron.Schedule(schedule, opts.Name, opts.Handler)
+	c.schedule(&Entry{
+		Schedule: schedule,
+		Name:     opts.Name,
+		Job:      job,
+	})
 
 	return nil
-}
-
-// DelaySchedule represents a simple recurring duty cycle, e.g. "Every 5 minutes".
-// It does not support jobs more frequent than once a millisecond.
-type DelaySchedule time.Duration
-
-// Next returns the next time this should be run.
-// This rounds so that the next activation time will be on the millisecond.
-func (s DelaySchedule) Next(t time.Time) time.Time {
-	d := time.Duration(s) - time.Duration(t.Nanosecond())/time.Millisecond
-	if d < time.Millisecond {
-		d = time.Millisecond
-	}
-	return t.Add(d)
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/logger/log"
-	wrap "github.com/pkg/errors"
 	"go.uber.org/atomic"
 )
 
@@ -21,7 +20,7 @@ type Cron struct {
 	add     chan *Entry
 	state   *atomic.Int32
 	logger  logger.Logger
-	ctx     context.Context
+	locker  LockerClient
 }
 
 // The Schedule describes a job's duty cycle.
@@ -30,8 +29,6 @@ type Schedule interface {
 	// Next is invoked initially, and then each time the job is run.
 	Next(time.Time) time.Time
 }
-
-type Job func(context.Context) error
 
 // Entry consists of a schedule and the func to execute on that schedule.
 type Entry struct {
@@ -49,7 +46,7 @@ type Entry struct {
 	Prev time.Time
 
 	// The Job to run.
-	Job Job
+	Job func(ctx context.Context)
 }
 
 // byTime is a wrapper for sorting the entry array by time
@@ -72,25 +69,20 @@ func (s byTime) Less(i, j int) bool {
 }
 
 // New returns a new Cron job runner, in the Local time zone.
-func NewCron() *Cron {
+func New(locker LockerClient) *Cron {
 	c := &Cron{
 		entries: nil,
 		add:     make(chan *Entry),
 		done:    make(chan struct{}),
 		state:   atomic.NewInt32(0),
 		logger:  log.Logger(),
+		locker:  locker,
 	}
 
 	return c
 }
 
-// Schedule adds a Job to the Cron to be run on the given schedule.
-func (c *Cron) Schedule(schedule Schedule, name string, job Job) {
-	entry := &Entry{
-		Schedule: schedule,
-		Name:     name,
-		Job:      job,
-	}
+func (c *Cron) schedule(entry *Entry) {
 	if c.state.Load() != 1 {
 		c.entries = append(c.entries, entry)
 		return
@@ -98,14 +90,13 @@ func (c *Cron) Schedule(schedule Schedule, name string, job Job) {
 
 	select {
 	case c.add <- entry:
-	case <-c.ctx.Done():
+	case <-c.done:
 	}
 }
 
 // Start the cron scheduler in its own go-routine, or no-op if already started.
 func (c *Cron) Start(ctx context.Context) {
 	if c.state.CAS(0, 1) {
-		c.ctx = ctx
 		go c.run(ctx)
 	}
 }
@@ -148,9 +139,7 @@ func (c *Cron) run(ctx context.Context) {
 							c.logger.Errorf("workers `%s` panic: %v", e2.Name, r)
 						}
 					}()
-					if err := e2.Job(ctx); err != nil {
-						c.logger.Error(wrap.Wrapf(err, "worker `%s`", e2.Name))
-					}
+					e2.Job(ctx)
 				}(e)
 				e.Prev = e.Next
 				e.Next = e.Schedule.Next(now)

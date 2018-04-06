@@ -3,17 +3,21 @@ package workers
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
-	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/atomic"
 )
 
+func init() {
+	os.Setenv("LEVEL", "dev")
+}
+
 func testSimple(t *testing.T) {
 	c, cancel := context.WithCancel(context.Background())
-	w := New(c)
+	w := New(nil)
 
 	i := atomic.NewInt64(0)
 
@@ -83,23 +87,18 @@ func testSimple(t *testing.T) {
 	}
 
 	time.AfterFunc(time.Millisecond*450, cancel)
-	w.Start()
+	w.Start(c)
 
 	<-c.Done()
 
-	w.Stop()
 	w.Wait(context.Background())
 
 	assert.Equal(t, int64(6), i.Load())
 }
 
 func TestWorkers(t *testing.T) {
-	log.Init()
-
 	t.Run("simple test workers", func(t *testing.T) {
-		n := 10
-
-		for i := 0; i < n; i++ {
+		for i := 0; i < 10; i++ {
 			t.Run("for-loop", func(t *testing.T) {
 				testSimple(t)
 			})
@@ -107,17 +106,15 @@ func TestWorkers(t *testing.T) {
 	})
 
 	t.Run("high way to hell", func(t *testing.T) {
-		t.Parallel()
-
 		c, cancel := context.WithCancel(context.Background())
-		w := New(c)
+		w := New(nil)
 
 		i := atomic.NewInt64(0)
 
 		for n := 0; n < 1000; n++ {
 			w.Schedule(Options{
 				Name:     fmt.Sprintf("test-worker-%d", i),
-				Schedule: time.Millisecond,
+				Schedule: DelaySchedule(time.Millisecond * 10),
 				Handler: func(ctx context.Context) error {
 					i.Inc()
 					time.Sleep(time.Second * 2)
@@ -127,13 +124,12 @@ func TestWorkers(t *testing.T) {
 			})
 		}
 
-		w.Start()
+		w.Start(c)
 
 		time.AfterFunc(time.Second, cancel)
 
 		<-c.Done()
 
-		w.Stop()
 		w.Wait(context.Background())
 
 		assert.Equal(t, int64(0), i.Load())
