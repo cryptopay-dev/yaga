@@ -6,7 +6,7 @@ type Options interface {
 }
 
 // Option closure
-type Option = func(opt Options) error
+type Option = func(opt Options)
 
 // Locker interface to abstract bsm/redis-lock
 type Locker interface {

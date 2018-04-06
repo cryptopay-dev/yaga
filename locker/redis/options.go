@@ -1,7 +1,6 @@
 package redis
 
 import (
-	"errors"
 	"time"
 
 	"github.com/bsm/redis-lock"
@@ -27,37 +26,22 @@ func (o *Options) Parse(opts ...locker.Option) {
 type Client = lock.RedisClient
 
 // Timeout closure
-func Timeout(v interface{}) locker.Option {
-	return func(o locker.Options) error {
-		val, ok := v.(time.Duration)
-		if !ok {
-			return errors.New("bad option timeout, must be time.Duration")
-		}
-		o.(*Options).Timeout = val
-		return nil
+func Timeout(v time.Duration) locker.Option {
+	return func(o locker.Options) {
+		o.(*Options).Timeout = v
 	}
 }
 
 // Count closure to set RetryCount
-func Count(v interface{}) locker.Option {
-	return func(o locker.Options) error {
-		val, ok := v.(int)
-		if !ok {
-			return errors.New("bad option count, must be int")
-		}
-		o.(*Options).RetryCount = val
-		return nil
+func Count(v int) locker.Option {
+	return func(o locker.Options) {
+		o.(*Options).RetryCount = v
 	}
 }
 
 // Delay closure to set RetryDelay
-func Delay(v interface{}) locker.Option {
-	return func(o locker.Options) error {
-		val, ok := v.(time.Duration)
-		if !ok {
-			return errors.New("bad option timeout, must be time.Duration")
-		}
-		o.(*Options).RetryDelay = val
-		return nil
+func Delay(v time.Duration) locker.Option {
+	return func(o locker.Options) {
+		o.(*Options).RetryDelay = v
 	}
 }
