@@ -12,7 +12,7 @@ import (
 
 func testSimple(t *testing.T, iterN int) {
 	c, cancel := context.WithCancel(context.Background())
-	w := New(nil)
+	w := New(&LockerJobPerInstance{})
 	log := newMockLogger()
 	w.logger = log
 
@@ -111,6 +111,40 @@ func testSimple(t *testing.T, iterN int) {
 }
 
 func TestWorkers(t *testing.T) {
+	t.Run("multiple workers at one time", func(t *testing.T) {
+		// TODO
+		return
+		c, cancel := context.WithCancel(context.Background())
+		w := New(&LockerUniqJobPerInstance{})
+
+		i := atomic.NewInt64(0)
+
+		opts := Options{
+			Name:     "my-best-test-worker",
+			Schedule: DelaySchedule(time.Millisecond * 10),
+			TypeJob:  OnePerInstance,
+			Handler: func(ctx context.Context) error {
+				time.Sleep(time.Second * 2)
+				i.Inc()
+				return nil
+			},
+		}
+
+		for n := 0; n < 2; n++ {
+			w.Schedule(opts)
+		}
+
+		w.Start(c)
+
+		time.AfterFunc(time.Second*2, cancel)
+
+		<-c.Done()
+
+		w.Wait(context.Background())
+
+		assert.Equal(t, int64(0), i.Load())
+	})
+
 	t.Run("simple test workers", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			t.Run("for-loop", func(t *testing.T) {
@@ -121,7 +155,7 @@ func TestWorkers(t *testing.T) {
 
 	t.Run("high way to hell", func(t *testing.T) {
 		c, cancel := context.WithCancel(context.Background())
-		w := New(nil)
+		w := New()
 
 		i := atomic.NewInt64(0)
 

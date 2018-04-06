@@ -5,9 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/bsm/redis-lock"
 	wrap "github.com/pkg/errors"
-	"go.uber.org/atomic"
 )
 
 type TypeJob int
@@ -18,22 +16,9 @@ const (
 	OnePerCluster
 )
 
+var maxTypeJob = OnePerCluster
+
 type (
-	// LockerOptions for exclusive running
-	LockerOptions struct {
-		// The maximum duration to lock a key for
-		// Default: 5s
-		LockTimeout time.Duration
-
-		// The number of time the acquisition of a lock will be retried.
-		// Default: 0 = do not retry
-		RetryCount int
-
-		// RetryDelay is the amount of time to wait between retries.
-		// Default: 100ms
-		RetryDelay time.Duration
-	}
-
 	Job func(context.Context) error
 
 	// Options structure for creation new worker.
@@ -42,11 +27,15 @@ type (
 		Schedule interface{}
 		Handler  Job
 		TypeJob  TypeJob
-		Locker   LockerOptions
+		Locker   interface{}
 	}
 
-	// Client for redis
-	LockerClient = lock.RedisClient
+	LockerJob func(context.Context)
+
+	Locker interface {
+		TypeJob() TypeJob
+		WrapJob(lockerOptions interface{}, jobName string, job LockerJob) (LockerJob, error)
+	}
 )
 
 var (
@@ -62,8 +51,8 @@ var (
 	// ErrEmptyDuration when spec or duration is empty
 	ErrEmptyDuration = errors.New("spec or duration must be not nil")
 
-	// ErrEmptyRedisClient when locker is empty
-	ErrEmptyLockerClient = errors.New("locker client must be not nil")
+	// ErrEmptyLocker when locker is empty
+	ErrEmptyLocker = errors.New("locker must be not nil")
 
 	// ErrUnknownJobType when invalid job type
 	ErrUnknownJobType = errors.New("unknown job type")
@@ -79,10 +68,10 @@ func (c *Cron) checkOptions(opts *Options) (Schedule, error) {
 	if opts.Handler == nil {
 		return nil, ErrEmptyHandler
 	}
-	if opts.TypeJob == OnePerCluster && c.locker == nil {
-		return nil, ErrEmptyLockerClient
-	}
 
+	if opts.TypeJob > maxTypeJob {
+		return nil, ErrUnknownJobType
+	}
 	var err error
 	var schedule Schedule
 	switch sc := opts.Schedule.(type) {
@@ -105,39 +94,6 @@ func (c *Cron) checkOptions(opts *Options) (Schedule, error) {
 	return schedule, nil
 }
 
-func (c *Cron) wrapJobDefault(opts *Options) func(ctx context.Context) {
-	return func(ctx context.Context) {
-		if err := opts.Handler(ctx); err != nil {
-			c.logger.Error(wrap.Wrapf(err, "workers `%s`", opts.Name))
-		}
-	}
-}
-
-func (c *Cron) wrapJobPerInstance(opts *Options) func(ctx context.Context) {
-	job := c.wrapJobDefault(opts)
-	lock := atomic.NewInt32(0)
-	return func(ctx context.Context) {
-		if !lock.CAS(0, 1) {
-			return
-		}
-		defer lock.Store(0)
-		job(ctx)
-	}
-}
-
-func (c *Cron) wrapJobPerCluster(opts *Options) func(ctx context.Context) {
-	job := c.wrapJobDefault(opts)
-	return func(ctx context.Context) {
-		if err := lock.Run(c.locker, opts.Name, &lock.Options{
-			LockTimeout: opts.Locker.LockTimeout,
-			RetryCount:  opts.Locker.RetryCount,
-			RetryDelay:  opts.Locker.RetryDelay,
-		}, func() { job(ctx) }); err != nil {
-			c.logger.Error(wrap.Wrapf(err, "workers `%s` locker error", opts.Name))
-		}
-	}
-}
-
 // Schedule adds a Job to the Cron to be run on the given schedule.
 func (c *Cron) Schedule(opts Options) error {
 	schedule, err := c.checkOptions(&opts)
@@ -145,16 +101,17 @@ func (c *Cron) Schedule(opts Options) error {
 		return err
 	}
 
-	var job func(ctx context.Context)
-	switch opts.TypeJob {
-	case DefaultJob:
-		job = c.wrapJobDefault(&opts)
-	case OnePerInstance:
-		job = c.wrapJobPerInstance(&opts)
-	case OnePerCluster:
-		job = c.wrapJobPerCluster(&opts)
-	default:
-		return ErrUnknownJobType
+	job := func(ctx context.Context) {
+		if err := opts.Handler(ctx); err != nil {
+			c.logger.Error(wrap.Wrapf(err, "workers `%s`", opts.Name))
+		}
+	}
+
+	if locker, ok := c.lockers[OnePerInstance]; ok {
+		job, err = locker.WrapJob(opts.Locker, opts.Name, job)
+		if err != nil {
+			return err
+		}
 	}
 
 	c.schedule(&Entry{

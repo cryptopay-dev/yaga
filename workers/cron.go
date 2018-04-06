@@ -20,7 +20,7 @@ type Cron struct {
 	add     chan *Entry
 	state   *atomic.Int32
 	logger  logger.Logger
-	locker  LockerClient
+	lockers map[TypeJob]Locker
 }
 
 // The Schedule describes a job's duty cycle.
@@ -69,15 +69,19 @@ func (s byTime) Less(i, j int) bool {
 }
 
 // New returns a new Cron job runner, in the Local time zone.
-func New(locker LockerClient) *Cron {
-	return &Cron{
+func New(lockers ...Locker) *Cron {
+	c := &Cron{
 		entries: nil,
 		add:     make(chan *Entry),
 		done:    make(chan struct{}),
 		state:   atomic.NewInt32(0),
 		logger:  log.Logger(),
-		locker:  locker,
+		lockers: make(map[TypeJob]Locker),
 	}
+	for _, locker := range lockers {
+		c.lockers[locker.TypeJob()] = locker
+	}
+	return c
 }
 
 func (c *Cron) schedule(entry *Entry) {
