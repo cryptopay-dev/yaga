@@ -107,7 +107,7 @@ func (c *Cron) Schedule(opts Options) error {
 		}
 	}
 
-	if locker, ok := c.lockers[OnePerInstance]; ok {
+	if locker, ok := c.lockers[opts.TypeJob]; ok {
 		job, err = locker.WrapJob(opts.Locker, opts.Name, job)
 		if err != nil {
 			return err
