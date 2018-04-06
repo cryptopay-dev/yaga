@@ -61,15 +61,3 @@ func Delay(v interface{}) locker.Option {
 		return nil
 	}
 }
-
-// Redis closure to set field in Options
-func Redis(v interface{}) locker.Option {
-	return func(o locker.Options) error {
-		val, ok := v.(Client)
-		if !ok {
-			return errors.New("bad option redis, must be RedisClient")
-		}
-		o.(*Options).Redis = val
-		return nil
-	}
-}

@@ -7,11 +7,15 @@ import (
 )
 
 // Lock struct to abstract bsm/redis-lock
-type Lock struct{}
+type Lock struct {
+	redis Client
+}
 
 // New redis locker
-func New() locker.Locker {
-	return new(Lock)
+func New(redis Client) locker.Locker {
+	return &Lock{
+		redis: redis,
+	}
 }
 
 // Run runs a callback handler with a Redis lock.
@@ -19,7 +23,7 @@ func (l *Lock) Run(key string, handler func(), options ...locker.Option) {
 	opts := new(Options)
 	opts.Parse(options...)
 
-	if err := lock.Run(opts.Redis, key, &lock.Options{
+	if err := lock.Run(l.redis, key, &lock.Options{
 		LockTimeout: opts.Timeout,
 		RetryCount:  opts.RetryCount,
 		RetryDelay:  opts.RetryDelay,
