@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cryptopay-dev/yaga/locker"
+	locker "github.com/cryptopay-dev/yaga/locker/redis"
 	"github.com/go-redis/redis"
 )
 
@@ -16,22 +16,20 @@ func main() {
 		DB:       0,
 	})
 
-	lock := locker.New(
-		locker.Redis(store),
-	)
+	lock := locker.New()
 
 	wg := sync.WaitGroup{}
 
 	for i := 0; i <= 10; i++ {
 		wg.Add(1)
 		go func(index int) {
-			lock.Run("my-key", time.Second*10, func() {
+			lock.Run("my-key", func() {
 				// Do some thing ... //
 
 				// For example
 				fmt.Println("Step :", index)
 				wg.Done()
-			})
+			}, locker.Redis(store), locker.Timeout(time.Second*10))
 		}(i)
 	}
 
