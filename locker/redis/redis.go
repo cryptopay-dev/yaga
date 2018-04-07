@@ -4,6 +4,7 @@ import (
 	"github.com/bsm/redis-lock"
 	"github.com/cryptopay-dev/yaga/locker"
 	"github.com/labstack/gommon/log"
+	"github.com/pkg/errors"
 )
 
 // Lock struct to abstract bsm/redis-lock
@@ -24,7 +25,7 @@ func (l *Lock) Run(key string, handler func(), options ...locker.Option) error {
 
 	if err := opts.Parse(options...); err != nil {
 		log.Debugf("Locker parse: %v", err)
-		return err
+		return errors.Wrap(err, "locker parse")
 	}
 
 	if err := lock.Run(l.redis, key, &lock.Options{
@@ -33,7 +34,7 @@ func (l *Lock) Run(key string, handler func(), options ...locker.Option) error {
 		RetryDelay:  opts.RetryDelay,
 	}, handler); err != nil {
 		log.Debugf("Locker error: %v", err)
-		return err
+		return errors.Wrap(err, "locker run")
 	}
 
 	return nil
