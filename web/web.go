@@ -125,9 +125,11 @@ type graceful interface {
 }
 
 // StartAsync HTTP with custom address.
-func StartAsync(e *Engine, bind string, g graceful) {
+func StartAsync(e *Engine, g graceful) {
 	go func() {
 		defer g.Cancel()
+		bind := config.GetString("bind")
+		log.Infof("Server started on %s", bind)
 		err := Start(e, bind)
 		if err != nil {
 			e.Logger.Error(err)
