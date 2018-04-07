@@ -56,7 +56,7 @@ func TestActivation(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		sched, err := Parse(test.spec)
+		sched, err := parse(test.spec)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -153,7 +153,7 @@ func TestNext(t *testing.T) {
 	}
 
 	for _, c := range runs {
-		sched, err := Parse(c.spec)
+		sched, err := parse(c.spec)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -174,7 +174,7 @@ func TestErrors(t *testing.T) {
 		"0 0 * * XYZ",
 	}
 	for _, spec := range invalidSpecs {
-		_, err := Parse(spec)
+		_, err := parse(spec)
 		if err == nil {
 			t.Error("expected an error parsing: ", spec)
 		}
@@ -217,7 +217,7 @@ func TestNextWithTz(t *testing.T) {
 		{"2016-01-03T14:00:00+0530", "0 14 14 * * ?", "2016-01-03T14:14:00+0530"},
 	}
 	for _, c := range runs {
-		sched, err := Parse(c.spec)
+		sched, err := parse(c.spec)
 		if err != nil {
 			t.Error(err)
 			continue

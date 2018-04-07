@@ -12,10 +12,10 @@ import (
 // fields should be included, while others enable features. If a field is not
 // included the parser will assume a default value. These options do not change
 // the order fields are parse in.
-type ParseOption int
+type parseOption int
 
 const (
-	Second      ParseOption = 1 << iota // Seconds field, default 0
+	Second      parseOption = 1 << iota // Seconds field, default 0
 	Minute                              // Minutes field, default 0
 	Hour                                // Hours field, default 0
 	Dom                                 // Day of month field, default *
@@ -25,7 +25,7 @@ const (
 	Descriptor                          // Allow descriptors such as @monthly, @weekly, etc.
 )
 
-var places = []ParseOption{
+var places = []parseOption{
 	Second,
 	Minute,
 	Hour,
@@ -43,9 +43,9 @@ var defaults = []string{
 	"*",
 }
 
-// A custom Parser that can be configured.
-type Parser struct {
-	options   ParseOption
+// A custom parser that can be configured.
+type parser struct {
+	options   parseOption
 	optionals int
 }
 
@@ -63,21 +63,21 @@ type Parser struct {
 //  subsParser := NewParser(Dom | Month | DowOptional)
 //  sched, err := specParser.Parse("15 */3")
 //
-func NewParser(options ParseOption) Parser {
+func newParser(options parseOption) parser {
 	optionals := 0
 	if options&DowOptional > 0 {
 		options |= Dow
 		optionals++
 	}
-	return Parser{options, optionals}
+	return parser{options, optionals}
 }
 
 // Parse returns a new crontab schedule representing the given spec.
 // It returns a descriptive error if the spec is not valid.
 // It accepts crontab specs and features configured by NewParser.
-func (p Parser) Parse(spec string) (Schedule, error) {
+func (p parser) Parse(spec string) (Schedule, error) {
 	if len(spec) == 0 {
-		return nil, fmt.Errorf("Empty spec string")
+		return nil, fmt.Errorf("empty spec string")
 	}
 	if spec[0] == '@' && p.options&Descriptor > 0 {
 		return parseDescriptor(spec)
@@ -98,9 +98,9 @@ func (p Parser) Parse(spec string) (Schedule, error) {
 	// Validate number of fields
 	if count := len(fields); count < min || count > max {
 		if min == max {
-			return nil, fmt.Errorf("Expected exactly %d fields, found %d: %s", min, count, spec)
+			return nil, fmt.Errorf("expected exactly %d fields, found %d: %s", min, count, spec)
 		}
-		return nil, fmt.Errorf("Expected %d to %d fields, found %d: %s", min, max, count, spec)
+		return nil, fmt.Errorf("expected %d to %d fields, found %d: %s", min, max, count, spec)
 	}
 
 	// Fill in missing fields
@@ -138,7 +138,7 @@ func (p Parser) Parse(spec string) (Schedule, error) {
 	}, nil
 }
 
-func expandFields(fields []string, options ParseOption) []string {
+func expandFields(fields []string, options parseOption) []string {
 	n := 0
 	count := len(fields)
 	expFields := make([]string, len(places))
@@ -155,7 +155,7 @@ func expandFields(fields []string, options ParseOption) []string {
 	return expFields
 }
 
-var standardParser = NewParser(
+var standardParser = newParser(
 	Minute | Hour | Dom | Month | Dow | Descriptor,
 )
 
@@ -167,11 +167,11 @@ var standardParser = NewParser(
 // It accepts
 //   - Standard crontab specs, e.g. "* * * * ?"
 //   - Descriptors, e.g. "@midnight", "@every 1h30m"
-func ParseStandard(standardSpec string) (Schedule, error) {
+func parseStandard(standardSpec string) (Schedule, error) {
 	return standardParser.Parse(standardSpec)
 }
 
-var defaultParser = NewParser(
+var defaultParser = newParser(
 	Second | Minute | Hour | Dom | Month | DowOptional | Descriptor,
 )
 
@@ -181,7 +181,7 @@ var defaultParser = NewParser(
 // It accepts
 //   - Full crontab specs, e.g. "* * * * * ?"
 //   - Descriptors, e.g. "@midnight", "@every 1h30m"
-func Parse(spec string) (Schedule, error) {
+func parse(spec string) (Schedule, error) {
 	return defaultParser.Parse(spec)
 }
 
@@ -232,7 +232,7 @@ func getRange(expr string, r bounds) (uint64, error) {
 				return 0, err
 			}
 		default:
-			return 0, fmt.Errorf("Too many hyphens: %s", expr)
+			return 0, fmt.Errorf("too many hyphens: %s", expr)
 		}
 	}
 
@@ -250,20 +250,20 @@ func getRange(expr string, r bounds) (uint64, error) {
 			end = r.max
 		}
 	default:
-		return 0, fmt.Errorf("Too many slashes: %s", expr)
+		return 0, fmt.Errorf("too many slashes: %s", expr)
 	}
 
 	if start < r.min {
-		return 0, fmt.Errorf("Beginning of range (%d) below minimum (%d): %s", start, r.min, expr)
+		return 0, fmt.Errorf("beginning of range (%d) below minimum (%d): %s", start, r.min, expr)
 	}
 	if end > r.max {
-		return 0, fmt.Errorf("End of range (%d) above maximum (%d): %s", end, r.max, expr)
+		return 0, fmt.Errorf("end of range (%d) above maximum (%d): %s", end, r.max, expr)
 	}
 	if start > end {
-		return 0, fmt.Errorf("Beginning of range (%d) beyond end of range (%d): %s", start, end, expr)
+		return 0, fmt.Errorf("beginning of range (%d) beyond end of range (%d): %s", start, end, expr)
 	}
 	if step == 0 {
-		return 0, fmt.Errorf("Step of range should be a positive number: %s", expr)
+		return 0, fmt.Errorf("step of range should be a positive number: %s", expr)
 	}
 
 	return getBits(start, end, step) | extra, nil
@@ -283,10 +283,10 @@ func parseIntOrName(expr string, names map[string]uint) (uint, error) {
 func mustParseInt(expr string) (uint, error) {
 	num, err := strconv.Atoi(expr)
 	if err != nil {
-		return 0, fmt.Errorf("Failed to parse int from %s: %s", expr, err)
+		return 0, fmt.Errorf("failed to parse int from %s: %s", expr, err)
 	}
 	if num < 0 {
-		return 0, fmt.Errorf("Negative number (%d) not allowed: %s", num, expr)
+		return 0, fmt.Errorf("negative number (%d) not allowed: %s", num, expr)
 	}
 
 	return uint(num), nil
@@ -371,10 +371,10 @@ func parseDescriptor(descriptor string) (Schedule, error) {
 	if strings.HasPrefix(descriptor, every) {
 		duration, err := time.ParseDuration(descriptor[len(every):])
 		if err != nil {
-			return nil, fmt.Errorf("Failed to parse duration %s: %s", descriptor, err)
+			return nil, fmt.Errorf("failed to parse duration %s: %s", descriptor, err)
 		}
 		return Every(duration), nil
 	}
 
-	return nil, fmt.Errorf("Unrecognized descriptor: %s", descriptor)
+	return nil, fmt.Errorf("unrecognized descriptor: %s", descriptor)
 }

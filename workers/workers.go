@@ -3,9 +3,13 @@ package workers
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
+	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	wrap "github.com/pkg/errors"
+	"go.uber.org/atomic"
 )
 
 type TypeJob int
@@ -29,16 +33,13 @@ type (
 		TypeJob  TypeJob
 		Locker   interface{}
 	}
-
-	LockerJob func(context.Context)
-
-	Locker interface {
-		TypeJob() TypeJob
-		WrapJob(lockerOptions interface{}, jobName string, job LockerJob) (LockerJob, error)
-	}
 )
 
 var (
+	// ErrAlreadyWorker is returned by New calls
+	// when workers name is already exists.
+	ErrAlreadyWorker = errors.New("worker name must be unique")
+
 	// ErrEmptyOptions when options is empty
 	ErrEmptyOptions = errors.New("options must be present")
 
@@ -51,14 +52,47 @@ var (
 	// ErrEmptyDuration when spec or duration is empty
 	ErrEmptyDuration = errors.New("spec or duration must be not nil")
 
-	// ErrEmptyLocker when locker is empty
-	ErrEmptyLocker = errors.New("locker must be not nil")
-
 	// ErrUnknownJobType when invalid job type
 	ErrUnknownJobType = errors.New("unknown job type")
 )
 
-func (c *Cron) checkOptions(opts *Options) (Schedule, error) {
+// Workers keeps track of any number of entries, invoking the associated func as
+// specified by the schedule. It may be started, stopped, and the entries may
+// be inspected while running.
+type Workers struct {
+	entries []*entry
+	done    chan struct{}
+	add     chan *entry
+	state   *atomic.Int32
+	logger  logger.Logger
+	lockers map[TypeJob]Locker
+
+	mu    *sync.Mutex
+	names map[string]struct{}
+}
+
+// New returns a new Workers job runner, in the Local time zone.
+func New(lockerOnePerCluster Locker) *Workers {
+	w := &Workers{
+		entries: nil,
+		add:     make(chan *entry),
+		done:    make(chan struct{}),
+		state:   atomic.NewInt32(0),
+		logger:  log.Logger(),
+		lockers: make(map[TypeJob]Locker),
+		mu:      new(sync.Mutex),
+		names:   make(map[string]struct{}),
+	}
+
+	w.lockers[OnePerInstance] = new(LockerJobPerInstance)
+	if lockerOnePerCluster != nil {
+		w.lockers[OnePerCluster] = lockerOnePerCluster
+	}
+
+	return w
+}
+
+func checkOptions(opts *Options) (Schedule, error) {
 	if opts == nil {
 		return nil, ErrEmptyOptions
 	}
@@ -76,7 +110,7 @@ func (c *Cron) checkOptions(opts *Options) (Schedule, error) {
 	var schedule Schedule
 	switch sc := opts.Schedule.(type) {
 	case string:
-		schedule, err = Parse(sc)
+		schedule, err = parse(sc)
 		if err != nil {
 			return nil, err
 		}
@@ -94,27 +128,45 @@ func (c *Cron) checkOptions(opts *Options) (Schedule, error) {
 	return schedule, nil
 }
 
-// Schedule adds a Job to the Cron to be run on the given schedule.
-func (c *Cron) Schedule(opts Options) error {
-	schedule, err := c.checkOptions(&opts)
+func (w *Workers) regJobName(name string) error {
+	w.mu.Lock()
+	if _, found := w.names[name]; found {
+		w.mu.Unlock()
+		return ErrAlreadyWorker
+	}
+	w.names[name] = struct{}{}
+	w.mu.Unlock()
+
+	return nil
+}
+
+// Schedule adds a Job to the Workers to be run on the given schedule.
+func (w *Workers) Schedule(opts Options) error {
+	schedule, err := checkOptions(&opts)
 	if err != nil {
 		return err
 	}
 
 	job := func(ctx context.Context) {
 		if err := opts.Handler(ctx); err != nil {
-			c.logger.Error(wrap.Wrapf(err, "workers `%s`", opts.Name))
+			w.logger.Error(wrap.Wrapf(err, "workers `%s`", opts.Name))
 		}
 	}
 
-	if locker, ok := c.lockers[opts.TypeJob]; ok {
-		job, err = locker.WrapJob(opts.Locker, opts.Name, job)
+	if locker, ok := w.lockers[opts.TypeJob]; ok {
+		// TODO wait until Locker interface will be approved
+		job, err = locker.WrapRun(opts.Name, opts.Locker, job)
 		if err != nil {
 			return err
 		}
 	}
 
-	c.schedule(&Entry{
+	// TODO for all job types or only for one job type?
+	if err = w.regJobName(opts.Name); err != nil {
+		return err
+	}
+
+	w.schedule(&entry{
 		Schedule: schedule,
 		Name:     opts.Name,
 		Job:      job,

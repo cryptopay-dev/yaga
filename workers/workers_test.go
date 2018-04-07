@@ -106,16 +106,15 @@ func testSimple(t *testing.T, iterN int) {
 
 	assert.Equal(t, int64(7), i.Load())
 
+	// TODO
 	assert.True(t, log.Contains(fmt.Sprintf("workers `#3: 400 ms worker` panic: (%d) testing a logger of panic", iterN)))
 	assert.True(t, log.Contains(fmt.Sprintf("workers `#4: 100 ms worker`: (%d) testing a logger of error", iterN)))
 }
 
 func TestWorkers(t *testing.T) {
 	t.Run("multiple workers at one time", func(t *testing.T) {
-		// TODO
-		return
 		c, cancel := context.WithCancel(context.Background())
-		w := New(&LockerUniqJobPerInstance{})
+		w := New(nil)
 
 		i := atomic.NewInt64(0)
 
@@ -130,7 +129,7 @@ func TestWorkers(t *testing.T) {
 			},
 		}
 
-		for n := 0; n < 2; n++ {
+		for n := 0; n < 10; n++ {
 			w.Schedule(opts)
 		}
 
@@ -142,7 +141,7 @@ func TestWorkers(t *testing.T) {
 
 		w.Wait(context.Background())
 
-		assert.Equal(t, int64(0), i.Load())
+		assert.Equal(t, int64(1), i.Load())
 	})
 
 	t.Run("simple test workers", func(t *testing.T) {
@@ -155,7 +154,7 @@ func TestWorkers(t *testing.T) {
 
 	t.Run("high way to hell", func(t *testing.T) {
 		c, cancel := context.WithCancel(context.Background())
-		w := New()
+		w := New(nil)
 
 		i := atomic.NewInt64(0)
 

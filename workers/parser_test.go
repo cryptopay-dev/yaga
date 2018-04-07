@@ -30,11 +30,11 @@ func TestRange(t *testing.T) {
 		{"*", 1, 3, 1<<1 | 1<<2 | 1<<3 | starBit, ""},
 		{"*/2", 1, 3, 1<<1 | 1<<3 | starBit, ""},
 
-		{"5--5", 0, 0, zero, "Too many hyphens"},
-		{"jan-x", 0, 0, zero, "Failed to parse int from"},
-		{"2-x", 1, 5, zero, "Failed to parse int from"},
-		{"*/-12", 0, 0, zero, "Negative number"},
-		{"*//2", 0, 0, zero, "Too many slashes"},
+		{"5--5", 0, 0, zero, "too many hyphens"},
+		{"jan-x", 0, 0, zero, "failed to parse int from"},
+		{"2-x", 1, 5, zero, "failed to parse int from"},
+		{"*/-12", 0, 0, zero, "negative number"},
+		{"*//2", 0, 0, zero, "too many slashes"},
 		{"1", 3, 5, zero, "below minimum"},
 		{"6", 3, 5, zero, "above maximum"},
 		{"5-3", 3, 5, zero, "beyond end of range"},
@@ -135,7 +135,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			expr: "* 5 j * * *",
-			err:  "Failed to parse int from",
+			err:  "failed to parse int from",
 		},
 		{
 			expr:     "@every 5m",
@@ -143,7 +143,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			expr: "@every Xm",
-			err:  "Failed to parse duration",
+			err:  "failed to parse duration",
 		},
 		{
 			expr: "@yearly",
@@ -169,20 +169,20 @@ func TestParse(t *testing.T) {
 		},
 		{
 			expr: "@unrecognized",
-			err:  "Unrecognized descriptor",
+			err:  "unrecognized descriptor",
 		},
 		{
 			expr: "* * * *",
-			err:  "Expected 5 to 6 fields",
+			err:  "expected 5 to 6 fields",
 		},
 		{
 			expr: "",
-			err:  "Empty spec string",
+			err:  "empty spec string",
 		},
 	}
 
 	for _, c := range entries {
-		actual, err := Parse(c.expr)
+		actual, err := parse(c.expr)
 		if len(c.err) != 0 && (err == nil || !strings.Contains(err.Error(), c.err)) {
 			t.Errorf("%s => expected %v, got %v", c.expr, c.err, err)
 		}
@@ -211,16 +211,16 @@ func TestStandardSpecSchedule(t *testing.T) {
 		},
 		{
 			expr: "5 j * * *",
-			err:  "Failed to parse int from",
+			err:  "failed to parse int from",
 		},
 		{
 			expr: "* * * *",
-			err:  "Expected exactly 5 fields",
+			err:  "expected exactly 5 fields",
 		},
 	}
 
 	for _, c := range entries {
-		actual, err := ParseStandard(c.expr)
+		actual, err := parseStandard(c.expr)
 		if len(c.err) != 0 && (err == nil || !strings.Contains(err.Error(), c.err)) {
 			t.Errorf("%s => expected %v, got %v", c.expr, c.err, err)
 		}

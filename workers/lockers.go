@@ -1,56 +1,80 @@
+// TODO move to packet yaga/locker(/...)
 package workers
 
 import (
 	"context"
 	"errors"
-	"sync"
 
+	"github.com/bsm/redis-lock"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"go.uber.org/atomic"
 )
 
-var (
-	// ErrAlreadyWorker is returned by New calls
-	// when workers name is already exists.
-	ErrAlreadyWorker = errors.New("worker name must be unique")
+// TODO need to discuss about context.Context
+type LockerHandler func(context.Context)
 
+type Locker interface {
+	// TODO move to packet yaga/locker
+	// while Options as interface{} (may be later as type Options)
+	// and while as Wrapper
+	WrapRun(key string, options interface{}, handler LockerHandler) (LockerHandler, error)
+}
+
+var (
 	_ Locker = &LockerJobPerInstance{}
-	_ Locker = &LockerUniqJobPerInstance{}
+
+	// ErrUnknownOptions passed to Option
+	ErrUnknownOptions = errors.New("unknown options passed")
 )
 
 type LockerJobPerInstance struct{}
 
-func (LockerJobPerInstance) TypeJob() TypeJob {
-	return OnePerInstance
-}
-
-func (LockerJobPerInstance) WrapJob(opts interface{}, jobName string, job LockerJob) (LockerJob, error) {
+func (LockerJobPerInstance) WrapRun(key string, opts interface{}, handler LockerHandler) (LockerHandler, error) {
+	// TODO need verification unique for key?
 	lock := atomic.NewInt32(0)
 	return func(ctx context.Context) {
 		if !lock.CAS(0, 1) {
 			return
 		}
 		defer lock.Store(0)
-		job(ctx)
+		handler(ctx)
 	}, nil
 }
 
-type LockerUniqJobPerInstance struct {
-	LockerJobPerInstance
+// *******************
+// TODO example locker for OnePerCluster
+// *******************
 
-	mu    sync.Mutex
-	names map[string]struct{}
+// LockerJobPerCluster struct for OnePerCluster job type
+type LockerJobPerCluster struct {
+	redis Client
 }
 
-func (l *LockerUniqJobPerInstance) WrapJob(opts interface{}, jobName string, job LockerJob) (LockerJob, error) {
-	l.mu.Lock()
-	if l.names == nil {
-		l.names = make(map[string]struct{})
-	}
-	if _, found := l.names[jobName]; found {
-		l.mu.Unlock()
-		return nil, ErrAlreadyWorker
-	}
-	l.mu.Unlock()
+// Client is a minimal client interface.
+type Client = lock.RedisClient
 
-	return l.LockerJobPerInstance.WrapJob(opts, jobName, job)
+// New locker
+// TODO while 'NewLocker'
+func NewLocker(client Client) Locker {
+	return &LockerJobPerCluster{
+		redis: client,
+	}
+}
+
+// TODO while 'LockerOptions'
+type LockerOptions = lock.Options
+
+func (l *LockerJobPerCluster) WrapRun(key string, opts interface{}, handler LockerHandler) (LockerHandler, error) {
+	options, ok := opts.(LockerOptions)
+	if !ok {
+		return nil, ErrUnknownOptions
+	}
+
+	return func(ctx context.Context) {
+		if err := lock.Run(l.redis, key, &options, func() {
+			handler(ctx)
+		}); err != nil {
+			log.Debugf("Locker error: %v", err)
+		}
+	}, nil
 }
