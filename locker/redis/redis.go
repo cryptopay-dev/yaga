@@ -19,15 +19,22 @@ func New(redis Client) locker.Locker {
 }
 
 // Run runs a callback handler with a Redis lock.
-func (l *Lock) Run(key string, handler func(), options ...locker.Option) {
+func (l *Lock) Run(key string, handler func(), options ...locker.Option) error {
 	opts := new(Options)
-	opts.Parse(options...)
+
+	if err := opts.Parse(options...); err != nil {
+		log.Debugf("Locker parse: %v", err)
+		return err
+	}
 
 	if err := lock.Run(l.redis, key, &lock.Options{
 		LockTimeout: opts.Timeout,
 		RetryCount:  opts.RetryCount,
 		RetryDelay:  opts.RetryDelay,
 	}, handler); err != nil {
-		log.Errorf("Locker error: %v", err.Error())
+		log.Debugf("Locker error: %v", err)
+		return err
 	}
+
+	return nil
 }
