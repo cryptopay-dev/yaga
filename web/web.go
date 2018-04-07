@@ -129,7 +129,6 @@ func StartAsync(e *Engine, g graceful) {
 	go func() {
 		defer g.Cancel()
 		bind := config.GetString("bind")
-		log.Infof("Server started on %s", bind)
 		err := Start(e, bind)
 		if err != nil {
 			e.Logger.Error(err)
