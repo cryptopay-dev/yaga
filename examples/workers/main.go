@@ -6,13 +6,22 @@ import (
 	"time"
 
 	"github.com/cryptopay-dev/yaga/workers"
+	local "github.com/cryptopay-dev/yaga/workers/locker/atomic"
+	cluster "github.com/cryptopay-dev/yaga/workers/locker/redis"
+	"github.com/go-redis/redis"
 	"go.uber.org/atomic"
 )
 
 func main() {
+	store := redis.NewClient(&redis.Options{
+		Addr:     "127.0.0.1:6379",
+		Password: "",
+		DB:       0,
+	})
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	w := workers.New(nil)
+	w := workers.New()
 
 	fmt.Printf("[%s] Hello, workers!\n", time.Now().Format("15:04:05"))
 
@@ -63,7 +72,7 @@ func main() {
 		panic(err)
 	}
 
-	// worker will run as custom scheduler
+	// worker will run every 1 seconds
 	// example of scheduler (using workers.DelaySchedule type)
 	do := false
 	err = w.Schedule(workers.Options{
@@ -76,6 +85,43 @@ func main() {
 				// delay canceling of context for 10 seconds
 				time.AfterFunc(time.Second*10, cancel)
 			}
+			return nil
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// worker will exclusive run every 10 seconds
+	// example of scheduler like time.Ticker
+	err = w.Schedule(workers.Options{
+		Name:     "worker #5",
+		Schedule: time.Second * 10,
+		Locker:   local.New(),
+		Handler: func(context.Context) error {
+			fmt.Printf("[%s] exclusive worker #5 every 10 secs\n", time.Now().Format("15:04:05"))
+			time.Sleep(time.Second * 38)
+			return nil
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	clusterLocker := cluster.New(store)
+	// worker will exclusive run every 10 seconds
+	// example of scheduler like time.Ticker
+	err = w.Schedule(workers.Options{
+		Name:     "worker #6",
+		Schedule: time.Second * 20,
+		Locker: clusterLocker.GetLocker(cluster.Options{
+			LockTimeout: time.Minute,
+			RetryCount:  3,
+			RetryDelay:  time.Second,
+		}),
+		Handler: func(context.Context) error {
+			fmt.Printf("[%s] exclusive worker #6 every 20 secs\n", time.Now().Format("15:04:05"))
+			time.Sleep(time.Minute)
 			return nil
 		},
 	})

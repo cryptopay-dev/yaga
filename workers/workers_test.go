@@ -6,13 +6,14 @@ import (
 	"testing"
 	"time"
 
+	local "github.com/cryptopay-dev/yaga/workers/locker/atomic"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/atomic"
 )
 
 func testSimple(t *testing.T, iterN int) {
 	c, cancel := context.WithCancel(context.Background())
-	w := New(&LockerJobPerInstance{})
+	w := New()
 	log := newMockLogger()
 	w.logger = log
 
@@ -58,7 +59,7 @@ func testSimple(t *testing.T, iterN int) {
 			time.Sleep(time.Millisecond * 400)
 			return fmt.Errorf("(%d) testing a logger of error", iterN)
 		},
-		TypeJob: OnePerInstance,
+		Locker: local.New(),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -114,14 +115,14 @@ func testSimple(t *testing.T, iterN int) {
 func TestWorkers(t *testing.T) {
 	t.Run("multiple workers at one time", func(t *testing.T) {
 		c, cancel := context.WithCancel(context.Background())
-		w := New(nil)
+		w := New()
 
 		i := atomic.NewInt64(0)
 
 		opts := Options{
 			Name:     "my-best-test-worker",
 			Schedule: DelaySchedule(time.Millisecond * 10),
-			TypeJob:  OnePerInstance,
+			Locker:   local.New(),
 			Handler: func(ctx context.Context) error {
 				time.Sleep(time.Second * 2)
 				i.Inc()
@@ -154,7 +155,7 @@ func TestWorkers(t *testing.T) {
 
 	t.Run("high way to hell", func(t *testing.T) {
 		c, cancel := context.WithCancel(context.Background())
-		w := New(nil)
+		w := New()
 
 		i := atomic.NewInt64(0)
 
