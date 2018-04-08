@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"time"
 
 	"github.com/cryptopay-dev/yaga/cli"
 	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/controllers"
@@ -10,51 +9,27 @@ import (
 	"github.com/cryptopay-dev/yaga/web"
 )
 
-// authors scructure
-type authors struct {
-	Name  string
-	Email string
-}
-
 // App instance
 type App struct {
 	cli.RunOptions
-	Engine   *web.Engine
-	Graceful graceful.Graceful
-}
-
-var appAuthors = []authors{
-	{
-		Name:  "John Doe",
-		Email: "john.doe@example.com",
-	},
+	Engine *web.Engine
 }
 
 // Authors of application
 func Authors() []cli.Author {
-	var result = make([]cli.Author, 0, len(appAuthors))
-	for i := range appAuthors {
-		result = append(result, cli.Author(appAuthors[i]))
+	return []cli.Author{
+		{
+			Name:  "John Doe",
+			Email: "john.doe@example.com",
+		},
 	}
-
-	return result
 }
 
 // New creates instance
-func New() *App {
-	return &App{
-		Graceful: graceful.New(context.Background()),
-	}
-}
+func New() *App { return &App{} }
 
 // Shutdown of application
-func (a *App) Shutdown(ctx context.Context) error {
-	if a.Engine == nil {
-		return nil
-	}
-
-	return a.Engine.Shutdown(ctx)
-}
+func (a *App) Shutdown(ctx context.Context) error { return nil }
 
 // Run of application
 func (a *App) Run(opts cli.RunOptions) error {
@@ -74,10 +49,7 @@ func (a *App) Run(opts cli.RunOptions) error {
 		return err
 	}
 
-	graceful.AttachNotifier(a.Graceful)
-	web.StartAsync(a.Engine, a.Graceful)
+	web.StartAsync(a.Engine)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-	return a.Graceful.Wait(ctx)
+	return graceful.Wait()
 }
