@@ -8,7 +8,7 @@ type Options interface {
 // Option closure
 type Option = func(opt Options) error
 
-// Locker interface to abstract bsm/redis-lock
+// Locker interface for drivers
 type Locker interface {
 	Run(key string, handler func(), options ...Option) error
 }
