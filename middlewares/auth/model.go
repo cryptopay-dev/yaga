@@ -12,7 +12,29 @@ import (
 var (
 	// ErrUsernameAlreadyTaken when username exists in DB
 	ErrUsernameAlreadyTaken = errors.New("username already taken")
+
+	defaultHasher hasher = normal{}
 )
+
+type hasher interface {
+	Hash(password string) (string, error)
+	Compare(password, hash string) (bool, error)
+}
+
+type normal struct{}
+
+func (normal) Compare(password, hash string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil, errors.Wrap(err, "auth CheckPasswordHash failed")
+}
+
+func (normal) Hash(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", errors.Wrap(err, "auth HasPassword failed")
+	}
+	return string(bytes), nil
+}
 
 // User model
 type User struct {
@@ -43,7 +65,7 @@ func NewUser(db orm.DB, username, password string) (*User, error) {
 		}
 	)
 
-	if found, err = model.Exist(db, model.Conditions{"username": username}, &User{}); err != nil {
+	if found, err = model.Exists(db, &User{}, model.Equal("username", username)); err != nil {
 		return nil, errors.Wrap(err, "auth NewUser failed")
 	} else if found {
 		return nil, ErrUsernameAlreadyTaken
@@ -58,21 +80,16 @@ func NewUser(db orm.DB, username, password string) (*User, error) {
 
 // ByName gets user from DB
 func (u *User) ByName(db orm.DB, username string) error {
-	return model.FindOne(db, model.Conditions{"username": username}, u)
+	return model.FindOne(db, u, model.Equal("username", username))
 }
 
 // HashPassword from input to user-model
-func (u *User) HashPassword(password string) error {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	if err != nil {
-		return errors.Wrap(err, "auth HasPassword failed")
-	}
-	u.Password = string(bytes)
-	return nil
+func (u *User) HashPassword(password string) (err error) {
+	u.Password, err = defaultHasher.Hash(password)
+	return
 }
 
 // CheckPasswordHash compare input and user password
 func (u *User) CheckPasswordHash(password string) (bool, error) {
-	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
-	return err == nil, errors.Wrap(err, "auth CheckPasswordHash failed")
+	return defaultHasher.Compare(u.Password, password)
 }

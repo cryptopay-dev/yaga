@@ -5,10 +5,12 @@ import (
 	"github.com/go-pg/pg/orm"
 )
 
+// ErrNoRows in database
 var ErrNoRows = pg.ErrNoRows
 
-func Create(db orm.DB, v interface{}) (int, error) {
-	res, err := db.Model(v).Insert()
+// Create row in database
+func Create(db orm.DB, model interface{}) (int, error) {
+	res, err := db.Model(model).Insert()
 	if err != nil {
 		return 0, err
 	}
@@ -16,8 +18,9 @@ func Create(db orm.DB, v interface{}) (int, error) {
 	return res.RowsAffected(), nil
 }
 
-func Delete(db orm.DB, v interface{}) (int, error) {
-	res, err := db.Model(v).Delete()
+// Delete row from database
+func Delete(db orm.DB, model interface{}, opts ...Option) (int, error) {
+	res, err := queryFilter(db, model, opts...).Delete()
 	if err != nil {
 		return 0, err
 	}
@@ -25,6 +28,7 @@ func Delete(db orm.DB, v interface{}) (int, error) {
 	return res.RowsAffected(), nil
 }
 
+// Update row in database
 func Update(db orm.DB, v interface{}, column ...string) (int, error) {
 	res, err := db.Model(v).Column(column...).Update()
 	if err != nil {
@@ -34,31 +38,33 @@ func Update(db orm.DB, v interface{}, column ...string) (int, error) {
 	return res.RowsAffected(), nil
 }
 
-type Conditions map[string]interface{}
-
-func queryFilter(db orm.DB, filter Conditions, v interface{}) *orm.Query {
-	q := db.Model(v)
-	for name, value := range filter {
-		q.Where(name+"=?", value)
+func queryFilter(db orm.DB, model interface{}, opts ...Option) *orm.Query {
+	q := db.Model(model)
+	for _, o := range opts {
+		o(q)
 	}
 
 	return q
 }
 
-func Find(db orm.DB, filter Conditions, v interface{}) error {
-	return queryFilter(db, filter, v).Select()
+// Find row in database
+func Find(db orm.DB, model interface{}, opts ...Option) error {
+	return queryFilter(db, model, opts...).Select()
 }
 
-func FindOneByID(db orm.DB, id int64, v interface{}) error {
-	return FindOne(db, Conditions{"id": id}, v)
+// FindByID row in database
+func FindByID(db orm.DB, model interface{}, id interface{}) error {
+	return FindOne(db, model, Equal("id", id))
 }
 
-func FindOne(db orm.DB, filter Conditions, v interface{}) error {
-	return queryFilter(db, filter, v).First()
+// FindOne row in database
+func FindOne(db orm.DB, model interface{}, opts ...Option) error {
+	return queryFilter(db, model, opts...).First()
 }
 
-func Exist(db orm.DB, filter Conditions, v interface{}) (bool, error) {
-	n, err := queryFilter(db, filter, v).Count()
+// Exists for check for row in database
+func Exists(db orm.DB, model interface{}, opts ...Option) (bool, error) {
+	n, err := queryFilter(db, model, opts...).Count()
 	if err != nil {
 		return false, err
 	}
@@ -66,6 +72,7 @@ func Exist(db orm.DB, filter Conditions, v interface{}) (bool, error) {
 	return n > 0, nil
 }
 
-func FindOneForUpdate(db orm.DB, filter Conditions, v interface{}) error {
-	return queryFilter(db, filter, v).For("UPDATE").First()
+// FindOneForUpdate row in database and row-level locking
+func FindOneForUpdate(db orm.DB, model interface{}, opts ...Option) error {
+	return queryFilter(db, model, opts...).For("UPDATE").First()
 }

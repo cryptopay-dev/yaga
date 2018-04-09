@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/cryptopay-dev/yaga/helpers/testdb"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/go-pg/pg"
@@ -27,9 +28,12 @@ const (
 )
 
 func init() {
-	var db = testdb.GetTestDB().DB
-	createTables(db)
+	var db, err = testdb.GetTestDB()
+	if err != nil {
+		log.Panic(err)
+	}
 
+	createTables(db)
 	db.Exec("TRUNCATE ?", getTableName())
 }
 
@@ -70,7 +74,10 @@ func (m *mockDB) QueryOne(model, query interface{}, params ...interface{}) (orm.
 }
 
 func TestMigrate_List(t *testing.T) {
-	var db = testdb.GetTestDB().DB
+	var db, err = testdb.GetTestDB()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("Good", func(t *testing.T) {
 		db.RunInTransaction(func(tx *pg.Tx) error {
@@ -126,7 +133,10 @@ func TestMigrate_List(t *testing.T) {
 }
 
 func TestMigrate_Plan(t *testing.T) {
-	var db = testdb.GetTestDB().DB
+	var db, err = testdb.GetTestDB()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("Good case #1", func(t *testing.T) {
 		db.RunInTransaction(func(tx *pg.Tx) error {
@@ -208,7 +218,10 @@ func TestMigrate_Plan(t *testing.T) {
 }
 
 func TestUpDown(t *testing.T) {
-	var db = testdb.GetTestDB().DB
+	var db, err = testdb.GetTestDB()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("Good", func(t *testing.T) {
 		db.RunInTransaction(func(tx *pg.Tx) error {
@@ -344,10 +357,10 @@ func TestUpDown(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	var (
-		err error
-		db  = testdb.GetTestDB().DB
-	)
+	var db, err = testdb.GetTestDB()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("Good case", func(t *testing.T) {
 		if err = db.RunInTransaction(func(tx *pg.Tx) error {
@@ -373,7 +386,7 @@ func TestNew(t *testing.T) {
 
 			var i int64
 
-			for i = 1; i <= 10; i++ {
+			for i = 1; i <= 2; i++ {
 				if _, errVer := tx.Exec(
 					sqlNewVersion,
 					getTableName(),
@@ -406,7 +419,10 @@ func TestNew(t *testing.T) {
 }
 
 func TestMigrate_Version(t *testing.T) {
-	var db = testdb.GetTestDB().DB
+	var db, err = testdb.GetTestDB()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	db.RunInTransaction(func(tx *pg.Tx) error {
 		tx.Exec(`TRUNCATE ?`, getTableName())

@@ -7,78 +7,104 @@ import (
 	"testing"
 
 	"github.com/cryptopay-dev/yaga/helpers/testdb"
+	"github.com/cryptopay-dev/yaga/logger/log"
+	"github.com/cryptopay-dev/yaga/model"
+	"github.com/cryptopay-dev/yaga/web"
 	"github.com/go-pg/pg"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/bcrypt"
 )
 
 const fakeResponse = "test"
 
-func TestAuth_Middleware(t *testing.T) {
-	e := echo.New()
-	e.HideBanner = true
+type fake struct{}
 
-	d := testdb.GetTestDB()
+func (fake) Compare(hash, password string) (bool, error) {
+	log.Infof("%q == %q", password, hash)
+	return password == hash, nil
+}
+func (fake) Hash(password string) (string, error) { return password, nil }
 
-	authenticate := New(
-		DB(d.DB),
-	)
-
-	e.Use(authenticate.Middleware())
-
-	req := httptest.NewRequest(echo.POST, "/", nil)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+func testContext(e *web.Engine) (web.Context, *http.Request, *httptest.ResponseRecorder) {
+	req := httptest.NewRequest(echo.GET, "/", nil)
 
 	rec := httptest.NewRecorder()
 
 	c := e.NewContext(req, rec)
 
-	h := authenticate.Middleware()(func(c echo.Context) error {
-		return c.String(http.StatusOK, "test")
-	})
+	return c, req, rec
+}
 
-	t.Run("Unauthorized", func(t *testing.T) {
-		var err = h(c)
-		assert.Error(t, err)
-		assert.EqualError(t, err, echo.ErrUnauthorized.Error())
-	})
-
+func TestAuth_Middleware(t *testing.T) {
 	var (
-		err      error
-		user     *User
-		username = "user1"
-		password = "password1"
+		e            *web.Engine
+		h            web.HandlerFunc
+		db           *pg.DB
+		err          error
+		user         *User
+		username     = "user1"
+		password     = "password1"
+		authenticate *Auth
 	)
 
-	// Remove user if it exists:
-	if _, err = d.DB.Model(user).Where("username = ?", username).Delete(); err != nil {
+	defaultHasher = fake{}
+
+	e, err = web.New(web.Options{})
+	assert.NoError(t, err)
+
+	if db, err = testdb.GetTestDB(); err != nil {
+		t.Fatal(err)
+	}
+
+	authenticate = New(db)
+
+	h = authenticate.Middleware()(func(c web.Context) error {
+		return c.String(http.StatusOK, fakeResponse)
+	})
+
+	if _, err = model.Delete(db, user, model.Equal("username", username)); err != nil {
 		t.Fatal(err)
 	}
 
 	// Create new user:
-	if user, err = NewUser(d.DB, username, password); err != nil {
+	if user, err = NewUser(db, username, password); err != nil {
 		t.Fatal(err)
 	}
 
-	if err = d.DB.Insert(user); err != nil {
+	if _, err = model.Create(db, user); err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("Check that user exists", func(t *testing.T) {
+		t.Parallel()
+
 		assert.NoError(
 			t,
-			new(User).ByName(d.DB, username),
+			new(User).ByName(db, username),
 		)
 	})
 
 	t.Run("Check that we can't add new user with same name", func(t *testing.T) {
-		var _, userErr = NewUser(d.DB, username, "password2")
+		t.Parallel()
+
+		var _, userErr = NewUser(db, username, "password2")
 		assert.EqualError(t, errors.Cause(userErr), ErrUsernameAlreadyTaken.Error())
 	})
 
+	t.Run("Unauthorized", func(t *testing.T) {
+		t.Parallel()
+
+		c, _, _ := testContext(e)
+		errH := h(c)
+		assert.Error(t, errH)
+		assert.EqualError(t, errH, web.ErrUnauthorized.Error())
+	})
+
 	t.Run("Valid user credentials", func(t *testing.T) {
+		t.Parallel()
+
+		c, req, rec := testContext(e)
 		authData := "basic " + base64.StdEncoding.EncodeToString([]byte(username+":"+password))
 		req.Header.Set(echo.HeaderAuthorization, authData)
 
@@ -89,12 +115,18 @@ func TestAuth_Middleware(t *testing.T) {
 	})
 
 	t.Run("Bad user credentials - password", func(t *testing.T) {
+		t.Parallel()
+
+		c, req, _ := testContext(e)
 		authData := "basic " + base64.StdEncoding.EncodeToString([]byte(username+":password2"))
 		req.Header.Set(echo.HeaderAuthorization, authData)
-		assert.EqualError(t, errors.Cause(h(c)), bcrypt.ErrMismatchedHashAndPassword.Error())
+		assert.Error(t, h(c))
 	})
 
 	t.Run("Bad user credentials - login", func(t *testing.T) {
+		t.Parallel()
+
+		c, req, _ := testContext(e)
 		authData := "basic " + base64.StdEncoding.EncodeToString([]byte("user2:"+password))
 		req.Header.Set(echo.HeaderAuthorization, authData)
 		assert.EqualError(t, errors.Cause(h(c)), pg.ErrNoRows.Error())
