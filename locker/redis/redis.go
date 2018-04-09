@@ -24,8 +24,8 @@ func (l *Lock) Run(key string, handler func(), options ...locker.Option) error {
 	opts := new(Options)
 
 	if err := opts.Parse(options...); err != nil {
-		log.Debugf("Locker parse: %v", err)
-		return errors.Wrap(err, "locker parse")
+		log.Debugf("(%s) Locker parse: %v", key, err)
+		return errors.Wrapf(err, "locker parse (%s)", key)
 	}
 
 	if err := lock.Run(l.redis, key, &lock.Options{
@@ -33,8 +33,8 @@ func (l *Lock) Run(key string, handler func(), options ...locker.Option) error {
 		RetryCount:  opts.RetryCount,
 		RetryDelay:  opts.RetryDelay,
 	}, handler); err != nil {
-		log.Debugf("Locker error: %v", err)
-		return errors.Wrap(err, "locker run")
+		log.Debugf("(%s) Locker error: %v", key, err)
+		return errors.Wrapf(err, "locker run (%s)", key)
 	}
 
 	return nil
