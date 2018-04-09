@@ -12,7 +12,7 @@ import (
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	w := workers.New(nil)
+	w := workers.New(nil, nil, 4)
 
 	fmt.Printf("[%s] Hello, workers!\n", time.Now().Format("15:04:05"))
 

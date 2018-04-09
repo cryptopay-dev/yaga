@@ -3,7 +3,6 @@ package workers
 import (
 	"context"
 	"sort"
-	"sync"
 	"time"
 )
 
@@ -58,10 +57,7 @@ func (w *Workers) schedule(entry *entry) {
 		return
 	}
 
-	select {
-	case w.add <- entry:
-	case <-w.done:
-	}
+	w.add <- entry
 }
 
 // Start the cron scheduler in its own go-routine, or no-op if already started.
@@ -74,9 +70,9 @@ func (w *Workers) Start(ctx context.Context) {
 // Run the scheduler. this is private just due to the need to synchronize
 // access to the 'running' state variable.
 func (w *Workers) run(ctx context.Context) {
+	go w.pool.Run(ctx)
 	// Figure out the next activation times for each entry.
 	now := time.Now()
-	wg := new(sync.WaitGroup)
 	for _, entry := range w.entries {
 		entry.Next = entry.Schedule.Next(now)
 	}
@@ -101,16 +97,9 @@ func (w *Workers) run(ctx context.Context) {
 				if e.Next.After(now) || e.Next.IsZero() {
 					break
 				}
-				wg.Add(1)
-				go func(e2 *entry) {
-					defer func() {
-						wg.Done()
-						if r := recover(); r != nil {
-							w.logger.Errorf("workers `%s` panic: %v", e2.Name, r)
-						}
-					}()
-					e2.Job(ctx)
-				}(e)
+				if err := w.pool.Do(e.Job); err != nil {
+					w.logger.Errorf("workers `%s` cannot run: %v", e.Name, e)
+				}
 				e.Prev = e.Next
 				e.Next = e.Schedule.Next(now)
 			}
@@ -124,19 +113,11 @@ func (w *Workers) run(ctx context.Context) {
 		case <-ctx.Done():
 			w.state.Store(2)
 			timer.Stop()
-			wg.Wait()
-			close(w.done)
 			return
 		}
 	}
 }
 
 func (w *Workers) Wait(ctx context.Context) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-w.done:
-	}
-
-	return nil
+	return w.pool.Wait(ctx)
 }

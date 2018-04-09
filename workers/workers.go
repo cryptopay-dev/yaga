@@ -6,8 +6,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cryptopay-dev/yaga/locker"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/logger/log"
+	"github.com/cryptopay-dev/yaga/workers/pool"
 	wrap "github.com/pkg/errors"
 	"go.uber.org/atomic"
 )
@@ -31,7 +33,7 @@ type (
 		Schedule interface{}
 		Handler  Job
 		TypeJob  TypeJob
-		Locker   interface{}
+		Locker   []locker.Option
 	}
 )
 
@@ -61,30 +63,32 @@ var (
 // be inspected while running.
 type Workers struct {
 	entries []*entry
-	done    chan struct{}
 	add     chan *entry
 	state   *atomic.Int32
 	logger  logger.Logger
-	lockers map[TypeJob]Locker
+	lockers map[TypeJob]locker.Locker
+	pool    *pool.Pool
 
 	mu    *sync.Mutex
 	names map[string]struct{}
 }
 
 // New returns a new Workers job runner, in the Local time zone.
-func New(lockerOnePerCluster Locker) *Workers {
+func New(lockerOnePerInstance, lockerOnePerCluster locker.Locker, size int) *Workers {
 	w := &Workers{
 		entries: nil,
 		add:     make(chan *entry),
-		done:    make(chan struct{}),
 		state:   atomic.NewInt32(0),
 		logger:  log.Logger(),
-		lockers: make(map[TypeJob]Locker),
+		lockers: make(map[TypeJob]locker.Locker),
+		pool:    pool.New(size),
 		mu:      new(sync.Mutex),
 		names:   make(map[string]struct{}),
 	}
 
-	w.lockers[OnePerInstance] = new(LockerJobPerInstance)
+	if lockerOnePerInstance != nil {
+		w.lockers[OnePerInstance] = lockerOnePerInstance
+	}
 	if lockerOnePerCluster != nil {
 		w.lockers[OnePerCluster] = lockerOnePerCluster
 	}
@@ -106,6 +110,7 @@ func checkOptions(opts *Options) (Schedule, error) {
 	if opts.TypeJob > maxTypeJob {
 		return nil, ErrUnknownJobType
 	}
+
 	var err error
 	var schedule Schedule
 	switch sc := opts.Schedule.(type) {
@@ -148,20 +153,26 @@ func (w *Workers) Schedule(opts Options) error {
 	}
 
 	job := func(ctx context.Context) {
+		defer func() {
+			if r := recover(); r != nil {
+				w.logger.Errorf("workers `%s` panic: %v", opts.Name, r)
+			}
+		}()
 		if err := opts.Handler(ctx); err != nil {
 			w.logger.Error(wrap.Wrapf(err, "workers `%s`", opts.Name))
 		}
 	}
 
 	if locker, ok := w.lockers[opts.TypeJob]; ok {
-		// TODO wait until Locker interface will be approved
-		job, err = locker.WrapRun(opts.Name, opts.Locker, job)
-		if err != nil {
-			return err
+		j := job
+		job = func(ctx context.Context) {
+			err := locker.Run(opts.Name, func() { j(ctx) }, opts.Locker...)
+			if err != nil {
+				w.logger.Error(wrap.Wrapf(err, "workers `%s` locker", opts.Name))
+			}
 		}
 	}
 
-	// TODO for all job types or only for one job type?
 	if err = w.regJobName(opts.Name); err != nil {
 		return err
 	}
