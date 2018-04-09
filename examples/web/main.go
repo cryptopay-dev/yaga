@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/graceful"
 	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/web"
@@ -37,7 +36,7 @@ func main() {
 	g := graceful.New(context.Background())
 	graceful.AttachNotifier(g)
 
-	web.StartAsync(e, config.GetString("bind"), g)
+	web.StartAsync(e, g)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()

@@ -116,12 +116,6 @@
   revision = "04140366298a54a039076d798123ffa108fff46c"
 
 [[projects]]
-  name = "github.com/joho/godotenv"
-  packages = ["."]
-  revision = "a79fa1e548e2c689c241d10173efd51e5d689d5b"
-  version = "v1.2.0"
-
-[[projects]]
   name = "github.com/labstack/echo"
   packages = [
     ".",
@@ -350,6 +344,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "05f6062b58d537a95e195f0a4ebe38f318de267f48d34df8a71ed5b26d5f8a69"
+  inputs-digest = "626b4fb67c718b8c6cf19c69d8ea13ae7e73a9f289df037e08d1531abb310c5a"
   solver-name = "gps-cdcl"
   solver-version = 1

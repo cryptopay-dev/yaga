@@ -6,7 +6,6 @@ import (
 
 	"github.com/cryptopay-dev/yaga/cli"
 	"github.com/cryptopay-dev/yaga/cmd/yaga/project_example/app/controllers"
-	"github.com/cryptopay-dev/yaga/config"
 	"github.com/cryptopay-dev/yaga/graceful"
 	"github.com/cryptopay-dev/yaga/web"
 )
@@ -76,7 +75,7 @@ func (a *App) Run(opts cli.RunOptions) error {
 	}
 
 	graceful.AttachNotifier(a.Graceful)
-	web.StartAsync(a.Engine, config.GetString("bind"), a.Graceful)
+	web.StartAsync(a.Engine, a.Graceful)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
