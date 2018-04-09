@@ -1,25 +1,28 @@
 package workers
 
 import (
+	"context"
 	"errors"
+	"sync"
 	"time"
 
-	"github.com/robfig/cron"
+	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/logger/log"
+	"github.com/cryptopay-dev/yaga/workers/locker"
+	wrap "github.com/pkg/errors"
+	"go.uber.org/atomic"
 )
 
 type (
+	Job func(context.Context) error
+
 	// Options structure for creation new worker.
 	Options struct {
 		Name     string
-		Schedule Schedule
-		Handler  func()
+		Schedule interface{}
+		Handler  Job
+		Locker   locker.Locker
 	}
-
-	// Schedule describes a job's duty cycle.
-	//
-	// Return the next activation time, later than the given time.
-	// Next is invoked initially, and then each time the job is run.
-	Schedule = cron.Schedule
 )
 
 var (
@@ -27,53 +30,123 @@ var (
 	// when workers name is already exists.
 	ErrAlreadyWorker = errors.New("worker name must be unique")
 
-	// ErrWrongOptions is returned by New calls
-	// when parameter Options.Schedule is NIL or Options.Handler is NIL.
-	ErrWrongOptions = errors.New("wrong options")
+	// ErrEmptyOptions when options is empty
+	ErrEmptyOptions = errors.New("options must be present")
 
-	cronWorker = cron.New()
-	poolWorker = newPool()
+	// ErrEmptyName when name is empty
+	ErrEmptyName = errors.New("worker must have name")
+
+	// ErrEmptyHandler when handler is empty
+	ErrEmptyHandler = errors.New("handler must be not null")
+
+	// ErrEmptyDuration when spec or duration is empty
+	ErrEmptyDuration = errors.New("spec or duration must be not nil")
 )
 
-// New returns an error if cannot create new worker
-func New(opts Options) (err error) {
-	_, err = newWorker(opts, poolWorker, func(w *worker, handler func()) {
-		cronWorker.Schedule(w.options.Schedule, cron.FuncJob(handler))
+// Workers keeps track of any number of entries, invoking the associated func as
+// specified by the schedule. It may be started, stopped, and the entries may
+// be inspected while running.
+type Workers struct {
+	entries []*entry
+	done    chan struct{}
+	add     chan *entry
+	state   *atomic.Int32
+	logger  logger.Logger
+
+	mu    *sync.Mutex
+	names map[string]struct{}
+}
+
+// New returns a new Workers job runner, in the Local time zone.
+func New() *Workers {
+	return &Workers{
+		entries: nil,
+		add:     make(chan *entry),
+		done:    make(chan struct{}),
+		state:   atomic.NewInt32(0),
+		logger:  log.Logger(),
+		mu:      new(sync.Mutex),
+		names:   make(map[string]struct{}),
+	}
+}
+
+func checkOptions(opts *Options) (Schedule, error) {
+	if opts == nil {
+		return nil, ErrEmptyOptions
+	}
+	if len(opts.Name) == 0 {
+		return nil, ErrEmptyName
+	}
+	if opts.Handler == nil {
+		return nil, ErrEmptyHandler
+	}
+
+	var err error
+	var schedule Schedule
+	switch sc := opts.Schedule.(type) {
+	case string:
+		schedule, err = parse(sc)
+		if err != nil {
+			return nil, err
+		}
+	case time.Duration:
+		if sc == 0 {
+			return nil, ErrEmptyDuration
+		}
+		schedule = Every(sc)
+	case Schedule:
+		schedule = sc
+	default:
+		return nil, ErrEmptyDuration
+	}
+
+	return schedule, nil
+}
+
+func (w *Workers) regJobName(name string) error {
+	w.mu.Lock()
+	if _, found := w.names[name]; found {
+		w.mu.Unlock()
+		return ErrAlreadyWorker
+	}
+	w.names[name] = struct{}{}
+	w.mu.Unlock()
+
+	return nil
+}
+
+// Schedule adds a Job to the Workers to be run on the given schedule.
+func (w *Workers) Schedule(opts Options) error {
+	schedule, err := checkOptions(&opts)
+	if err != nil {
+		return err
+	}
+
+	job := func(ctx context.Context) {
+		if err := opts.Handler(ctx); err != nil {
+			w.logger.Error(wrap.Wrapf(err, "workers `%s`", opts.Name))
+		}
+	}
+
+	if opts.Locker != nil {
+		j := job
+		job = func(ctx context.Context) {
+			opts.Locker.Run(opts.Name, func() {
+				j(ctx)
+			})
+		}
+	}
+
+	// TODO for all jobs or inside locker.Locker?
+	if err = w.regJobName(opts.Name); err != nil {
+		return err
+	}
+
+	w.schedule(&entry{
+		Schedule: schedule,
+		Name:     opts.Name,
+		Job:      job,
 	})
 
-	return
-}
-
-// Parse returns a new crontab schedule representing the given spec.
-// It returns a descriptive error if the spec is not valid.
-//
-// It accepts
-//   - Full crontab specs, e.g. "* * * * * ?"
-//   - Descriptors, e.g. "@midnight", "@every 1h30m"
-func Parse(spec string) (Schedule, error) {
-	return cron.Parse(spec)
-}
-
-// Every returns a crontab Schedule that activates once every duration.
-// Delays of less than a second are not supported (will round up to 1 second).
-// Any fields less than a Second are truncated.
-func Every(duration time.Duration) Schedule {
-	return cron.Every(duration)
-}
-
-// Start all workers.
-func Start() {
-	poolWorker.start()
-	cronWorker.Start()
-}
-
-// Stop all workers.
-func Stop() {
-	poolWorker.stop()
-	cronWorker.Stop()
-}
-
-// Wait blocks until all workers will be stopped.
-func Wait() {
-	poolWorker.wait()
+	return nil
 }
