@@ -21,9 +21,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	authenticate := auth.New(
-		auth.DB(db),
-	)
+	authenticate := auth.New(db)
 
 	e.Use(authenticate.Middleware())
 
