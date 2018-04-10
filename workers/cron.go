@@ -4,6 +4,8 @@ import (
 	"context"
 	"sort"
 	"time"
+
+	"github.com/cryptopay-dev/yaga/workers/pool"
 )
 
 // The Schedule describes a job's duty cycle.
@@ -60,17 +62,15 @@ func (w *Workers) schedule(entry *entry) {
 	w.add <- entry
 }
 
-// Start the cron scheduler in its own go-routine, or no-op if already started.
 func (w *Workers) Start(ctx context.Context) {
 	if w.state.CAS(0, 1) {
-		go w.run(ctx)
+		jobCh := make(chan func(context.Context), w.size)
+		go w.run(ctx, jobCh)
+		pool.Run(ctx, jobCh)
 	}
 }
 
-// Run the scheduler. this is private just due to the need to synchronize
-// access to the 'running' state variable.
-func (w *Workers) run(ctx context.Context) {
-	go w.pool.Run(ctx)
+func (w *Workers) run(ctx context.Context, jobCh chan func(context.Context)) {
 	// Figure out the next activation times for each entry.
 	now := time.Now()
 	for _, entry := range w.entries {
@@ -97,8 +97,10 @@ func (w *Workers) run(ctx context.Context) {
 				if e.Next.After(now) || e.Next.IsZero() {
 					break
 				}
-				if err := w.pool.Do(e.Job); err != nil {
-					w.logger.Errorf("workers `%s` cannot run: %v", e.Name, e)
+				select {
+				case jobCh <- e.Job:
+				default:
+					w.logger.Errorf("workers `%s` cannot run", e.Name)
 				}
 				e.Prev = e.Next
 				e.Next = e.Schedule.Next(now)
@@ -116,8 +118,4 @@ func (w *Workers) run(ctx context.Context) {
 			return
 		}
 	}
-}
-
-func (w *Workers) Wait(ctx context.Context) error {
-	return w.pool.Wait(ctx)
 }

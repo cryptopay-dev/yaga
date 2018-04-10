@@ -102,13 +102,9 @@ func testSimple(t *testing.T, iterN int) {
 
 	<-c.Done()
 
-	w.Wait(context.Background())
+	assert.Equal(t, int64(10), i.Load())
 
-	assert.Equal(t, int64(7), i.Load())
-
-	// TODO
-	assert.True(t, log.Contains(fmt.Sprintf("workers `#3: 400 ms worker` panic: (%d) testing a logger of panic", iterN)))
-	assert.True(t, log.Contains(fmt.Sprintf("workers `#4: 100 ms worker`: (%d) testing a logger of error", iterN)))
+	assert.Equal(t, 5, log.Count())
 }
 
 func TestWorkers(t *testing.T) {
@@ -122,7 +118,7 @@ func TestWorkers(t *testing.T) {
 
 		opts := Options{
 			Name:     "my-best-test-worker",
-			Schedule: DelaySchedule(time.Millisecond * 10),
+			Schedule: DelaySchedule(time.Millisecond * 900),
 			TypeJob:  OnePerInstance,
 			Handler: func(ctx context.Context) error {
 				time.Sleep(time.Second * 2)
@@ -141,9 +137,7 @@ func TestWorkers(t *testing.T) {
 
 		<-c.Done()
 
-		w.Wait(context.Background())
-
-		assert.Equal(t, int64(1), i.Load())
+		assert.Equal(t, int64(2), i.Load())
 	})
 
 	t.Run("simple test workers", func(t *testing.T) {
@@ -163,7 +157,7 @@ func TestWorkers(t *testing.T) {
 		for n := 0; n < 10; n++ {
 			w.Schedule(Options{
 				Name:     fmt.Sprintf("test-worker-%d", i),
-				Schedule: DelaySchedule(time.Millisecond * 10),
+				Schedule: DelaySchedule(time.Millisecond * 900),
 				Handler: func(ctx context.Context) error {
 					i.Inc()
 					time.Sleep(time.Second * 2)
@@ -178,8 +172,6 @@ func TestWorkers(t *testing.T) {
 		time.AfterFunc(time.Second, cancel)
 
 		<-c.Done()
-
-		w.Wait(context.Background())
 
 		assert.Equal(t, int64(0), i.Load())
 	})

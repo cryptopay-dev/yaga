@@ -9,7 +9,6 @@ import (
 	"github.com/cryptopay-dev/yaga/locker"
 	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/cryptopay-dev/yaga/logger/log"
-	"github.com/cryptopay-dev/yaga/workers/pool"
 	wrap "github.com/pkg/errors"
 	"go.uber.org/atomic"
 )
@@ -67,7 +66,7 @@ type Workers struct {
 	state   *atomic.Int32
 	logger  logger.Logger
 	lockers map[TypeJob]locker.Locker
-	pool    *pool.Pool
+	size    int
 
 	mu    *sync.Mutex
 	names map[string]struct{}
@@ -81,7 +80,7 @@ func New(lockerOnePerInstance, lockerOnePerCluster locker.Locker, size int) *Wor
 		state:   atomic.NewInt32(0),
 		logger:  log.Logger(),
 		lockers: make(map[TypeJob]locker.Locker),
-		pool:    pool.New(size),
+		size:    size,
 		mu:      new(sync.Mutex),
 		names:   make(map[string]struct{}),
 	}

@@ -30,8 +30,6 @@ func main() {
 		panic(err)
 	}
 
-	w.Start(ctx)
-
 	// worker will run every 13 seconds
 	// example of scheduler like time.Ticker (using string parsing)
 	step := atomic.NewUint32(0)
@@ -84,15 +82,7 @@ func main() {
 	}
 
 	// wait until context will be canceled
-	<-ctx.Done()
-
-	fmt.Printf("[%s] workers are stopping\n", time.Now().Format("15:04:05"))
-
-	// stopping workers
-	// do not nothing
-
-	// wait until all workers will be stopped
-	w.Wait(context.Background())
+	w.Start(ctx)
 
 	fmt.Printf("[%s] All workers are stopped\n", time.Now().Format("15:04:05"))
 }

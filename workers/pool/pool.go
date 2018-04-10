@@ -2,32 +2,11 @@ package pool
 
 import (
 	"context"
-	"errors"
 	"sync"
 )
 
-var (
-	// ErrEmptyHandler when handler is empty
-	ErrEmptyHandler = errors.New("handler must be not null")
-
-	// ErrPoolBusy when pool is busy
-	ErrPoolBusy = errors.New("pool is busy")
-)
-
-type Pool struct {
-	done  chan struct{}
-	jobCh chan func(context.Context)
-}
-
-func New(size int) *Pool {
-	return &Pool{
-		done:  make(chan struct{}),
-		jobCh: make(chan func(context.Context), size),
-	}
-}
-
-func (p *Pool) Run(ctx context.Context) {
-	size := cap(p.jobCh)
+func Run(ctx context.Context, jobCh <-chan func(context.Context)) {
+	size := cap(jobCh)
 	wg := new(sync.WaitGroup)
 	wg.Add(size)
 	for i := 0; i < size; i++ {
@@ -35,8 +14,13 @@ func (p *Pool) Run(ctx context.Context) {
 			defer wg.Done()
 			for {
 				select {
-				case job := <-p.jobCh:
-					job(ctx)
+				case job, ok := <-jobCh:
+					if !ok {
+						return
+					}
+					if job != nil {
+						job(ctx)
+					}
 				case <-ctx.Done():
 					return
 				}
@@ -44,26 +28,4 @@ func (p *Pool) Run(ctx context.Context) {
 		}()
 	}
 	wg.Wait()
-	close(p.done)
-}
-
-func (p *Pool) Do(job func(context.Context)) error {
-	if job == nil {
-		return ErrEmptyHandler
-	}
-	select {
-	case p.jobCh <- job:
-		return nil
-	default:
-		return ErrPoolBusy
-	}
-}
-
-func (p *Pool) Wait(ctx context.Context) error {
-	select {
-	case <-p.done:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
 }
