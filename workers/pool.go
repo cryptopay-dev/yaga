@@ -1,11 +1,11 @@
-package pool
+package workers
 
 import (
 	"context"
 	"sync"
 )
 
-func Run(ctx context.Context, jobCh <-chan func(context.Context)) {
+func runPool(ctx context.Context, jobCh <-chan func(context.Context)) {
 	size := cap(jobCh)
 	wg := new(sync.WaitGroup)
 	wg.Add(size)

@@ -4,8 +4,6 @@ import (
 	"context"
 	"sort"
 	"time"
-
-	"github.com/cryptopay-dev/yaga/workers/pool"
 )
 
 // The Schedule describes a job's duty cycle.
@@ -66,7 +64,7 @@ func (w *Workers) Start(ctx context.Context) {
 	if w.state.CAS(0, 1) {
 		jobCh := make(chan func(context.Context), w.size)
 		go w.run(ctx, jobCh)
-		pool.Run(ctx, jobCh)
+		runPool(ctx, jobCh)
 		close(jobCh)
 	}
 }
