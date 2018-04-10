@@ -2,17 +2,18 @@ package workers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/cryptopay-dev/yaga/locker/local"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/atomic"
 )
 
-func testSimple(t *testing.T, iterN int) {
-	c, cancel := context.WithCancel(context.Background())
-	w := New(nil, nil, 10)
+func testSimple(t *testing.T) {
+	w := New(local.New(), nil, 100)
 	log := newMockLogger()
 	w.logger = log
 
@@ -44,7 +45,7 @@ func testSimple(t *testing.T, iterN int) {
 		Name:     "#3: 400 ms worker",
 		Schedule: DelaySchedule(time.Millisecond * 400),
 		Handler: func(ctx context.Context) error {
-			panic(fmt.Sprintf("(%d) testing a logger of panic", iterN))
+			panic("testing a logger of panic")
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -53,12 +54,12 @@ func testSimple(t *testing.T, iterN int) {
 	if err := w.Schedule(Options{
 		Name:     "#4: 100 ms worker",
 		Schedule: DelaySchedule(time.Millisecond * 100),
+		TypeJob:  OnePerInstance,
 		Handler: func(ctx context.Context) error {
 			i.Inc()
 			time.Sleep(time.Millisecond * 400)
-			return fmt.Errorf("(%d) testing a logger of error", iterN)
+			return errors.New("testing a logger of error")
 		},
-		TypeJob: OnePerInstance,
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -97,82 +98,78 @@ func testSimple(t *testing.T, iterN int) {
 		t.Fatal(err)
 	}
 
+	c, cancel := context.WithTimeout(context.Background(), time.Millisecond*450)
+	defer cancel()
 	w.Start(c)
-	time.AfterFunc(time.Millisecond*450, cancel)
 
-	<-c.Done()
+	assert.Equal(t, int64(7), i.Load())
 
-	assert.Equal(t, int64(10), i.Load())
-
-	assert.Equal(t, 5, log.Count())
+	assert.Equal(t, 2, log.Count())
 }
 
 func TestWorkers(t *testing.T) {
-	// TODO
-	return
 	t.Run("multiple workers at one time", func(t *testing.T) {
-		c, cancel := context.WithCancel(context.Background())
-		w := New(nil, nil, 10)
+		w := New(local.New(), nil, 10)
+		log := newMockLogger()
+		w.logger = log
 
 		i := atomic.NewInt64(0)
 
 		opts := Options{
 			Name:     "my-best-test-worker",
-			Schedule: DelaySchedule(time.Millisecond * 900),
+			Schedule: DelaySchedule(time.Millisecond * 100),
 			TypeJob:  OnePerInstance,
 			Handler: func(ctx context.Context) error {
-				time.Sleep(time.Second * 2)
+				time.Sleep(time.Millisecond * 400)
 				i.Inc()
 				return nil
 			},
 		}
 
-		for n := 0; n < 10; n++ {
-			w.Schedule(opts)
+		if err := w.Schedule(opts); !assert.NoError(t, err) {
+			t.Fatal(err)
+		}
+		if err := w.Schedule(opts); !assert.Error(t, err) {
+			t.Fatal("must be error")
 		}
 
+		c, cancel := context.WithTimeout(context.Background(), time.Millisecond*450)
+		defer cancel()
 		w.Start(c)
 
-		time.AfterFunc(time.Second*2, cancel)
-
-		<-c.Done()
-
-		assert.Equal(t, int64(2), i.Load())
+		assert.Equal(t, int64(1), i.Load())
+		assert.Equal(t, 0, log.Count())
 	})
 
 	t.Run("simple test workers", func(t *testing.T) {
-		for i := 0; i < 10; i++ {
-			t.Run("for-loop", func(t *testing.T) {
-				testSimple(t, i)
-			})
-		}
+		testSimple(t)
 	})
 
 	t.Run("high way to hell", func(t *testing.T) {
-		c, cancel := context.WithCancel(context.Background())
-		w := New(nil, nil, 10)
+		w := New(nil, nil, 100)
+		log := newMockLogger()
+		w.logger = log
 
 		i := atomic.NewInt64(0)
 
-		for n := 0; n < 10; n++ {
+		for n := 0; n < 210; n++ {
 			w.Schedule(Options{
-				Name:     fmt.Sprintf("test-worker-%d", i),
-				Schedule: DelaySchedule(time.Millisecond * 900),
+				Name:     fmt.Sprintf("test-worker-%d", n),
+				Schedule: DelaySchedule(time.Millisecond * 90),
 				Handler: func(ctx context.Context) error {
 					i.Inc()
-					time.Sleep(time.Second * 2)
+					time.Sleep(time.Millisecond * 20)
 					defer i.Dec()
 					return nil
 				},
 			})
 		}
 
+		c, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
+		defer cancel()
 		w.Start(c)
 
-		time.AfterFunc(time.Second, cancel)
-
-		<-c.Done()
-
 		assert.Equal(t, int64(0), i.Load())
+		assert.Equal(t, 10, log.Count())
 	})
 }

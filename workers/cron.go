@@ -97,6 +97,8 @@ func (w *Workers) run(ctx context.Context, jobCh chan func(context.Context)) {
 					break
 				}
 				select {
+				case <-ctx.Done():
+					break
 				case jobCh <- e.Job:
 				default:
 					w.logger.Errorf("workers `%s` cannot run", e.Name)
