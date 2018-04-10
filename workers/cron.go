@@ -67,6 +67,7 @@ func (w *Workers) Start(ctx context.Context) {
 		jobCh := make(chan func(context.Context), w.size)
 		go w.run(ctx, jobCh)
 		pool.Run(ctx, jobCh)
+		close(jobCh)
 	}
 }
 
@@ -115,7 +116,6 @@ func (w *Workers) run(ctx context.Context, jobCh chan func(context.Context)) {
 		case <-ctx.Done():
 			w.state.Store(0)
 			timer.Stop()
-			close(jobCh)
 			return
 		}
 	}
