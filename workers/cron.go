@@ -113,8 +113,9 @@ func (w *Workers) run(ctx context.Context, jobCh chan func(context.Context)) {
 			w.entries = append(w.entries, newEntry)
 
 		case <-ctx.Done():
-			w.state.Store(2)
+			w.state.Store(0)
 			timer.Stop()
+			close(jobCh)
 			return
 		}
 	}
