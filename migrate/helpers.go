@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/types"
 )
@@ -97,7 +97,7 @@ func doMigrate(version int64, name, sql string, fn updateVersion) func(db DB) er
 }
 
 // extractMigrations, find files in migration folder and convert to Migration-item
-func extractMigrations(log logger.Logger, folder string, files []os.FileInfo) (Migrations, error) {
+func extractMigrations(folder string, files []os.FileInfo) (Migrations, error) {
 	var (
 		err          error
 		data         []byte

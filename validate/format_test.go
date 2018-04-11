@@ -1,7 +1,6 @@
 package validate
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,7 +24,7 @@ var testCases = []struct {
 }{
 	{
 		Struct: test1{A: -1},
-		Error:  errors.New("bad `a_custom`, `b_custom`, `someValue`, `e`, `f_custom`, `g_custom`, `h_custom`"),
+		Error:  newError(400, "bad `a_custom`, `b_custom`, `someValue`, `e`, `f_custom`, `g_custom`, `h_custom`"),
 	},
 
 	{

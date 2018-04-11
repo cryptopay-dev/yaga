@@ -1,13 +1,11 @@
 package commands
 
 import (
-	"github.com/cryptopay-dev/yaga/config"
-	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/urfave/cli"
 )
 
 // MigrateList migrations
-func MigrateList(db *config.Database, log logger.Logger) cli.Command {
+func MigrateList() cli.Command {
 	return cli.Command{
 		Name:        "migrate:list",
 		ShortName:   "m:l",
@@ -15,12 +13,12 @@ func MigrateList(db *config.Database, log logger.Logger) cli.Command {
 		Description: "Migration list applied migrations",
 		Category:    "Migrate commands",
 		Flags:       []cli.Flag{dbFlag, dsnFlag},
-		Action:      migrateAction(migrateList, db, log),
+		Action:      migrateAction(migrateList),
 	}
 }
 
 // MigratePlan migrations
-func MigratePlan(db *config.Database, log logger.Logger) cli.Command {
+func MigratePlan() cli.Command {
 	return cli.Command{
 		Name:        "migrate:plan",
 		ShortName:   "m:p",
@@ -28,6 +26,6 @@ func MigratePlan(db *config.Database, log logger.Logger) cli.Command {
 		Description: "Migration plan migrations",
 		Category:    "Migrate commands",
 		Flags:       migrateFlags(),
-		Action:      migrateAction(migratePlan, db, log),
+		Action:      migrateAction(migratePlan),
 	}
 }

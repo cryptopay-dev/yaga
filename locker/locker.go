@@ -1,46 +1,14 @@
 package locker
 
-import (
-	"time"
+// Options interface
+type Options interface {
+	Parse(opts ...Option) error
+}
 
-	"github.com/bsm/redis-lock"
-	"github.com/cryptopay-dev/yaga/logger"
-	"github.com/go-redis/redis"
-)
+// Option closure
+type Option = func(opt Options) error
 
-// Locker interface to abstract bsm/redis-lock
+// Locker interface for drivers
 type Locker interface {
-	Run(key string, timeout time.Duration, handler func())
-}
-
-// Lock struct to abstract bsm/redis-lock
-type Lock struct {
-	redis  *redis.Client
-	locker *lock.Options
-	logger logger.Logger
-}
-
-// New creates instance of Locker
-func New(opts ...Option) Locker {
-	var options = newOptions(opts...)
-	return &Lock{
-		redis:  options.Redis,
-		logger: options.Logger,
-		locker: &lock.Options{
-			RetryCount: 10,
-			RetryDelay: 100 * time.Millisecond,
-		},
-	}
-}
-
-// Run runs a callback handler with a Redis lock.
-func (l *Lock) Run(key string, timeout time.Duration, handler func()) {
-	opts := &lock.Options{
-		RetryCount:  l.locker.RetryCount,
-		RetryDelay:  l.locker.RetryDelay,
-		LockTimeout: timeout,
-	}
-	if err := lock.Run(l.redis, key, opts, handler); err != nil {
-		l.logger.Errorf("Locker error: %v", err.Error())
-	}
+	Run(key string, handler func(), options ...Option) error
 }

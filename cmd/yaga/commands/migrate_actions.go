@@ -5,7 +5,8 @@ import (
 	"os"
 
 	"github.com/cryptopay-dev/yaga/config"
-	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/helpers/postgres"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/migrate"
 	"github.com/urfave/cli"
 )
@@ -79,14 +80,14 @@ func (m migrateType) needMigrations() bool {
 		m == migratePlan
 }
 
-func migrateAction(mtype migrateType, db *config.Database, log logger.Logger) func(ctx *cli.Context) error {
+func migrateAction(mtype migrateType) func(ctx *cli.Context) error {
 	return func(ctx *cli.Context) (err error) {
-		if db, err = FetchDB(ctx, db); err != nil {
+		if err = FetchDB(ctx, "database"); err != nil {
 			log.Fatalf("can't find config file or dsn: %v", err)
 		}
 
 		if database := ctx.String("db"); len(database) != 0 {
-			db.Database = database
+			config.Set("database.database", database)
 		}
 
 		var steps = ctx.Int("steps")
@@ -98,15 +99,14 @@ func migrateAction(mtype migrateType, db *config.Database, log logger.Logger) fu
 			}
 		}
 
-		pg, err := db.Connect()
+		pg, err := postgres.Connect("database")
 		if err != nil {
 			log.Fatalf("postgres connection error: %v", err)
 		}
 
 		m, err := migrate.New(migrate.Options{
-			DB:     pg,
-			Path:   mpath,
-			Logger: log,
+			DB:   pg,
+			Path: mpath,
 		})
 
 		if err != nil {

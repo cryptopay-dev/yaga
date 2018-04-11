@@ -92,7 +92,7 @@ func TestExtractMigrations(t *testing.T) {
 		t.FailNow()
 	}
 
-	items, errMigrate := extractMigrations(defaultLogger, path, files)
+	items, errMigrate := extractMigrations(path, files)
 
 	if !assert.NoError(t, errMigrate) {
 		t.FailNow()
@@ -122,7 +122,7 @@ func TestCreateMigrations(t *testing.T) {
 			t.FailNow()
 		}
 
-		items, err := extractMigrations(defaultLogger, dir, files)
+		items, err := extractMigrations(dir, files)
 		if !assert.NoError(t, err) {
 			t.FailNow()
 		}

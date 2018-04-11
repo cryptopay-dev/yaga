@@ -1,13 +1,11 @@
 package commands
 
 import (
-	"github.com/cryptopay-dev/yaga/config"
-	"github.com/cryptopay-dev/yaga/logger"
 	"github.com/urfave/cli"
 )
 
 // MigrateDown migrations
-func MigrateDown(db *config.Database, log logger.Logger) cli.Command {
+func MigrateDown() cli.Command {
 	return cli.Command{
 		Name:        "migrate:down",
 		ShortName:   "m:d",
@@ -15,6 +13,6 @@ func MigrateDown(db *config.Database, log logger.Logger) cli.Command {
 		Description: "Migration down last migration (by default)",
 		Category:    "Migrate commands",
 		Flags:       migrateFlags(),
-		Action:      migrateAction(migrateDown, db, log),
+		Action:      migrateAction(migrateDown),
 	}
 }

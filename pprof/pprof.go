@@ -2,40 +2,45 @@ package pprof
 
 import (
 	"net/http/pprof"
-	"os"
 	"strings"
 
-	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/config"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
 const (
-	pprofPortEnv    = "PPROF_BIND"
 	tplInfoPprof    = "Pprof start on port: %s"
 	errNilWebEngine = "web.Engine is nil, can't add pprof"
 )
 
 // Wrap adds several routes from package `net/http/pprof` to *echo.Echo object.
-func Wrap(logger logger.Logger, e *web.Engine) {
-	port := os.Getenv(pprofPortEnv)
+func Wrap(e *web.Engine) error {
+	port := config.GetString("pprof_bind")
 	if len(port) == 0 {
 		if e == nil {
-			logger.Error(errNilWebEngine)
-			return
+			log.Error(errNilWebEngine)
+			return nil
 		}
 		WrapGroup("", e.Group("/debug"))
-		return
+		return nil
 	}
 
-	pprofWeb := web.New(web.Options{})
+	pprofWeb, err := web.New(web.Options{})
+	if err != nil {
+		return err
+	}
+
 	WrapGroup("", pprofWeb.Group("/debug"))
 
 	go func() {
-		logger.Infof(tplInfoPprof, port)
-		if err := web.StartServer(pprofWeb, port); err != nil {
-			logger.Error(err)
+		log.Infof(tplInfoPprof, port)
+		if err := web.Start(pprofWeb, port); err != nil {
+			log.Error(err)
 		}
 	}()
+
+	return nil
 }
 
 // Wrapper make sure we are backward compatible.

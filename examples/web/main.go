@@ -2,47 +2,29 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
+	"time"
 
-	"github.com/cryptopay-dev/yaga/errors"
-	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/graceful"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	e, err := web.New(web.Options{Debug: true})
 
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
-
-	log := nop.New()
-
-	errLogic, _ := errors.New(errors.Options{
-		Logger: log,
-	})
-
-	e := web.New(web.Options{
-		Logger: log,
-		Error:  errLogic,
-		Debug:  true,
-	})
+	if err != nil {
+		log.Panic(err)
+		return
+	}
 
 	e.GET("/test/:command", func(c web.Context) error {
 		cmd := c.Param("command")
-		fmt.Println("Received command:", cmd)
+		log.Infof("Received command: %v", cmd)
 
 		switch cmd {
 		case "nop":
 			// do nothing
-		case "off":
-			// send signal to exit
-			ch <- syscall.SIGABRT
 		default:
 			// unknown operation
 			return http.ErrNotSupported
@@ -51,20 +33,14 @@ func main() {
 		return c.JSON(http.StatusOK, cmd)
 	})
 
-	go func() {
-		if err := web.StartServer(e, os.Getenv("BIND")); err != nil {
-			if !strings.Contains(err.Error(), http.ErrServerClosed.Error()) {
-				e.Logger.Error(err)
-			}
-			ch <- syscall.SIGABRT
-		}
-	}()
+	g := graceful.New(context.Background())
+	graceful.AttachNotifier(g)
 
-	// wait for signals
-	sig := <-ch
-	fmt.Println("Received signal:", sig.String())
+	web.StartAsync(e, g)
 
-	cancel()
-
-	e.Shutdown(ctx)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	if err := g.Wait(ctx); err != nil {
+		e.Logger.Error(err)
+	}
 }

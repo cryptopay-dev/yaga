@@ -1,14 +1,19 @@
 package web
 
 import (
+	"context"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/cryptopay-dev/go-metrics"
+	"github.com/cryptopay-dev/yaga/config"
+	"github.com/cryptopay-dev/yaga/logger/log"
+	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 const (
@@ -19,6 +24,10 @@ const (
 	defaultBind = ":8080"
 )
 
+var (
+	defaultLogger = nop.New()
+)
+
 type recoverer interface {
 	Capture(error, echo.Context)
 	Recover() echo.MiddlewareFunc
@@ -26,8 +35,6 @@ type recoverer interface {
 
 // Options contains a parameters for new Echo instance.
 type Options struct {
-	Logger    echo.Logger
-	Error     recoverer
 	Debug     bool
 	Validator echo.Validator
 }
@@ -74,17 +81,15 @@ type (
 )
 
 // New creates an instance of Echo.
-func New(opts Options) *Engine {
+func New(opts Options) (*Engine, error) {
 	e := echo.New()
 
-	if opts.Logger != nil {
-		e.Logger = opts.Logger
-	}
+	e.Logger = log.Logger()
 
 	// TODO may be move to function?
 	initMetricsOnce.Do(func() {
 		// enable metrics
-		if err := metrics.Setup(os.Getenv("METRICS_URL"), os.Getenv("METRICS_APP"), os.Getenv("METRICS_HOSTNAME")); err == nil {
+		if err := metrics.Setup(config.GetString("metrics_url"), config.GetString("metrics_app"), config.GetString("metrics_hostname")); err == nil {
 			go func() {
 				if errWatch := metrics.Watch(time.Second * 10); errWatch != nil {
 					e.Logger.Errorf("Can't start watching for metrics: %v", errWatch)
@@ -100,20 +105,47 @@ func New(opts Options) *Engine {
 
 	if opts.Validator != nil {
 		e.Validator = opts.Validator
+	} else {
+		e.Validator = validate.New(validator.New())
 	}
 
 	e.Binder = new(DefaultBinder)
 
-	if opts.Error != nil {
-		e.HTTPErrorHandler = opts.Error.Capture
-		e.Use(opts.Error.Recover())
-	}
+	logic := NewLogic(opts.Debug)
 
-	return e
+	e.HTTPErrorHandler = logic.Capture
+	e.Use(logic.Recover())
+
+	return e, nil
 }
 
-// StartServer HTTP with custom address.
-func StartServer(e *Engine, bind string) error {
+type graceful interface {
+	Cancel()
+	Go(func(context.Context) error)
+}
+
+// StartAsync HTTP with custom address.
+func StartAsync(e *Engine, g graceful) {
+	go func() {
+		defer g.Cancel()
+		bind := config.GetString("bind")
+		err := Start(e, bind)
+		if err != nil {
+			e.Logger.Error(err)
+		}
+	}()
+
+	g.Go(func(c context.Context) error {
+		<-c.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		return e.Shutdown(ctx)
+	})
+}
+
+// Start HTTP with custom address.
+func Start(e *Engine, bind string) error {
 	// start server
 	if len(bind) == 0 {
 		bind = defaultBind

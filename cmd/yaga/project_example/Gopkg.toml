@@ -1,6 +1,6 @@
 [[constraint]]
   name = "github.com/cryptopay-dev/yaga"
-  version = "1.8"
+  version = "1.11.3"
 
 [prune]
   non-go = true

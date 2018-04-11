@@ -2,30 +2,26 @@ package main
 
 import (
 	"net/http"
-	"os"
 
-	"github.com/cryptopay-dev/yaga/logger/nop"
+	"github.com/cryptopay-dev/yaga/helpers/postgres"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/middlewares/auth"
 	"github.com/cryptopay-dev/yaga/web"
-	"github.com/go-pg/pg"
 )
 
 func main() {
-	log := nop.New()
-	e := web.New(web.Options{
-		Logger: log,
-	})
+	e, err := web.New(web.Options{})
 
-	authenticate := auth.New(
-		auth.Logger(log),
-		auth.DB(pg.Connect(&pg.Options{
-			Addr:     os.Getenv("DATABASE_ADDR"),
-			User:     os.Getenv("DATABASE_USER"),
-			Database: os.Getenv("DATABASE_DATABASE"),
-			Password: os.Getenv("DATABASE_PASSWORD"),
-			PoolSize: 2,
-		})),
-	)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	db, err := postgres.Connect("database")
+	if err != nil {
+		log.Panic(err)
+	}
+
+	authenticate := auth.New(db)
 
 	e.Use(authenticate.Middleware())
 

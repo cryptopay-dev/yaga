@@ -1,20 +1,19 @@
 package testdb
 
 import (
-	"fmt"
-	"os"
 	"strings"
 
-	"github.com/go-pg/pg"
-	"github.com/joho/godotenv"
+	"github.com/cryptopay-dev/yaga/config"
+	"github.com/cryptopay-dev/yaga/helpers/postgres"
 )
 
-var database *Database
-
-// Database for tests
-type Database struct {
-	DB *pg.DB
-}
+var defaultConfig = strings.NewReader(`
+database:
+  addr: some-address
+  database: some-database
+  user: some-user
+  password: some-password
+`)
 
 // GetTestDB creates connection to PostgreSQL.
 // Options used from ENV:
@@ -22,21 +21,17 @@ type Database struct {
 // - TEST_DATABASE_USER
 // - TEST_DATABASE_DATABASE
 // - TEST_DATABASE_PASSWORD
-func GetTestDB() *Database {
-	if database == nil {
-		err := godotenv.Load()
-		if err != nil && !strings.Contains(err.Error(), "no such file or directory") {
-			fmt.Println(err)
-		}
-		database = new(Database)
-		database.DB = pg.Connect(&pg.Options{
-			Addr:     os.Getenv("TEST_DATABASE_ADDR"),
-			User:     os.Getenv("TEST_DATABASE_USER"),
-			Database: os.Getenv("TEST_DATABASE_DATABASE"),
-			Password: os.Getenv("TEST_DATABASE_PASSWORD"),
-			PoolSize: 2,
-		})
+func GetTestDB() (db *postgres.DB, err error) {
+	config.SetEnvPrefix("test")
+
+	if err = config.ReadConfig(defaultConfig); err != nil {
+		return
 	}
 
-	return database
+	db, err = postgres.Connect("database")
+	if err != nil {
+		return
+	}
+
+	return db, nil
 }

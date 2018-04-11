@@ -3,24 +3,22 @@ package main
 import (
 	"net/http"
 
-	"github.com/cryptopay-dev/yaga/logger/zap"
-	"github.com/cryptopay-dev/yaga/middlewares/request"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/web"
 )
 
 func main() {
-	log := zap.New(zap.Development)
+	e, err := web.New(web.Options{})
+	if err != nil {
+		log.Panic(err)
+	}
 
-	e := web.New(web.Options{
-		Logger: log,
-	})
-
-	e.Use(request.RayTraceID(log))
+	e.Use(web.RayTraceID)
 
 	e.GET("/", func(ctx web.Context) error {
 		return ctx.String(
 			http.StatusOK,
-			ctx.Request().Header.Get(request.RayTraceHeader),
+			ctx.Request().Header.Get(web.RayTraceHeader),
 		)
 	})
 

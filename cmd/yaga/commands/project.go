@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cryptopay-dev/yaga/logger"
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/urfave/cli"
 )
 
@@ -124,7 +124,7 @@ func checkGopath(appath, gopath string) (bool, string) {
 	return false, relpath
 }
 
-func projectFormatter(log logger.Logger, appath string) {
+func projectFormatter(appath string) {
 	var tools = []string{"goimports", "gofmt"}
 	for _, tool := range tools {
 		var message = "OK"
@@ -146,7 +146,7 @@ func exampleProjectPath(gopath string) (string, error) {
 	return "", fmt.Errorf("project template not found: %s", examplePath)
 }
 
-func newProject(log logger.Logger) cli.Command {
+func newProject() cli.Command {
 	action := func(ctx *cli.Context) error {
 		var (
 			ok         bool
@@ -230,7 +230,7 @@ func newProject(log logger.Logger) cli.Command {
 			log.Fatalf("Can't copy example project: %v", err)
 		}
 
-		projectFormatter(log, appath)
+		projectFormatter(appath)
 
 		log.Print("Project created")
 		log.Printf(postInfo, appath)

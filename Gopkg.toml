@@ -20,10 +20,6 @@
   version = "6.8.0"
 
 [[constraint]]
-  name = "github.com/joho/godotenv"
-  version = "1.2.0"
-
-[[constraint]]
   name = "github.com/labstack/echo"
   version = "3.3.0"
 
@@ -37,7 +33,7 @@
 
 [[constraint]]
   name = "github.com/shopspring/decimal"
-  version = "1.0.0"
+  version = "=1.0.0"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
@@ -52,16 +48,16 @@
   name = "golang.org/x/crypto"
 
 [[constraint]]
-  name = "github.com/robfig/cron"
-  version = "v1"
-
-[[constraint]]
   name = "gopkg.in/go-playground/validator.v9"
   version = "9.11.0"
 
 [[constraint]]
   name = "github.com/bsm/redis-lock"
   version = "v8"
+
+[[override]]
+  name = "gopkg.in/yaml.v2"
+  version = "v2.1.1"
 
 [[constraint]]
   branch = "master"
