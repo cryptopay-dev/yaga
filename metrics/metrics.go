@@ -12,7 +12,7 @@ type Provider interface {
 	Observe(key string, value float64)
 }
 
-var defaultProvider Provider
+var defaultProvider Provider = &nop{}
 
 // SetProvider set global metrics provider
 func SetProvider(p Provider) {
