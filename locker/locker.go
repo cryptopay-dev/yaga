@@ -41,6 +41,6 @@ func (l *Lock) Run(key string, timeout time.Duration, handler func()) {
 		LockTimeout: timeout,
 	}
 	if err := lock.Run(l.redis, key, opts, handler); err != nil {
-		l.logger.Infof("Locker error: %v", err.Error())
+		l.logger.Warn("Locker error", err)
 	}
 }
