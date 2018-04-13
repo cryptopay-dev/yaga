@@ -5,8 +5,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/migrate"
-	"github.com/labstack/gommon/log"
 	"github.com/urfave/cli"
 )
 
