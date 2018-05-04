@@ -5,93 +5,40 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/cryptopay-dev/yaga/logger/log"
-	"github.com/golang/sync/errgroup"
-	"github.com/pkg/errors"
 )
 
-// Graceful interface
-type Graceful interface {
-	Go(func(context.Context) error)
-	Wait(context.Context) error
-	Cancel()
-}
-
-type graceful struct {
-	eg     *errgroup.Group
-	cancel context.CancelFunc
+var (
 	ctx    context.Context
-}
+	cancel context.CancelFunc
+)
 
-func (g *graceful) Cancel() {
-	g.cancel()
-}
+func init() {
+	ctx, cancel = context.WithCancel(context.Background())
 
-func (g *graceful) Go(job func(context.Context) error) {
-	f := func() (err error) {
-		defer func() {
-			if r := recover(); r != nil {
-				switch x := r.(type) {
-				case string:
-					err = errors.New(x)
-				case error:
-					err = x
-				default:
-					err = errors.New("Unknown panic")
-				}
-			}
-			err = errors.Wrap(err, "graceful failed")
-		}()
-		err = job(g.ctx)
-		return
-	}
-
-	g.eg.Go(f)
-}
-
-func (g *graceful) Wait(ctx context.Context) error {
-	if ctx == nil {
-		return g.eg.Wait()
-	}
-
-	var err error
-	done := make(chan struct{})
 	go func() {
-		err = g.eg.Wait()
-		close(done)
-	}()
-	select {
-	case <-done:
-		return err
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-}
+		ch := make(chan os.Signal, 1)
+		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 
-// New returns a new Graceful and an associated Context derived from ctx.
-func New(ctx context.Context) Graceful {
-	ctx, cancel := context.WithCancel(ctx)
-	g, ctx := errgroup.WithContext(ctx)
-
-	return &graceful{g, cancel, ctx}
-}
-
-// AttachNotifier connects Graceful to notification of OS signals.
-func AttachNotifier(g Graceful) {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-
-	g.Go(func(c context.Context) error {
 		select {
-		case sig := <-ch:
-			defer g.Cancel()
-			if log.Logger() != nil {
-				log.Infof("received signal: %s", sig.String())
-			}
-		case <-c.Done():
-			return c.Err()
+		case <-ch:
+			cancel()
+		case <-ctx.Done():
 		}
-		return nil
-	})
+	}()
+}
+
+// Context signal-bound context
+func Context() context.Context {
+	return ctx
+}
+
+// Cancel context
+func Cancel() {
+	cancel()
+}
+
+// Wait for context done
+func Wait() error {
+	<-ctx.Done()
+	return ctx.Err()
 }

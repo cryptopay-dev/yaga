@@ -8,11 +8,13 @@ import (
 
 	"github.com/cryptopay-dev/go-metrics"
 	"github.com/cryptopay-dev/yaga/config"
+	"github.com/cryptopay-dev/yaga/graceful"
 	"github.com/cryptopay-dev/yaga/logger/log"
 	"github.com/cryptopay-dev/yaga/logger/nop"
 	"github.com/cryptopay-dev/yaga/validate"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"github.com/pkg/errors"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -119,29 +121,25 @@ func New(opts Options) (*Engine, error) {
 	return e, nil
 }
 
-type graceful interface {
-	Cancel()
-	Go(func(context.Context) error)
-}
-
 // StartAsync HTTP with custom address.
-func StartAsync(e *Engine, g graceful) {
+func StartAsync(e *Engine) {
 	go func() {
-		defer g.Cancel()
+		defer graceful.Cancel()
 		bind := config.GetString("bind")
-		err := Start(e, bind)
-		if err != nil {
-			e.Logger.Error(err)
+
+		if err := Start(e, bind); err != nil {
+			log.Error(errors.Wrap(err, "web start-async"))
 		}
 	}()
 
-	g.Go(func(c context.Context) error {
-		<-c.Done()
+	go func() {
+		graceful.Wait()
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-
-		return e.Shutdown(ctx)
-	})
+		if err := e.Shutdown(ctx); err != nil {
+			log.Error(errors.Wrap(err, "web shutdown"))
+		}
+	}()
 }
 
 // Start HTTP with custom address.

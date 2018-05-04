@@ -1,9 +1,7 @@
 package main
 
 import (
-	"context"
 	"net/http"
-	"time"
 
 	"github.com/cryptopay-dev/yaga/graceful"
 	"github.com/cryptopay-dev/yaga/logger/log"
@@ -33,14 +31,7 @@ func main() {
 		return c.JSON(http.StatusOK, cmd)
 	})
 
-	g := graceful.New(context.Background())
-	graceful.AttachNotifier(g)
+	web.StartAsync(e)
 
-	web.StartAsync(e, g)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	if err := g.Wait(ctx); err != nil {
-		e.Logger.Error(err)
-	}
+	graceful.Wait()
 }
