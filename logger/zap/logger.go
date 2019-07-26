@@ -28,14 +28,14 @@ func New(platform string) logger.Logger {
 	if platform == Development {
 		l, _ = zap.NewDevelopment(zap.AddCallerSkip(1))
 	} else {
-		platform = Production
-		l, _ = zap.Config{
-			Level:            zap.NewAtomicLevelAt(zap.InfoLevel),
-			Encoding:         "json",
-			EncoderConfig:    zap.NewProductionEncoderConfig(),
-			OutputPaths:      []string{"stderr"},
-			ErrorOutputPaths: []string{"stderr"},
-		}.Build()
+		cfg := zap.NewProductionConfig()
+		cfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+		cfg.OutputPaths = []string{"stdout"}
+		cfg.ErrorOutputPaths = []string{"stdout"}
+		cfg.Encoding = "json"
+		cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+		l, _ = cfg.Build(zap.AddCallerSkip(1))
 	}
 
 	core := l.Core()
