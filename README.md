@@ -20,7 +20,6 @@ Yaga is a project that provides a set of useful utilities for creating a golang 
 - [**Middlewares**](./middlewares) provides intermediate layers for authorizing and logging requests in web application
 - [**Migrator**](./migrate) this package allows you to run migrations on your PostgreSQL database
 - [**Pprof**](./pprof) provides a utility for profiling with web interaction
-- [**Report**](./report) helps to write metrics for data using `cryptopay-dev/go-metrics`
 - [**Testdb**](./helpers/testdb) creates a connection to the test database to run tests
 - [**Tracer**](./tracer) is a wrapper over the raven `github.com/getsentry/raven-go` client for the Sentry event/error logging system
 - [**Web**](./web) allows you to run the web server using `github.com/labstack/echo` web framework with the necessary parameters
@@ -73,5 +72,5 @@ Some examples of packages you can find in [examples](./examples) folder or in `e
 Run in the console:
 ```
 godoc -http=:6060
-``` 
+```
 Then open `localhost:6060/`

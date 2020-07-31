@@ -4,10 +4,6 @@
   unused-packages = true
 
 [[constraint]]
-  name = "github.com/cryptopay-dev/go-metrics"
-  version = "3.0.0"
-
-[[constraint]]
   branch = "master"
   name = "github.com/getsentry/raven-go"
 

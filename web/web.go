@@ -2,11 +2,7 @@ package web
 
 import (
 	"fmt"
-	"os"
-	"sync"
-	"time"
 
-	"github.com/cryptopay-dev/go-metrics"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -49,8 +45,6 @@ var (
 var (
 	// NewHTTPError creates a new HTTPError instance.
 	NewHTTPError = echo.NewHTTPError
-
-	initMetricsOnce = sync.Once{}
 )
 
 type (
@@ -80,20 +74,6 @@ func New(opts Options) *Engine {
 	if opts.Logger != nil {
 		e.Logger = opts.Logger
 	}
-
-	// TODO may be move to function?
-	initMetricsOnce.Do(func() {
-		// enable metrics
-		if err := metrics.Setup(os.Getenv("METRICS_URL"), os.Getenv("METRICS_APP"), os.Getenv("METRICS_HOSTNAME")); err == nil {
-			go func() {
-				if errWatch := metrics.Watch(time.Second * 10); errWatch != nil {
-					e.Logger.Errorf("Can't start watching for metrics: %v", errWatch)
-				}
-			}()
-		} else {
-			e.Logger.Error(err)
-		}
-	})
 
 	e.Debug = opts.Debug
 	e.HideBanner = true
