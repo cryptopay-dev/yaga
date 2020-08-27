@@ -2,15 +2,11 @@ package cli
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/cryptopay-dev/yaga/cmd/yaga/commands"
 	"github.com/cryptopay-dev/yaga/config"
-	"github.com/cryptopay-dev/yaga/validate"
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 func shutdownApplication(opts *Options) {
@@ -39,58 +35,13 @@ func appCommands(opts *Options) {
 			return nil
 		},
 		Action: func(c *cli.Context) error {
-			var err error
-
-			// If we have config-source/interface - loading config:
-			if opts.ConfigSource != nil &&
-				opts.ConfigInterface != nil {
-				if reflect.TypeOf(opts.ConfigInterface).Kind() != reflect.Ptr {
-					return ErrConfigNotPointer
-				}
-
-				if err = config.Load(
-					opts.ConfigSource,
-					opts.ConfigInterface,
-				); err != nil {
-					return errors.Wrapf(err, "can't load config")
-				}
-			}
-
-			if opts.App != nil && reflect.TypeOf(opts.App).Kind() != reflect.Ptr {
-				return ErrAppNotPointer
-			}
-
-			if err = setDatabase(opts, ""); err != nil {
-				return errors.Wrapf(err, "can't set database")
-			}
-
-			if opts.ConfigInterface != nil {
-				if redisConf, ok := hasRedis(opts.ConfigInterface); ok {
-					if opts.Redis, err = redisConf.Connect(); err != nil {
-						return errors.Wrap(err, "can't connect to redis")
-					}
-				}
-			}
-
-			// Validate options:
-			if err = validator.New().Struct(opts); err != nil {
-				if ok, errv := validate.CheckErrors(validate.Options{
-					Struct: opts,
-					Errors: err,
-				}); ok {
-					return errors.Wrapf(errv, "validate error")
-				}
+			ropts, err := NewRunOptions(opts)
+			if err != nil {
+				return err
 			}
 
 			// Running main server
-			if err = opts.App.Run(RunOptions{
-				DB:           opts.DB,
-				Redis:        opts.Redis,
-				Logger:       opts.Logger,
-				Debug:        opts.Debug,
-				BuildTime:    opts.BuildTime,
-				BuildVersion: opts.BuildVersion,
-			}); err != nil {
+			if err = opts.App.Run(ropts); err != nil {
 				opts.Logger.Fatal("Application failure", err)
 			}
 
